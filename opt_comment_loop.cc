@@ -4,7 +4,7 @@
 Op* OptCommentLoop::Run(Op* op)
 {
   Op* head = op;
-  while (op->Cmd() == OpCode::NOP) {
+  while (op->OpCode() == OpCode::NOP) {
     op = op->Next();
   }
   Op* comment_loop = op;
@@ -19,7 +19,7 @@ Op* OptCommentLoop::Run(Op* op)
         break;
       }
     }
-    comment_loop->SetCmd(OpCode::NOP);
+    comment_loop->SetOpCode(OpCode::NOP);
     comment_loop->SetOperand1(0);
   }
   return head;

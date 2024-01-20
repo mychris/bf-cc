@@ -39,11 +39,11 @@ public:
 
   ~Op() = default;
 
-  inline OpCode Cmd() const {
+  inline OpCode OpCode() const {
     return m.instr;
   }
 
-  inline void SetCmd(OpCode cmd) {
+  inline void SetOpCode(enum OpCode cmd) {
     m.instr = cmd;
   }
 
@@ -138,7 +138,7 @@ public:
     return buffer;
   }
 
-  static Op Create(OpCode instr, uintptr_t op1 = 0, uintptr_t op2 = 0) {
+  static Op Create(enum OpCode instr, uintptr_t op1 = 0, uintptr_t op2 = 0) {
     return Op(M{
         .instr = instr,
         .next = nullptr,
@@ -147,7 +147,7 @@ public:
     });
   }
 
-  static Op *Allocate(OpCode instr, uintptr_t op1 = 0, uintptr_t op2 = 0) {
+  static Op *Allocate(enum OpCode instr, uintptr_t op1 = 0, uintptr_t op2 = 0) {
     return new Op(M{
         .instr = instr,
         .next = nullptr,

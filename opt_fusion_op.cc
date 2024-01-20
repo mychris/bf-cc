@@ -5,7 +5,7 @@ Op* OptFusionOp::Run(Op* op) {
   Op* head = op;
   // First loop, fuse the same operations
   while (op) {
-    OpCode seq_cmd = op->Cmd();
+    OpCode seq_cmd = op->OpCode();
     if (seq_cmd == OpCode::INCR_CELL
         || seq_cmd == OpCode::DECR_CELL
         || seq_cmd == OpCode::INCR_PTR
@@ -13,7 +13,7 @@ Op* OptFusionOp::Run(Op* op) {
       Op* seq_head = op;
       uintptr_t amount = op->Operand1();
       op = op->Next();
-      while (op->Cmd() == seq_cmd) {
+      while (op->OpCode() == seq_cmd) {
         amount += op->Operand1();
         seq_head->SetOperand1(amount);
         seq_head->SetNext(op->Next());
