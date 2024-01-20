@@ -3,8 +3,11 @@
 
 #include <cstdlib>
 #include <utility>
+#include <cassert>
 
 #include "base.h"
+
+#define MEMORY_SIZE 10000
 
 class MachineState {
 private:
@@ -22,7 +25,7 @@ public:
     // TODO: handle allocation failure
     return MachineState(M{
         .data_pointer = 0,
-        .data = (u8 *)calloc(10000, sizeof(u8)),
+        .data = (u8 *)calloc(MEMORY_SIZE, sizeof(u8)),
     });
   }
 
@@ -39,10 +42,12 @@ public:
   }
 
   inline void SetCell(u8 value) {
+    assert(m.data_pointer < MEMORY_SIZE);
     m.data[m.data_pointer] = value;
   }
 
   inline u8 GetCell() const {
+    assert(m.data_pointer < MEMORY_SIZE);
     return m.data[m.data_pointer];
   }
 
@@ -52,13 +57,16 @@ public:
 
   inline void IncrementDataPointer(u32 amount) {
     m.data_pointer += amount;
+    assert(m.data_pointer < MEMORY_SIZE);
   }
 
   inline void DecrementDataPointer(u32 amount) {
+    assert(m.data_pointer >= amount);
     m.data_pointer -= amount;
   }
 
   inline void SetDataPointer(u32 position) {
+    assert(position < MEMORY_SIZE);
     m.data_pointer = position;
   }
 
