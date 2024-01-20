@@ -7,17 +7,19 @@
 #include "machine.h"
 
 enum class OpCode {
-  NOP           = 1 << 0,
-  INCR_CELL     = 1 << 1,
-  DECR_CELL     = 1 << 2,
-  SET_CELL      = 1 << 3,
-  INCR_PTR      = 1 << 4,
-  DECR_PTR      = 1 << 5,
-  SET_PTR       = 1 << 6,
-  READ          = 1 << 7,
-  WRITE         = 1 << 8,
-  JUMP_ZERO     = 1 << 9,
-  JUMP_NON_ZERO = 1 << 10,
+  NOP            = 1 << 0,
+  INCR_CELL      = 1 << 1,
+  DECR_CELL      = 1 << 2,
+  SET_CELL       = 1 << 3,
+  INCR_PTR       = 1 << 4,
+  DECR_PTR       = 1 << 5,
+  SET_PTR        = 1 << 6,
+  READ           = 1 << 7,
+  WRITE          = 1 << 8,
+  JUMP_ZERO      = 1 << 9,
+  JUMP_NON_ZERO  = 1 << 10,
+  FIND_CELL_LOW  = 1 << 11,
+  FIND_CELL_HIGH = 1 << 12,
 };
 
 static char buffer[1024];
@@ -108,6 +110,20 @@ public:
     case OpCode::JUMP_NON_ZERO: {
       if (state.GetCell() != 0) {
         return (Instr *)m.operand1;
+      }
+      return m.next;
+    } break;
+    case OpCode::FIND_CELL_HIGH: {
+      u8 val = (u8) m.operand1;
+      while (state.GetCell() != val) {
+        state.IncrementDataPointer(m.operand2);
+      }
+      return m.next;
+    } break;
+    case OpCode::FIND_CELL_LOW: {
+      u8 val = (u8) m.operand1;
+      while (state.GetCell() != val) {
+        state.DecrementDataPointer(m.operand2);
       }
       return m.next;
     } break;
