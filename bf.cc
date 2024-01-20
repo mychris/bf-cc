@@ -10,6 +10,7 @@
 #include "machine.h"
 #include "instr.h"
 #include "optimize.h"
+#include "interp.h"
 
 #define OP_INCR '+'
 #define OP_DECR '-'
@@ -87,12 +88,11 @@ static char *readcontent(const char *filename) {
 int main(int argc, char **argv) {
   auto machine = MachineState::Create();
   auto optimizer = Optimizer::Create();
+  auto interpreter = Interpreter::Create();
   char *path = argv[1];
   char *content = readcontent(path);
   auto op = parse(content);
   op = optimizer.Run(op);
-  while (op) {
-    op = op->Exec(machine);
-  }
+  interpreter.Run(op);
   return 0;
 }
