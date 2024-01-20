@@ -78,7 +78,7 @@ static char *readcontent(const char *filename) {
     fseek(fp, 0, SEEK_END);
     fsize = ftell(fp);
     rewind(fp);
-    fcontent = (char *)malloc(sizeof(char) * fsize);
+    fcontent = (char *)calloc(fsize + 1, sizeof(char));
     fread(fcontent, 1, fsize, fp);
     fclose(fp);
   }
@@ -92,7 +92,13 @@ int main(int argc, char **argv) {
   char *path = argv[1];
   char *content = readcontent(path);
   auto op = parse(content);
+  free(content);
   op = optimizer.Run(op);
   interpreter.Run(op);
+  while (op) {
+    Instr* next = op->Next();
+    delete op;
+    op = next;
+  }
   return 0;
 }
