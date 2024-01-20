@@ -45,6 +45,24 @@ Instr *OptPeep::RemoveSetZero(Instr *op) {
         }
       }
     }
+    // Merge Set with + or -
+    if (op->OpCode() == OpCode::SET_CELL) {
+      bool replaced = false;
+      if (op->Next() && op->Next()->OpCode() == OpCode::INCR_CELL) {
+        u8 value = (u8)op->Operand1() + (u8)op->Next()->Operand1();
+        op->SetOperand1((uintptr_t)value);
+        replaced = true;
+      } else if (op->Next() && op->Next()->OpCode() == OpCode::DECR_CELL) {
+        u8 value = (u8)op->Operand1() - (u8)op->Next()->Operand1();
+        op->SetOperand1((uintptr_t)value);
+        replaced = true;
+      }
+      if (replaced) {
+        Instr* next = op->Next();
+        op->SetNext(op->Next()->Next());
+        delete next;
+      }
+    }
     op = op->Next();
   }
   return head;
