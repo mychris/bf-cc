@@ -5,7 +5,7 @@ EXE := bf-cc
 all: $(EXE)
 
 $(EXE): bf.cc
-	$(CXX) -Wall -Wextra --std=c++17 bf.cc -o bf
+	$(CXX) -g -Wall -Wextra --std=c++17 bf.cc -o bf
 
 format:
 	clang-format bf.cc

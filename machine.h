@@ -23,7 +23,7 @@ public:
     // TODO: handle allocation failure
     return MachineState(M{
         .data_pointer = 0,
-        .data = (u8 *)malloc(sizeof(u8) * 10000),
+        .data = (u8 *)calloc(10000, sizeof(u8)),
         .instruction_pointer = 0,
     });
   }
@@ -46,6 +46,10 @@ public:
 
   inline u8 GetCell() const {
     return m.data[m.data_pointer];
+  }
+
+  inline u32 GetDataPointer() const {
+    return m.data_pointer;
   }
 
   inline void IncrementDataPointer(u32 amount) {
@@ -72,7 +76,7 @@ public:
     m.instruction_pointer = position;
   }
 
-  inline u32 GetInstructionPointer() {
+  inline u32 GetInstructionPointer() const {
     return m.instruction_pointer;
   }
 };
