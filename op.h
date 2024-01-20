@@ -26,8 +26,9 @@ class Op final {
 private:
   struct M {
     Instr instr;
-    s32 operand1;
-    s32 operand2;
+    Op* next;
+    uintptr_t operand1;
+    uintptr_t operand2;
   } m;
 
   explicit Op(M m)
@@ -42,6 +43,10 @@ public:
     return m.instr;
   }
 
+  inline void SetCmd(Instr cmd) {
+    m.instr = cmd;
+  }
+
   inline bool IsJump() const {
     return m.instr == Instr::JUMP_ZERO || m.instr == Instr::JUMP_NON_ZERO;
   }
@@ -50,65 +55,102 @@ public:
     return m.instr == Instr::READ || m.instr == Instr::WRITE;
   }
 
-  inline s32 Operand1() const {
+  inline uintptr_t Operand1() const {
     return m.operand1;
+  }
+
+  inline void SetOperand1(uintptr_t val) {
+    m.operand1 = val;
   }
 
   inline s32 Operand2() const {
     return m.operand2;
   }
 
-  inline void Exec(MachineState& state) const {
+  inline void SetOperand2(uintptr_t val) {
+    m.operand2 = val;
+  }
+
+  inline Op* Next() const {
+    return m.next;
+  }
+
+  inline void SetNext(Op* next) {
+    m.next = next;
+  }
+
+  inline Op* Exec(MachineState& state) const {
     switch (m.instr) {
     case Instr::NOP: {
+      return m.next;
     } break;
     case Instr::INCR_CELL: {
       state.IncrementCell(m.operand1);
+      return m.next;
     } break;
     case Instr::DECR_CELL: {
       state.DecrementCell(m.operand1);
+      return m.next;
     } break;
     case Instr::SET_CELL: {
       state.SetCell((u8) m.operand1);
+      return m.next;
     } break;
     case Instr::INCR_PTR: {
       state.IncrementDataPointer(m.operand1);
+      return m.next;
     } break;
     case Instr::DECR_PTR: {
       state.DecrementDataPointer(m.operand1);
+      return m.next;
     } break;
     case Instr::SET_PTR: {
       state.SetDataPointer(m.operand1);
+      return m.next;
     } break;
     case Instr::READ: {
       u8 input = (u8) std::getchar();
       state.SetCell(input);
+      return m.next;
     } break;
     case Instr::WRITE: {
       u8 output = state.GetCell();
       std::putchar((int) output);
+      return m.next;
     } break;
     case Instr::JUMP_ZERO: {
       if (state.GetCell() == 0) {
-        state.SetInstructionPointer(m.operand1);
+        return (Op*) m.operand1;
       }
+      return m.next;
     } break;
     case Instr::JUMP_NON_ZERO: {
       if (state.GetCell() != 0) {
-        state.SetInstructionPointer(m.operand1);
+        return (Op*) m.operand1;
       }
+      return m.next;
     } break;
     }
   }
 
   char* Str() const {
-    sprintf(buffer, "%d %d %d", m.instr, m.operand1, m.operand2);
+    sprintf(buffer, "%d %zu %zu", m.instr, m.operand1, m.operand2);
     return buffer;
   }
 
-  static Op Create(Instr instr, s32 op1 = 0, s32 op2 = 0) {
+  static Op Create(Instr instr, uintptr_t op1 = 0, uintptr_t op2 = 0) {
     return Op(M{
         .instr = instr,
+        .next = nullptr,
+        .operand1 = op1,
+        .operand2 = op2,
+    });
+  }
+
+  static Op *Allocate(Instr instr, uintptr_t op1 = 0, uintptr_t op2 = 0) {
+    return new Op(M{
+        .instr = instr,
+        .next = nullptr,
         .operand1 = op1,
         .operand2 = op2,
     });

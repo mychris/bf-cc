@@ -1,39 +1,49 @@
 #ifndef BF_CC_OPTIMIZE_H
 #define BF_CC_OPTIMIZE_H 1
 
-#include <vector>
-
 #include "op.h"
 
 class OptStage {
 public:
-  virtual void Run(std::vector<Op>&) = 0;
+  virtual Op* Run(Op*) = 0;
+};
+
+class OptCommentLoop : OptStage {
+private:
+  OptCommentLoop() {}
+
+public:
+  Op* Run(Op*);
+
+  static OptCommentLoop Create() {
+    return OptCommentLoop();
+  }
 };
 
 class OptFusionOp : OptStage {
 private:
-  struct M {
-    std::vector<Op>* ops;
-    std::vector<std::pair<u32, u32>> fuse_list;
-  } m;
-
-  explicit OptFusionOp(M m)
-    : m(std::move(m))
-  {}
-
+  OptFusionOp() {}
 public:
-  void Run(std::vector<Op> &);
+  Op* Run(Op*);
 
   static OptFusionOp Create() {
-    return OptFusionOp(M{
-        .ops = nullptr,
-        .fuse_list = {},
-    });
+    return OptFusionOp();
+  }
+};
+
+class OptPeep : OptStage {
+private:
+  OptPeep() {}
+
+public:
+  Op* Run(Op*);
+
+  static OptPeep Create() {
+    return OptPeep();
   }
 
 private:
-  void FuseOperations();
-  void FixupJumps();
+  Op* RemoveSetZero(Op*);
 };
 
 #endif

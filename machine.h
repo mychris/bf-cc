@@ -11,7 +11,6 @@ private:
   struct M {
     u32 data_pointer;
     u8 *data;
-    u32 instruction_pointer;
   } m;
 
   explicit MachineState(M m)
@@ -24,7 +23,6 @@ public:
     return MachineState(M{
         .data_pointer = 0,
         .data = (u8 *)calloc(10000, sizeof(u8)),
-        .instruction_pointer = 0,
     });
   }
 
@@ -64,21 +62,6 @@ public:
     m.data_pointer = position;
   }
 
-  inline void IncrementInstructionPointer(u32 amount) {
-    m.instruction_pointer += amount;
-  }
-
-  inline void DecrementInstructionPointer(u32 amount) {
-    m.instruction_pointer -= amount;
-  }
-
-  inline void SetInstructionPointer(u32 position) {
-    m.instruction_pointer = position;
-  }
-
-  inline u32 GetInstructionPointer() const {
-    return m.instruction_pointer;
-  }
 };
 
 #endif

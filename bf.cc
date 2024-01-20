@@ -2,9 +2,9 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <memory>
 #include <utility>
 #include <vector>
-#include <memory>
 
 #include "base.h"
 #include "machine.h"
@@ -20,78 +20,85 @@
 #define OP_JMPF '['
 #define OP_JMPB ']'
 
-std::vector<Op> parse2(char* input) {
-  std::vector<Op> operations = {};
-  std::vector<u32> jump_stack = {};
+Op *parse(char *input) {
+  Op *head = Op::Allocate(Instr::NOP);
+  Op *tail = head;
+  std::vector<Op *> jump_stack = {};
   while (*input) {
     const char c = *input;
+    Op *this_op = nullptr;
     switch (c) {
     case OP_INCR: {
-      operations.push_back(Op::Create(Instr::INCR_CELL, 1));
+      this_op = Op::Allocate(Instr::INCR_CELL, 1);
     } break;
     case OP_DECR: {
-      operations.push_back(Op::Create(Instr::DECR_CELL, 1));
+      this_op = Op::Allocate(Instr::DECR_CELL, 1);
     } break;
     case OP_NEXT: {
-      operations.push_back(Op::Create(Instr::INCR_PTR, 1));
+      this_op = Op::Allocate(Instr::INCR_PTR, 1);
     } break;
     case OP_PREV: {
-      operations.push_back(Op::Create(Instr::DECR_PTR, 1));
+      this_op = Op::Allocate(Instr::DECR_PTR, 1);
     } break;
     case OP_READ: {
-      operations.push_back(Op::Create(Instr::READ, 0));
+      this_op = Op::Allocate(Instr::READ, 0);
     } break;
     case OP_WRIT: {
-      operations.push_back(Op::Create(Instr::WRITE, 0));
+      this_op = Op::Allocate(Instr::WRITE, 0);
     } break;
     case OP_JMPF: {
-      jump_stack.push_back(operations.size());
-      operations.push_back(Op::Create(Instr::JUMP_ZERO, 0));
+      this_op = Op::Allocate(Instr::JUMP_ZERO, 0);
+      jump_stack.push_back(this_op);
     } break;
     case OP_JMPB: {
-      u32 other = jump_stack.back();
-      u32 that = operations.size();
+      Op *other = jump_stack.back();
       jump_stack.pop_back();
-      operations.push_back(Op::Create(Instr::JUMP_NON_ZERO, other));
-      operations[other] = Op::Create(Instr::JUMP_ZERO, that);
+      this_op = Op::Allocate(Instr::JUMP_NON_ZERO, (uintptr_t)other);
+      other->SetOperand1((uintptr_t)this_op);
     } break;
     default:
       break;
     }
+    if (this_op) {
+      tail->SetNext(this_op);
+      tail = this_op;
+    }
     ++input;
   }
-  return operations;
+  return head;
 }
 
-static char *readcontent(const char *filename)
-{
-    char *fcontent = NULL;
-    int fsize = 0;
-    FILE *fp;
-    fp = fopen(filename, "r");
-    if(fp) {
-        fseek(fp, 0, SEEK_END);
-        fsize = ftell(fp);
-        rewind(fp);
-        fcontent = (char*) malloc(sizeof(char) * fsize);
-        fread(fcontent, 1, fsize, fp);
-        fclose(fp);
-    }
-    return fcontent;
+static char *readcontent(const char *filename) {
+  char *fcontent = NULL;
+  int fsize = 0;
+  FILE *fp;
+  fp = fopen(filename, "r");
+  if (fp) {
+    fseek(fp, 0, SEEK_END);
+    fsize = ftell(fp);
+    rewind(fp);
+    fcontent = (char *)malloc(sizeof(char) * fsize);
+    fread(fcontent, 1, fsize, fp);
+    fclose(fp);
+  }
+  return fcontent;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   auto machine = MachineState::Create();
-  char* path = argv[1];
-  char* content = readcontent(path);
-  auto operations = parse2(content);
-  auto optim = OptFusionOp::Create();
-  optim.Run(operations);
-  while (machine.GetInstructionPointer() < operations.size()) {
-    const auto& op = operations[machine.GetInstructionPointer()];
-    machine.IncrementInstructionPointer(1);
-    op.Exec(machine);
+  char *path = argv[1];
+  char *content = readcontent(path);
+  auto op = parse(content);
+  {
+    OptCommentLoop optim0 = OptCommentLoop::Create();
+    op = optim0.Run(op);
+    OptFusionOp optim1 = OptFusionOp::Create();
+    op = optim1.Run(op);
+    OptPeep optim2 = OptPeep::Create();
+    op = optim2.Run(op);
+  }
+  while (op) {
+    op = op->Exec(machine);
   }
   return 0;
 }
