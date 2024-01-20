@@ -46,4 +46,16 @@ private:
   Instr* RemoveSetZero(Instr*);
 };
 
+class Optimizer final {
+private:
+  Optimizer() {}
+
+public:
+  Instr* Run(Instr*);
+
+  static Optimizer Create() {
+    return Optimizer();
+  }
+};
+
 #endif

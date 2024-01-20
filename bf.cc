@@ -86,17 +86,11 @@ static char *readcontent(const char *filename) {
 
 int main(int argc, char **argv) {
   auto machine = MachineState::Create();
+  auto optimizer = Optimizer::Create();
   char *path = argv[1];
   char *content = readcontent(path);
   auto op = parse(content);
-  {
-    OptCommentLoop optim0 = OptCommentLoop::Create();
-    op = optim0.Run(op);
-    OptFusionOp optim1 = OptFusionOp::Create();
-    op = optim1.Run(op);
-    OptPeep optim2 = OptPeep::Create();
-    op = optim2.Run(op);
-  }
+  op = optimizer.Run(op);
   while (op) {
     op = op->Exec(machine);
   }
