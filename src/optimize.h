@@ -43,7 +43,8 @@ public:
   }
 
 private:
-  Instr* RemoveSetZero(Instr*);
+  Instr* ReplaceSingleInstructionLoops(Instr*);
+  Instr* MergeSetIncrDecr(Instr*);
 };
 
 class Optimizer final {

@@ -2,14 +2,14 @@
 #include "optimize.h"
 
 Instr *OptPeep::Run(Instr *op) {
-  op = RemoveSetZero(op);
+  op = ReplaceSingleInstructionLoops(op);
+  op = MergeSetIncrDecr(op);
   return op;
 }
 
-Instr *OptPeep::RemoveSetZero(Instr *op) {
+Instr *OptPeep::ReplaceSingleInstructionLoops(Instr *op) {
   Instr *head = op;
   while (op) {
-    // Find loops with a single instruction
     if (op->IsJump()) {
       Instr *first = op;
       Instr *second = op->Next();
@@ -45,7 +45,14 @@ Instr *OptPeep::RemoveSetZero(Instr *op) {
         }
       }
     }
-    // Merge Set with + or -
+    op = op->Next();
+  }
+  return head;
+}
+
+Instr *OptPeep::MergeSetIncrDecr(Instr* op) {
+  Instr *head = op;
+  while (op) {
     if (op->OpCode() == OpCode::SET_CELL) {
       bool replaced = false;
       if (op->Next() && op->Next()->OpCode() == OpCode::INCR_CELL) {
