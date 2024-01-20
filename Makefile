@@ -1,17 +1,16 @@
 
 CXX = clang++
+
 EXE := bf-cc
-SRC := bf.cc interp.cc opt_fusion_op.cc opt_peep.cc opt_comment_loop.cc optimize.cc util.cc
+SRC != find . -name '*.cc'
+HDR != find . -name '*.h'
 
 all: $(EXE)
 
-$(EXE): $(SRC)
+$(EXE): $(SRC) $(HDR)
 	$(CXX) -O2 -Wall -Wextra --std=c++17 $(SRC) -o $(EXE)
 
 clean:
 	$(RM) $(EXE)
-
-format:
-	clang-format bf.cc
 
 .PHONY: clear format
