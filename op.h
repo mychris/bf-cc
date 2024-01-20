@@ -7,17 +7,20 @@
 #include "machine.h"
 
 enum class Instr {
-  INCR_CELL     = 1 << 0, // 1
-  DECR_CELL     = 1 << 1, // 2
-  SET_CELL      = 1 << 2, // 4
-  INCR_PTR      = 1 << 3, // 8
-  DECR_PTR      = 1 << 4, // 16
-  SET_PTR       = 1 << 5, // 32
-  READ          = 1 << 6, // 64
-  WRITE         = 1 << 7, // 128
-  JUMP_ZERO     = 1 << 8, // 256
-  JUMP_NON_ZERO = 1 << 9, // 512
+  NOP           = 1 << 0,
+  INCR_CELL     = 1 << 1,
+  DECR_CELL     = 1 << 2,
+  SET_CELL      = 1 << 3,
+  INCR_PTR      = 1 << 4,
+  DECR_PTR      = 1 << 5,
+  SET_PTR       = 1 << 6,
+  READ          = 1 << 7,
+  WRITE         = 1 << 8,
+  JUMP_ZERO     = 1 << 9,
+  JUMP_NON_ZERO = 1 << 10,
 };
+
+static char buffer[1024];
 
 class Op final {
 private:
@@ -33,6 +36,8 @@ private:
 
 public:
 
+  ~Op() = default;
+
   inline Instr Cmd() const {
     return m.instr;
   }
@@ -45,8 +50,18 @@ public:
     return m.instr == Instr::READ || m.instr == Instr::WRITE;
   }
 
+  inline s32 Operand1() const {
+    return m.operand1;
+  }
+
+  inline s32 Operand2() const {
+    return m.operand2;
+  }
+
   inline void Exec(MachineState& state) const {
     switch (m.instr) {
+    case Instr::NOP: {
+    } break;
     case Instr::INCR_CELL: {
       state.IncrementCell(m.operand1);
     } break;
@@ -75,23 +90,20 @@ public:
     } break;
     case Instr::JUMP_ZERO: {
       if (state.GetCell() == 0) {
-        if (m.operand2 > 0) {
-          state.IncrementInstructionPointer(m.operand1);
-        } else {
-          state.DecrementInstructionPointer(m.operand1);
-        }
+        state.SetInstructionPointer(m.operand1);
       }
     } break;
     case Instr::JUMP_NON_ZERO: {
       if (state.GetCell() != 0) {
-        if (m.operand2 > 0) {
-          state.IncrementInstructionPointer(m.operand1);
-        } else {
-          state.DecrementInstructionPointer(m.operand1);
-        }
+        state.SetInstructionPointer(m.operand1);
       }
     } break;
     }
+  }
+
+  char* Str() const {
+    sprintf(buffer, "%d %d %d", m.instr, m.operand1, m.operand2);
+    return buffer;
   }
 
   static Op Create(Instr instr, s32 op1 = 0, s32 op2 = 0) {

@@ -9,6 +9,7 @@
 #include "base.h"
 #include "machine.h"
 #include "op.h"
+#include "optimize.h"
 
 #define OP_INCR '+'
 #define OP_DECR '-'
@@ -45,14 +46,14 @@ std::vector<Op> parse2(char* input) {
     } break;
     case OP_JMPF: {
       jump_stack.push_back(operations.size());
-      operations.push_back(Op::Create(Instr::JUMP_ZERO, 0, +1));
+      operations.push_back(Op::Create(Instr::JUMP_ZERO, 0));
     } break;
     case OP_JMPB: {
       u32 other = jump_stack.back();
-      u32 amount = operations.size() - other;
+      u32 that = operations.size();
       jump_stack.pop_back();
-      operations.push_back(Op::Create(Instr::JUMP_NON_ZERO, amount, -1));
-      operations[other] = Op::Create(Instr::JUMP_ZERO, amount, +1);
+      operations.push_back(Op::Create(Instr::JUMP_NON_ZERO, other));
+      operations[other] = Op::Create(Instr::JUMP_ZERO, that);
     } break;
     default:
       break;
@@ -81,10 +82,12 @@ static char *readcontent(const char *filename)
 
 int main(int argc, char **argv)
 {
+  auto machine = MachineState::Create();
   char* path = argv[1];
   char* content = readcontent(path);
   auto operations = parse2(content);
-  auto machine = MachineState::Create();
+  auto optim = OptFusionOp::Create();
+  optim.Run(operations);
   while (machine.GetInstructionPointer() < operations.size()) {
     const auto& op = operations[machine.GetInstructionPointer()];
     machine.IncrementInstructionPointer(1);
