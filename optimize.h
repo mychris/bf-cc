@@ -1,11 +1,11 @@
 #ifndef BF_CC_OPTIMIZE_H
 #define BF_CC_OPTIMIZE_H 1
 
-#include "op.h"
+#include "instr.h"
 
 class OptStage {
 public:
-  virtual Op* Run(Op*) = 0;
+  virtual Instr* Run(Instr*) = 0;
 };
 
 class OptCommentLoop : OptStage {
@@ -13,7 +13,7 @@ private:
   OptCommentLoop() {}
 
 public:
-  Op* Run(Op*);
+  Instr* Run(Instr*);
 
   static OptCommentLoop Create() {
     return OptCommentLoop();
@@ -24,7 +24,7 @@ class OptFusionOp : OptStage {
 private:
   OptFusionOp() {}
 public:
-  Op* Run(Op*);
+  Instr* Run(Instr*);
 
   static OptFusionOp Create() {
     return OptFusionOp();
@@ -36,14 +36,14 @@ private:
   OptPeep() {}
 
 public:
-  Op* Run(Op*);
+  Instr* Run(Instr*);
 
   static OptPeep Create() {
     return OptPeep();
   }
 
 private:
-  Op* RemoveSetZero(Op*);
+  Instr* RemoveSetZero(Instr*);
 };
 
 #endif

@@ -1,8 +1,8 @@
-#include "op.h"
+#include "instr.h"
 #include "optimize.h"
 
-Op* OptFusionOp::Run(Op* op) {
-  Op* head = op;
+Instr* OptFusionOp::Run(Instr* op) {
+  Instr* head = op;
   // First loop, fuse the same operations
   while (op) {
     OpCode seq_cmd = op->OpCode();
@@ -10,7 +10,7 @@ Op* OptFusionOp::Run(Op* op) {
         || seq_cmd == OpCode::DECR_CELL
         || seq_cmd == OpCode::INCR_PTR
         || seq_cmd == OpCode::DECR_PTR) {
-      Op* seq_head = op;
+      Instr* seq_head = op;
       uintptr_t amount = op->Operand1();
       op = op->Next();
       while (op->OpCode() == seq_cmd) {

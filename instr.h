@@ -1,5 +1,5 @@
-#ifndef BF_CC_OP_H
-#define BF_CC_OP_H 1
+#ifndef BF_CC_INSTR_H
+#define BF_CC_INSTR_H 1
 
 #include <cstdio>
 
@@ -22,30 +22,23 @@ enum class OpCode {
 
 static char buffer[1024];
 
-class Op final {
+class Instr final {
 private:
   struct M {
     OpCode instr;
-    Op* next;
+    Instr *next;
     uintptr_t operand1;
     uintptr_t operand2;
   } m;
 
-  explicit Op(M m)
-    : m(std::move(m))
-  {}
+  explicit Instr(M m) : m(std::move(m)) {}
 
 public:
+  ~Instr() = default;
 
-  ~Op() = default;
+  inline OpCode OpCode() const { return m.instr; }
 
-  inline OpCode OpCode() const {
-    return m.instr;
-  }
-
-  inline void SetOpCode(enum OpCode cmd) {
-    m.instr = cmd;
-  }
+  inline void SetOpCode(enum OpCode cmd) { m.instr = cmd; }
 
   inline bool IsJump() const {
     return m.instr == OpCode::JUMP_ZERO || m.instr == OpCode::JUMP_NON_ZERO;
@@ -55,31 +48,19 @@ public:
     return m.instr == OpCode::READ || m.instr == OpCode::WRITE;
   }
 
-  inline uintptr_t Operand1() const {
-    return m.operand1;
-  }
+  inline uintptr_t Operand1() const { return m.operand1; }
 
-  inline void SetOperand1(uintptr_t val) {
-    m.operand1 = val;
-  }
+  inline void SetOperand1(uintptr_t val) { m.operand1 = val; }
 
-  inline s32 Operand2() const {
-    return m.operand2;
-  }
+  inline s32 Operand2() const { return m.operand2; }
 
-  inline void SetOperand2(uintptr_t val) {
-    m.operand2 = val;
-  }
+  inline void SetOperand2(uintptr_t val) { m.operand2 = val; }
 
-  inline Op* Next() const {
-    return m.next;
-  }
+  inline Instr *Next() const { return m.next; }
 
-  inline void SetNext(Op* next) {
-    m.next = next;
-  }
+  inline void SetNext(Instr *next) { m.next = next; }
 
-  inline Op* Exec(MachineState& state) const {
+  inline Instr *Exec(MachineState &state) const {
     switch (m.instr) {
     case OpCode::NOP: {
       return m.next;
@@ -93,7 +74,7 @@ public:
       return m.next;
     } break;
     case OpCode::SET_CELL: {
-      state.SetCell((u8) m.operand1);
+      state.SetCell((u8)m.operand1);
       return m.next;
     } break;
     case OpCode::INCR_PTR: {
@@ -109,37 +90,37 @@ public:
       return m.next;
     } break;
     case OpCode::READ: {
-      u8 input = (u8) std::getchar();
+      u8 input = (u8)std::getchar();
       state.SetCell(input);
       return m.next;
     } break;
     case OpCode::WRITE: {
       u8 output = state.GetCell();
-      std::putchar((int) output);
+      std::putchar((int)output);
       return m.next;
     } break;
     case OpCode::JUMP_ZERO: {
       if (state.GetCell() == 0) {
-        return (Op*) m.operand1;
+        return (Instr *)m.operand1;
       }
       return m.next;
     } break;
     case OpCode::JUMP_NON_ZERO: {
       if (state.GetCell() != 0) {
-        return (Op*) m.operand1;
+        return (Instr *)m.operand1;
       }
       return m.next;
     } break;
     }
   }
 
-  char* Str() const {
+  char *Str() const {
     sprintf(buffer, "%d %zu %zu", m.instr, m.operand1, m.operand2);
     return buffer;
   }
 
-  static Op Create(enum OpCode instr, uintptr_t op1 = 0, uintptr_t op2 = 0) {
-    return Op(M{
+  static Instr Create(enum OpCode instr, uintptr_t op1 = 0, uintptr_t op2 = 0) {
+    return Instr(M{
         .instr = instr,
         .next = nullptr,
         .operand1 = op1,
@@ -147,8 +128,8 @@ public:
     });
   }
 
-  static Op *Allocate(enum OpCode instr, uintptr_t op1 = 0, uintptr_t op2 = 0) {
-    return new Op(M{
+  static Instr *Allocate(enum OpCode instr, uintptr_t op1 = 0, uintptr_t op2 = 0) {
+    return new Instr(M{
         .instr = instr,
         .next = nullptr,
         .operand1 = op1,

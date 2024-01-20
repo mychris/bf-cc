@@ -1,20 +1,18 @@
-#include <vector>
-
-#include "op.h"
+#include "instr.h"
 #include "optimize.h"
 
-Op *OptPeep::Run(Op *op) {
+Instr *OptPeep::Run(Instr *op) {
   op = RemoveSetZero(op);
   return op;
 }
 
-Op *OptPeep::RemoveSetZero(Op *op) {
-  Op *head = op;
+Instr *OptPeep::RemoveSetZero(Instr *op) {
+  Instr *head = op;
   while (op) {
     if (op->IsJump()) {
-      Op *first = op;
-      Op *second = op->Next();
-      Op *third = (second) ? second->Next() : nullptr;
+      Instr *first = op;
+      Instr *second = op->Next();
+      Instr *third = (second) ? second->Next() : nullptr;
       if (first && second && third && first->IsJump() && third->IsJump() &&
           first->Operand1() == (uintptr_t)third &&
           third->Operand1() == (uintptr_t)first &&

@@ -1,13 +1,13 @@
-#include "op.h"
+#include "instr.h"
 #include "optimize.h"
 
-Op* OptCommentLoop::Run(Op* op)
+Instr* OptCommentLoop::Run(Instr* op)
 {
-  Op* head = op;
+  Instr* head = op;
   while (op->OpCode() == OpCode::NOP) {
     op = op->Next();
   }
-  Op* comment_loop = op;
+  Instr* comment_loop = op;
   if (comment_loop->IsJump()) {
     op = op->Next();
     while (op) {

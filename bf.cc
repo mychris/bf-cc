@@ -8,7 +8,7 @@
 
 #include "base.h"
 #include "machine.h"
-#include "op.h"
+#include "instr.h"
 #include "optimize.h"
 
 #define OP_INCR '+'
@@ -20,40 +20,40 @@
 #define OP_JMPF '['
 #define OP_JMPB ']'
 
-Op *parse(char *input) {
-  Op *head = Op::Allocate(OpCode::NOP);
-  Op *tail = head;
-  std::vector<Op *> jump_stack = {};
+Instr *parse(char *input) {
+  Instr *head = Instr::Allocate(OpCode::NOP);
+  Instr *tail = head;
+  std::vector<Instr *> jump_stack = {};
   while (*input) {
     const char c = *input;
-    Op *this_op = nullptr;
+    Instr *this_op = nullptr;
     switch (c) {
     case OP_INCR: {
-      this_op = Op::Allocate(OpCode::INCR_CELL, 1);
+      this_op = Instr::Allocate(OpCode::INCR_CELL, 1);
     } break;
     case OP_DECR: {
-      this_op = Op::Allocate(OpCode::DECR_CELL, 1);
+      this_op = Instr::Allocate(OpCode::DECR_CELL, 1);
     } break;
     case OP_NEXT: {
-      this_op = Op::Allocate(OpCode::INCR_PTR, 1);
+      this_op = Instr::Allocate(OpCode::INCR_PTR, 1);
     } break;
     case OP_PREV: {
-      this_op = Op::Allocate(OpCode::DECR_PTR, 1);
+      this_op = Instr::Allocate(OpCode::DECR_PTR, 1);
     } break;
     case OP_READ: {
-      this_op = Op::Allocate(OpCode::READ, 0);
+      this_op = Instr::Allocate(OpCode::READ, 0);
     } break;
     case OP_WRIT: {
-      this_op = Op::Allocate(OpCode::WRITE, 0);
+      this_op = Instr::Allocate(OpCode::WRITE, 0);
     } break;
     case OP_JMPF: {
-      this_op = Op::Allocate(OpCode::JUMP_ZERO, 0);
+      this_op = Instr::Allocate(OpCode::JUMP_ZERO, 0);
       jump_stack.push_back(this_op);
     } break;
     case OP_JMPB: {
-      Op *other = jump_stack.back();
+      Instr *other = jump_stack.back();
       jump_stack.pop_back();
-      this_op = Op::Allocate(OpCode::JUMP_NON_ZERO, (uintptr_t)other);
+      this_op = Instr::Allocate(OpCode::JUMP_NON_ZERO, (uintptr_t)other);
       other->SetOperand1((uintptr_t)this_op);
     } break;
     default:
