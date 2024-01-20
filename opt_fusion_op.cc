@@ -1,5 +1,3 @@
-#include <vector>
-
 #include "op.h"
 #include "optimize.h"
 
@@ -7,11 +5,11 @@ Op* OptFusionOp::Run(Op* op) {
   Op* head = op;
   // First loop, fuse the same operations
   while (op) {
-    Instr seq_cmd = op->Cmd();
-    if (seq_cmd == Instr::INCR_CELL
-        || seq_cmd == Instr::DECR_CELL
-        || seq_cmd == Instr::INCR_PTR
-        || seq_cmd == Instr::DECR_PTR) {
+    OpCode seq_cmd = op->Cmd();
+    if (seq_cmd == OpCode::INCR_CELL
+        || seq_cmd == OpCode::DECR_CELL
+        || seq_cmd == OpCode::INCR_PTR
+        || seq_cmd == OpCode::DECR_PTR) {
       Op* seq_head = op;
       uintptr_t amount = op->Operand1();
       op = op->Next();

@@ -18,9 +18,9 @@ Op *OptPeep::RemoveSetZero(Op *op) {
       if (first && second && third && first->IsJump() && third->IsJump() &&
           first->Operand1() == (uintptr_t)third &&
           third->Operand1() == (uintptr_t)first &&
-          (second->Cmd() == Instr::DECR_CELL ||
-           second->Cmd() == Instr::INCR_CELL)) {
-        first->SetCmd(Instr::SET_CELL);
+          (second->Cmd() == OpCode::DECR_CELL ||
+           second->Cmd() == OpCode::INCR_CELL)) {
+        first->SetCmd(OpCode::SET_CELL);
         first->SetOperand1(0);
         first->SetNext(third->Next());
         delete second;
