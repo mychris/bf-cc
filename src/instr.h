@@ -78,4 +78,4 @@ public:
   }
 };
 
-#endif
+#endif /* BF_CC_INSTR_H */

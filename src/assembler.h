@@ -71,4 +71,4 @@ public:
   void Assemble(Instr *code);
 };
 
-#endif
+#endif /* BF_CC_ASSEMBLER_H */

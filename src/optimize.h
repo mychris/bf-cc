@@ -53,4 +53,4 @@ public:
   static Optimizer Create() { return Optimizer(); }
 };
 
-#endif
+#endif /* BF_CC_OPTIMIZE_H */

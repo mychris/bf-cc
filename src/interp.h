@@ -14,4 +14,4 @@ public:
   static Interpreter Create() { return Interpreter(); }
 };
 
-#endif
+#endif /* BF_CC_INTERP_H */

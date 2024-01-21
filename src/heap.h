@@ -1,5 +1,5 @@
-#ifndef BF_CC_MACHINE_H
-#define BF_CC_MACHINE_H 1
+#ifndef BF_CC_HEAP_H
+#define BF_CC_HEAP_H 1
 
 #define DEFAULT_HEAP_SIZE 32768
 #if defined(BF_HEAP_GUARD_PAGES)
@@ -80,4 +80,4 @@ public:
   inline uintptr_t BaseAddress() { return (uintptr_t)(m.data); }
 };
 
-#endif
+#endif /* BF_CC_HEAP_H */
