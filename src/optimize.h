@@ -3,6 +3,15 @@
 
 #include "instr.h"
 
+enum class OptLevel {
+  O0 = '0',
+  O1 = '1',
+  O2 = '2',
+  O3 = '3',
+};
+
+extern OptLevel OL;
+
 class OptStage {
 public:
   virtual Instr *Run(Instr *) = 0;

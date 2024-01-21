@@ -1,11 +1,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cerrno>
 
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "error.h"
 #include "heap.h"
 #include "assembler.h"
 #include "instr.h"
@@ -20,6 +22,88 @@
 #define OP_WRIT '.'
 #define OP_JMPF '['
 #define OP_JMPB ']'
+
+enum class ExecMode {
+  INTERPRETER = 'i',
+  COMPILER = 'c',
+};
+
+static const char *input_file_path = "\0";
+static size_t heap_size = DEFAULT_HEAP_SIZE;
+static ExecMode execution_mode = ExecMode::COMPILER;
+
+static void usage() {
+  fprintf(stderr, "Usage: %s [-h] [-O(0|1|2|3)] [-mMEMORY_SIZE] [(-i|-c)] PROGRAM\n", program_name);
+  fprintf(stderr, "\n");
+  fprintf(stderr, "Options:\n");
+  fprintf(stderr, "  -O, --optimize=  Set the optimization level to 0, 1, 2, or 3\n");
+  fprintf(stderr, "  -m, --memory=    Set the heap memory size\n");
+  fprintf(stderr, "  -i, --interp     Set the execution mode to: interpreter\n");
+  fprintf(stderr, "  -c, --compiler   Set the execution mode to: compiler\n");
+  fprintf(stderr, "  -h, --help       Display this help message\n");
+}
+
+static void parse_opts(int argc, char **argv) {
+  program_name = argv[0];
+  argc--;
+  argv++;
+  char opt_level = '1';
+  const char *mem_size_string = NULL;
+  while (argc--) {
+    if (0 == strcmp("-h", argv[0])
+        || 0 == strcmp("--help", argv[0])) {
+      usage();
+      exit(0);
+    } else if (0 == strncmp("-O", argv[0], 2)) {
+      opt_level = argv[0][2];
+      if (argv[0][2] == '\0'
+          || argv[0][3] != '\0'
+          || opt_level < '0'
+          || opt_level > '3') {
+        Error("Invalid optimization level: %s", argv[0]);
+      }
+    } else if (0 == strncmp("--optimize=", argv[0], 11)) {
+      opt_level = argv[0][11];
+      if (argv[0][11] == '\0'
+          || argv[0][12] != '\0'
+          || opt_level < '0'
+          || opt_level > '3') {
+        Error("Invalid optimization level: %s", argv[0]);
+      }
+    } else if (0 == strncmp("-m", argv[0], 2)) {
+      mem_size_string = &argv[0][2];
+    } else if (0 == strncmp("--memory=", argv[0], 9)) {
+      mem_size_string = &argv[0][9];
+    } else if (0 == strcmp("--interp", argv[0])
+               || 0 == strcmp("-i", argv[0])) {
+      execution_mode = ExecMode::INTERPRETER;
+    } else if (0 == strcmp("--comp", argv[0])
+               || 0 == strcmp("-c", argv[0])) {
+      execution_mode = ExecMode::COMPILER;
+    } else if (argv[0][0] != '-') {
+      input_file_path = argv[0];
+    } else {
+      Error("Invalid argument: %s", argv[0]);
+    }
+    if (mem_size_string) {
+      char* end = NULL;
+      long long result = 0;
+      errno = 0;
+      result = std::strtoll(mem_size_string, &end, 0);
+      if (result < 0
+          || errno == ERANGE
+          || NULL == end
+          || *end != '\0') {
+        Error("Invalid heap memory size: %s", mem_size_string);
+      }
+      heap_size = result;
+    }
+    argv++;
+  }
+  if (0 == strlen(input_file_path)) {
+    Error("No input file given");
+  }
+}
 
 Instr *parse(char *input) {
   Instr *head = Instr::Allocate(OpCode::NOP);
@@ -87,25 +171,27 @@ static char *read_content(const char *filename) {
 }
 
 int main(int argc, char **argv) {
-  auto heap = Heap::Create();
+  parse_opts(argc, argv);
+  auto heap = Heap::Create(heap_size);
   auto optimizer = Optimizer::Create();
-  auto interpreter = Interpreter::Create();
-  char *path = argv[1];
-  char *content = read_content(path);
+  char *content = read_content(input_file_path);
   auto op = parse(content);
   free(content);
   op = optimizer.Run(op);
-  if (0) {
+  switch (execution_mode) {
+  case ExecMode::INTERPRETER: {
+    auto interpreter = Interpreter::Create();
     interpreter.Run(heap, op);
-  }
-  if (1) {
+  } break;
+  case ExecMode::COMPILER: {
     auto code_area = CodeArea::Create();
     auto assembler = AssemblerX8664::Create(code_area);
     assembler.Assemble(op);
     code_area.MakeExecutable();
     ((code_entry)code_area.BaseAddr())(heap.BaseAddress());
-    fflush(stdout);
+  } break;
   }
+  fflush(stdout);
   while (op) {
     Instr *next = op->Next();
     delete op;

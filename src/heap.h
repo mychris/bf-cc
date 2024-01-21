@@ -52,30 +52,22 @@ public:
         .page_size = page_size,
         .allocated = size,
         .data_pointer = 0,
-    });
+      });
   }
 
   ~Heap() { munmap(m.data - (m.page_size * GUARD_PAGES), m.allocated); }
 
-  inline void IncrementCell(uint8_t amount) {
-    m.data[m.data_pointer] += amount;
-  }
+  inline void IncrementCell(uint8_t amount) { m.data[m.data_pointer] += amount; }
 
-  inline void DecrementCell(uint8_t amount) {
-    m.data[m.data_pointer] -= amount;
-  }
+  inline void DecrementCell(uint8_t amount) { m.data[m.data_pointer] -= amount; }
 
   inline void SetCell(uint8_t value) { m.data[m.data_pointer] = value; }
 
   inline uint8_t GetCell() const { return m.data[m.data_pointer]; }
 
-  inline int64_t GetDataPointer() const { return m.data_pointer; }
-
   inline void IncrementDataPointer(int64_t amount) { m.data_pointer += amount; }
 
   inline void DecrementDataPointer(int64_t amount) { m.data_pointer -= amount; }
-
-  inline void SetDataPointer(int64_t position) { m.data_pointer = position; }
 
   inline uintptr_t BaseAddress() { return (uintptr_t)(m.data); }
 };
