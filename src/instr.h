@@ -1,10 +1,8 @@
 #ifndef BF_CC_INSTR_H
 #define BF_CC_INSTR_H 1
 
-#include <cstdio>
-
-#include "base.h"
-#include "machine.h"
+#include <utility>
+#include <stdint.h>
 
 enum class OpCode {
   NOP            = 1 << 0,
@@ -21,8 +19,6 @@ enum class OpCode {
   FIND_CELL_LOW  = 1 << 11,
   FIND_CELL_HIGH = 1 << 12,
 };
-
-static char buffer[1024];
 
 class Instr final {
 private:
@@ -54,18 +50,13 @@ public:
 
   inline void SetOperand1(uintptr_t val) { m.operand1 = val; }
 
-  inline s32 Operand2() const { return m.operand2; }
+  inline int32_t Operand2() const { return m.operand2; }
 
   inline void SetOperand2(uintptr_t val) { m.operand2 = val; }
 
   inline Instr *Next() const { return m.next; }
 
   inline void SetNext(Instr *next) { m.next = next; }
-
-  char *Str() const {
-    sprintf(buffer, "%d %zu %zu", m.instr, m.operand1, m.operand2);
-    return buffer;
-  }
 
   static Instr Create(enum OpCode instr, uintptr_t op1 = 0, uintptr_t op2 = 0) {
     return Instr(M{

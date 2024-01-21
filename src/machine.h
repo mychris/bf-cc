@@ -1,19 +1,18 @@
 #ifndef BF_CC_MACHINE_H
 #define BF_CC_MACHINE_H 1
 
+#define MEMORY_SIZE 10000
+
+#include <cstdint>
 #include <cstdlib>
 #include <utility>
 #include <cassert>
 
-#include "base.h"
-
-#define MEMORY_SIZE 10000
-
 class MachineState {
 private:
   struct M {
-    u32 data_pointer;
-    u8 *data;
+    uint32_t data_pointer;
+    uint8_t *data;
   } m;
 
   explicit MachineState(M m)
@@ -25,7 +24,7 @@ public:
     // TODO: handle allocation failure
     return MachineState(M{
         .data_pointer = 0,
-        .data = (u8 *)calloc(MEMORY_SIZE, sizeof(u8)),
+        .data = (uint8_t *)calloc(MEMORY_SIZE, sizeof(uint8_t)),
     });
   }
 
@@ -33,39 +32,39 @@ public:
     free(m.data);
   }
 
-  inline void IncrementCell(u8 amount) {
+  inline void IncrementCell(uint8_t amount) {
     m.data[m.data_pointer] += amount;
   }
 
-  inline void DecrementCell(u8 amount) {
+  inline void DecrementCell(uint8_t amount) {
     m.data[m.data_pointer] -= amount;
   }
 
-  inline void SetCell(u8 value) {
+  inline void SetCell(uint8_t value) {
     assert(m.data_pointer < MEMORY_SIZE);
     m.data[m.data_pointer] = value;
   }
 
-  inline u8 GetCell() const {
+  inline uint8_t GetCell() const {
     assert(m.data_pointer < MEMORY_SIZE);
     return m.data[m.data_pointer];
   }
 
-  inline u32 GetDataPointer() const {
+  inline uint32_t GetDataPointer() const {
     return m.data_pointer;
   }
 
-  inline void IncrementDataPointer(u32 amount) {
+  inline void IncrementDataPointer(uint32_t amount) {
     m.data_pointer += amount;
     assert(m.data_pointer < MEMORY_SIZE);
   }
 
-  inline void DecrementDataPointer(u32 amount) {
+  inline void DecrementDataPointer(uint32_t amount) {
     assert(m.data_pointer >= amount);
     m.data_pointer -= amount;
   }
 
-  inline void SetDataPointer(u32 position) {
+  inline void SetDataPointer(uint32_t position) {
     assert(position < MEMORY_SIZE);
     m.data_pointer = position;
   }

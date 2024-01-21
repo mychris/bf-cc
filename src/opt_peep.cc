@@ -1,3 +1,5 @@
+#include <cstdint>
+
 #include "instr.h"
 #include "optimize.h"
 
@@ -56,11 +58,11 @@ Instr *OptPeep::MergeSetIncrDecr(Instr* op) {
     if (op->OpCode() == OpCode::SET_CELL) {
       bool replaced = false;
       if (op->Next() && op->Next()->OpCode() == OpCode::INCR_CELL) {
-        u8 value = (u8)op->Operand1() + (u8)op->Next()->Operand1();
+        uint8_t value = (uint8_t)op->Operand1() + (uint8_t)op->Next()->Operand1();
         op->SetOperand1((uintptr_t)value);
         replaced = true;
       } else if (op->Next() && op->Next()->OpCode() == OpCode::DECR_CELL) {
-        u8 value = (u8)op->Operand1() - (u8)op->Next()->Operand1();
+        uint8_t value = (uint8_t)op->Operand1() - (uint8_t)op->Next()->Operand1();
         op->SetOperand1((uintptr_t)value);
         replaced = true;
       }

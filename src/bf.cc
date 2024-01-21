@@ -6,7 +6,6 @@
 #include <utility>
 #include <vector>
 
-#include "base.h"
 #include "machine.h"
 #include "instr.h"
 #include "optimize.h"
