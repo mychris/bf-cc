@@ -36,27 +36,17 @@ public:
     m.data[m.data_pointer] -= amount;
   }
 
-  inline void SetCell(uint8_t value) {
-    m.data[m.data_pointer] = value;
-  }
+  inline void SetCell(uint8_t value) { m.data[m.data_pointer] = value; }
 
-  inline uint8_t GetCell() const {
-    return m.data[m.data_pointer];
-  }
+  inline uint8_t GetCell() const { return m.data[m.data_pointer]; }
 
   inline int64_t GetDataPointer() const { return m.data_pointer; }
 
-  inline void IncrementDataPointer(int64_t amount) {
-    m.data_pointer += amount;
-  }
+  inline void IncrementDataPointer(int64_t amount) { m.data_pointer += amount; }
 
-  inline void DecrementDataPointer(int64_t amount) {
-    m.data_pointer -= amount;
-  }
+  inline void DecrementDataPointer(int64_t amount) { m.data_pointer -= amount; }
 
-  inline void SetDataPointer(int64_t position) {
-    m.data_pointer = position;
-  }
+  inline void SetDataPointer(int64_t position) { m.data_pointer = position; }
 };
 
 #endif

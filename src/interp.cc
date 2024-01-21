@@ -1,6 +1,6 @@
 #include "interp.h"
-#include "instr.h"
 #include "heap.h"
+#include "instr.h"
 
 #include <cstdio>
 #include <stdint.h>
