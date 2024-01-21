@@ -39,6 +39,7 @@ public:
 
 private:
   Instr *ReplaceSingleInstructionLoops(Instr *);
+  Instr *ReplaceFindCellLoops(Instr *op);
   Instr *MergeSetIncrDecr(Instr *);
 };
 

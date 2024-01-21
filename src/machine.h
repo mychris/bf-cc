@@ -11,7 +11,7 @@
 class MachineState {
 private:
   struct M {
-    uint32_t data_pointer;
+    int64_t data_pointer;
     uint8_t *data;
   } m;
 
@@ -46,19 +46,19 @@ public:
     return m.data[m.data_pointer];
   }
 
-  inline uint32_t GetDataPointer() const { return m.data_pointer; }
+  inline int64_t GetDataPointer() const { return m.data_pointer; }
 
-  inline void IncrementDataPointer(uint32_t amount) {
+  inline void IncrementDataPointer(int64_t amount) {
     m.data_pointer += amount;
     assert(m.data_pointer < MEMORY_SIZE);
   }
 
-  inline void DecrementDataPointer(uint32_t amount) {
+  inline void DecrementDataPointer(int64_t amount) {
     assert(m.data_pointer >= amount);
     m.data_pointer -= amount;
   }
 
-  inline void SetDataPointer(uint32_t position) {
+  inline void SetDataPointer(int64_t position) {
     assert(position < MEMORY_SIZE);
     m.data_pointer = position;
   }

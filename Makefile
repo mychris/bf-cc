@@ -8,7 +8,7 @@ HDR != find . -name '*.h'
 all: $(EXE)
 
 $(EXE): $(SRC) $(HDR)
-	$(CXX) -O2 -Wall -Wextra --std=c++17 $(SRC) -o $(EXE)
+	$(CXX) -O0 -g -Wall -Wextra --std=c++17 $(SRC) -o $(EXE)
 
 clean:
 	$(RM) $(EXE)

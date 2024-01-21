@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+#include "assembler.h"
 #include "instr.h"
 #include "interp.h"
 #include "machine.h"
@@ -65,10 +66,11 @@ Instr *parse(char *input) {
     }
     ++input;
   }
+  tail->SetNext(Instr::Allocate(OpCode::NOP));
   return head;
 }
 
-static char *readcontent(const char *filename) {
+static char *read_content(const char *filename) {
   char *fcontent = NULL;
   int fsize = 0;
   FILE *fp;
@@ -88,11 +90,23 @@ int main(int argc, char **argv) {
   auto optimizer = Optimizer::Create();
   auto interpreter = Interpreter::Create();
   char *path = argv[1];
-  char *content = readcontent(path);
+  char *content = read_content(path);
   auto op = parse(content);
   free(content);
   op = optimizer.Run(op);
-  interpreter.Run(op);
+  if (0) {
+    interpreter.Run(op);
+  }
+  if (1) {
+    auto code_area = CodeArea::Create();
+    auto assembler = AssemblerX8664::Create(code_area);
+    void* heap = calloc(1000, sizeof(char));
+    assembler.Assemble(op);
+    code_area.MakeExecutable();
+    ((code_entry) code_area.BaseAddr())((uintptr_t)heap);
+    free(heap);
+    fflush(stdout);
+  }
   while (op) {
     Instr *next = op->Next();
     delete op;

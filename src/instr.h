@@ -11,7 +11,7 @@ enum class OpCode {
   SET_CELL = 1 << 3,
   INCR_PTR = 1 << 4,
   DECR_PTR = 1 << 5,
-  SET_PTR = 1 << 6,
+  // SET_PTR = 1 << 6,
   READ = 1 << 7,
   WRITE = 1 << 8,
   JUMP_ZERO = 1 << 9,

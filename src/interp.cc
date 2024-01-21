@@ -26,9 +26,6 @@ void Interpreter::Run(Instr *code) {
     case OpCode::DECR_PTR: {
       machine.DecrementDataPointer(code->Operand1());
     } break;
-    case OpCode::SET_PTR: {
-      machine.SetDataPointer(code->Operand1());
-    } break;
     case OpCode::READ: {
       uint8_t input = (uint8_t)std::getchar();
       machine.SetCell(input);
