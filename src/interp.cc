@@ -5,8 +5,7 @@
 #include <cstdio>
 #include <stdint.h>
 
-void Interpreter::Run(Instr *code) {
-  auto heap = Heap::Create();
+void Interpreter::Run(Heap &heap, Instr *code) {
   while (code) {
     switch (code->OpCode()) {
     case OpCode::NOP: {

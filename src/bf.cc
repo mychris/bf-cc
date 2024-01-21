@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+#include "heap.h"
 #include "assembler.h"
 #include "instr.h"
 #include "interp.h"
@@ -86,6 +87,7 @@ static char *read_content(const char *filename) {
 }
 
 int main(int argc, char **argv) {
+  auto heap = Heap::Create();
   auto optimizer = Optimizer::Create();
   auto interpreter = Interpreter::Create();
   char *path = argv[1];
@@ -94,16 +96,14 @@ int main(int argc, char **argv) {
   free(content);
   op = optimizer.Run(op);
   if (0) {
-    interpreter.Run(op);
+    interpreter.Run(heap, op);
   }
   if (1) {
     auto code_area = CodeArea::Create();
     auto assembler = AssemblerX8664::Create(code_area);
-    void *heap = calloc(32768, sizeof(char));
     assembler.Assemble(op);
     code_area.MakeExecutable();
-    ((code_entry)code_area.BaseAddr())((uintptr_t)heap);
-    free(heap);
+    ((code_entry)code_area.BaseAddr())(heap.BaseAddress());
     fflush(stdout);
   }
   while (op) {
