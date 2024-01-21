@@ -282,7 +282,6 @@ void AssemblerX8664::Assemble(Instr *code) {
     code = code->Next();
   }
   // Patch the jumps
-  size_t patch_count = 0;
   for (const auto &[jump, code_pos] : jump_list) {
     uintptr_t target_pos = 0;
     for (const auto &[target_jump, pos2] : jump_list) {

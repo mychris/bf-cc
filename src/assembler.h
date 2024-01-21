@@ -4,7 +4,6 @@
 #include <initializer_list>
 #include <iterator>
 
-#include "machine.h"
 #include "instr.h"
 
 typedef void (*code_entry)(uintptr_t);

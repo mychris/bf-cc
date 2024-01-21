@@ -9,7 +9,6 @@
 #include "assembler.h"
 #include "instr.h"
 #include "interp.h"
-#include "machine.h"
 #include "optimize.h"
 
 #define OP_INCR '+'
