@@ -3,11 +3,11 @@
 
 Instr *OptCommentLoop::Run(Instr *op) {
   Instr *head = op;
-  while (op->OpCode() == OpCode::NOP) {
+  while (op && op->OpCode() == OpCode::NOP) {
     op = op->Next();
   }
   Instr *comment_loop = op;
-  if (comment_loop->IsJump()) {
+  if (comment_loop && comment_loop->IsJump()) {
     op = op->Next();
     while (op) {
       bool last = op->IsJump() && op->Operand1() == (uintptr_t)comment_loop;
