@@ -2,6 +2,11 @@
 #define BF_CC_MACHINE_H 1
 
 #define DEFAULT_HEAP_SIZE 32768
+#if defined(BF_HEAP_GUARD_PAGES)
+#define GUARD_PAGES BF_HEAP_GUARD_PAGES
+#else
+#define GUARD_PAGES 2
+#endif
 
 #include <cassert>
 #include <cstdint>
@@ -27,30 +32,30 @@ public:
     // Round to size up to page_size
     size = ((size + page_size - 1) / page_size) * page_size;
     // Add two pages, which will be protected to guard for overflows
-    size += page_size + page_size;
+    size += page_size * (GUARD_PAGES * 2);
     uint8_t *mem = (uint8_t *)mmap(nullptr, size, PROT_READ | PROT_WRITE,
                                    MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (mem == MAP_FAILED) {
       // TODO: report error
       assert(0);
     }
-    if (0 != mprotect(mem, page_size, PROT_NONE)) {
+    if (0 != mprotect(mem, page_size * GUARD_PAGES, PROT_NONE)) {
       // TODO: report error
       assert(0);
     }
-    if (0 != mprotect(mem + size - page_size, page_size, PROT_NONE)) {
+    if (0 != mprotect(mem + size - (page_size * GUARD_PAGES), page_size * GUARD_PAGES, PROT_NONE)) {
       // TODO: report error
       assert(0);
     }
     return Heap(M{
-        .data = mem + page_size,
+        .data = mem + (page_size * GUARD_PAGES),
         .page_size = page_size,
         .allocated = size,
         .data_pointer = 0,
     });
   }
 
-  ~Heap() { munmap(m.data - m.page_size, m.allocated); }
+  ~Heap() { munmap(m.data - (m.page_size * GUARD_PAGES), m.allocated); }
 
   inline void IncrementCell(uint8_t amount) {
     m.data[m.data_pointer] += amount;
