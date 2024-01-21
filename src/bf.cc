@@ -85,7 +85,6 @@ static char *readcontent(const char *filename) {
 }
 
 int main(int argc, char **argv) {
-  auto machine = MachineState::Create();
   auto optimizer = Optimizer::Create();
   auto interpreter = Interpreter::Create();
   char *path = argv[1];
