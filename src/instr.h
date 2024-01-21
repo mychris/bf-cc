@@ -1,22 +1,22 @@
 #ifndef BF_CC_INSTR_H
 #define BF_CC_INSTR_H 1
 
-#include <utility>
 #include <stdint.h>
+#include <utility>
 
 enum class OpCode {
-  NOP            = 1 << 0,
-  INCR_CELL      = 1 << 1,
-  DECR_CELL      = 1 << 2,
-  SET_CELL       = 1 << 3,
-  INCR_PTR       = 1 << 4,
-  DECR_PTR       = 1 << 5,
-  SET_PTR        = 1 << 6,
-  READ           = 1 << 7,
-  WRITE          = 1 << 8,
-  JUMP_ZERO      = 1 << 9,
-  JUMP_NON_ZERO  = 1 << 10,
-  FIND_CELL_LOW  = 1 << 11,
+  NOP = 1 << 0,
+  INCR_CELL = 1 << 1,
+  DECR_CELL = 1 << 2,
+  SET_CELL = 1 << 3,
+  INCR_PTR = 1 << 4,
+  DECR_PTR = 1 << 5,
+  SET_PTR = 1 << 6,
+  READ = 1 << 7,
+  WRITE = 1 << 8,
+  JUMP_ZERO = 1 << 9,
+  JUMP_NON_ZERO = 1 << 10,
+  FIND_CELL_LOW = 1 << 11,
   FIND_CELL_HIGH = 1 << 12,
 };
 
@@ -67,7 +67,8 @@ public:
     });
   }
 
-  static Instr *Allocate(enum OpCode instr, uintptr_t op1 = 0, uintptr_t op2 = 0) {
+  static Instr *Allocate(enum OpCode instr, uintptr_t op1 = 0,
+                         uintptr_t op2 = 0) {
     return new Instr(M{
         .instr = instr,
         .next = nullptr,

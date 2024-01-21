@@ -6,10 +6,10 @@
 #include <utility>
 #include <vector>
 
-#include "machine.h"
 #include "instr.h"
-#include "optimize.h"
 #include "interp.h"
+#include "machine.h"
+#include "optimize.h"
 
 #define OP_INCR '+'
 #define OP_DECR '-'
@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
   op = optimizer.Run(op);
   interpreter.Run(op);
   while (op) {
-    Instr* next = op->Next();
+    Instr *next = op->Next();
     delete op;
     op = next;
   }

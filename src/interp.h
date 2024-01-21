@@ -8,11 +8,9 @@ private:
   Interpreter() {}
 
 public:
-  void Run(Instr*);
+  void Run(Instr *);
 
-  static Interpreter Create() {
-    return Interpreter();
-  }
+  static Interpreter Create() { return Interpreter(); }
 };
 
 #endif

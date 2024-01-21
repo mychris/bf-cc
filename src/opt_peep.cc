@@ -52,22 +52,23 @@ Instr *OptPeep::ReplaceSingleInstructionLoops(Instr *op) {
   return head;
 }
 
-Instr *OptPeep::MergeSetIncrDecr(Instr* op) {
+Instr *OptPeep::MergeSetIncrDecr(Instr *op) {
   Instr *head = op;
   while (op) {
     if (op->OpCode() == OpCode::SET_CELL) {
       bool replaced = false;
+      uint8_t value = 0;
       if (op->Next() && op->Next()->OpCode() == OpCode::INCR_CELL) {
-        uint8_t value = (uint8_t)op->Operand1() + (uint8_t)op->Next()->Operand1();
+        value = (uint8_t)op->Operand1() + (uint8_t)op->Next()->Operand1();
         op->SetOperand1((uintptr_t)value);
         replaced = true;
       } else if (op->Next() && op->Next()->OpCode() == OpCode::DECR_CELL) {
-        uint8_t value = (uint8_t)op->Operand1() - (uint8_t)op->Next()->Operand1();
+        value = (uint8_t)op->Operand1() - (uint8_t)op->Next()->Operand1();
         op->SetOperand1((uintptr_t)value);
         replaced = true;
       }
       if (replaced) {
-        Instr* next = op->Next();
+        Instr *next = op->Next();
         op->SetNext(op->Next()->Next());
         delete next;
       }

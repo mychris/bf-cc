@@ -3,10 +3,10 @@
 
 #define MEMORY_SIZE 10000
 
+#include <cassert>
 #include <cstdint>
 #include <cstdlib>
 #include <utility>
-#include <cassert>
 
 class MachineState {
 private:
@@ -15,9 +15,7 @@ private:
     uint8_t *data;
   } m;
 
-  explicit MachineState(M m)
-    : m(std::move(m))
-  {}
+  explicit MachineState(M m) : m(std::move(m)) {}
 
 public:
   static MachineState Create() {
@@ -28,9 +26,7 @@ public:
     });
   }
 
-  ~MachineState() {
-    free(m.data);
-  }
+  ~MachineState() { free(m.data); }
 
   inline void IncrementCell(uint8_t amount) {
     m.data[m.data_pointer] += amount;
@@ -50,9 +46,7 @@ public:
     return m.data[m.data_pointer];
   }
 
-  inline uint32_t GetDataPointer() const {
-    return m.data_pointer;
-  }
+  inline uint32_t GetDataPointer() const { return m.data_pointer; }
 
   inline void IncrementDataPointer(uint32_t amount) {
     m.data_pointer += amount;
@@ -68,7 +62,6 @@ public:
     assert(position < MEMORY_SIZE);
     m.data_pointer = position;
   }
-
 };
 
 #endif

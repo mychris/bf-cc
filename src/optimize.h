@@ -5,7 +5,7 @@
 
 class OptStage {
 public:
-  virtual Instr* Run(Instr*) = 0;
+  virtual Instr *Run(Instr *) = 0;
 };
 
 class OptCommentLoop : OptStage {
@@ -13,22 +13,19 @@ private:
   OptCommentLoop() {}
 
 public:
-  Instr* Run(Instr*);
+  Instr *Run(Instr *);
 
-  static OptCommentLoop Create() {
-    return OptCommentLoop();
-  }
+  static OptCommentLoop Create() { return OptCommentLoop(); }
 };
 
 class OptFusionOp : OptStage {
 private:
   OptFusionOp() {}
-public:
-  Instr* Run(Instr*);
 
-  static OptFusionOp Create() {
-    return OptFusionOp();
-  }
+public:
+  Instr *Run(Instr *);
+
+  static OptFusionOp Create() { return OptFusionOp(); }
 };
 
 class OptPeep : OptStage {
@@ -36,15 +33,13 @@ private:
   OptPeep() {}
 
 public:
-  Instr* Run(Instr*);
+  Instr *Run(Instr *);
 
-  static OptPeep Create() {
-    return OptPeep();
-  }
+  static OptPeep Create() { return OptPeep(); }
 
 private:
-  Instr* ReplaceSingleInstructionLoops(Instr*);
-  Instr* MergeSetIncrDecr(Instr*);
+  Instr *ReplaceSingleInstructionLoops(Instr *);
+  Instr *MergeSetIncrDecr(Instr *);
 };
 
 class Optimizer final {
@@ -52,11 +47,9 @@ private:
   Optimizer() {}
 
 public:
-  Instr* Run(Instr*);
+  Instr *Run(Instr *);
 
-  static Optimizer Create() {
-    return Optimizer();
-  }
+  static Optimizer Create() { return Optimizer(); }
 };
 
 #endif

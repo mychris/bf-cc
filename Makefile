@@ -13,4 +13,8 @@ $(EXE): $(SRC) $(HDR)
 clean:
 	$(RM) $(EXE)
 
-.PHONY: clear format
+format: fmt
+fmt:
+	clang-format -i $(SRC) $(HDR)
+
+.PHONY: clear format fmt
