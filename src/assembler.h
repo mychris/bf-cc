@@ -2,8 +2,11 @@
 #define BF_CC_ASSEMBLER_H 1
 
 #include <initializer_list>
+#include <variant>
 #include <iterator>
+#include <memory>
 
+#include "error.h"
 #include "instr.h"
 
 typedef void (*code_entry)(uintptr_t);
@@ -18,20 +21,27 @@ private:
     uint8_t *mem;
   } m;
 
-  explicit CodeArea(M m) : m(m) {}
+  explicit CodeArea(M m) noexcept : m(std::move(m)) {}
 
-  void EmitData(uint8_t *, size_t);
+  CodeArea(const CodeArea&) = delete;
+  CodeArea& operator=(const CodeArea&) = delete;
+
+  Err EmitData(uint8_t *, size_t);
 
   void PatchData(uintptr_t, uint8_t *, size_t);
 
 public:
-  ~CodeArea();
-  static CodeArea Create();
+  CodeArea(CodeArea&& other)
+    : m(std::exchange(other.m, {0, 0, 0, 0, nullptr}))
+  {}
 
-  void EmitCode(uint32_t c) {
+  ~CodeArea();
+  static std::variant<CodeArea, Err> Create() noexcept;
+
+  Err EmitCode(uint32_t c) {
     return EmitData((uint8_t *)&c, sizeof(uint32_t));
   }
-  void EmitCodeListing(std::initializer_list<uint8_t> l) {
+  Err EmitCodeListing(std::initializer_list<uint8_t> l) {
     return EmitData((uint8_t *)std::data(l), l.size());
   }
 
@@ -42,9 +52,9 @@ public:
     return PatchData(p, (uint8_t *)std::data(l), l.size());
   }
 
-  void MakeExecutable();
+  Err MakeExecutable();
 
-  inline uintptr_t BaseAddr() const { return (uintptr_t)m.mem; }
+  inline uintptr_t BaseAddress() const { return (uintptr_t)m.mem; }
 
   inline uintptr_t CurrentWriteAddr() const {
     return (uintptr_t)(m.mem + m.size);
@@ -68,7 +78,7 @@ public:
     return AssemblerX8664(M{.mem = mem});
   }
 
-  void Assemble(Instr *code);
+  Err Assemble(Instr *code);
 };
 
 #endif /* BF_CC_ASSEMBLER_H */

@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <utility>
 
+#include "error.h"
+
 enum class OpCode {
   NOP = 1 << 0,
   INCR_CELL = 1 << 1,
@@ -23,27 +25,34 @@ enum class OpCode {
 class Instr final {
 private:
   struct M {
-    OpCode instr;
+    OpCode op_code;
     Instr *next;
     uintptr_t operand1;
     uintptr_t operand2;
   } m;
 
+  Instr(const Instr&) = delete;
+  Instr& operator=(const Instr&) = delete;
+
   explicit Instr(M m) : m(std::move(m)) {}
 
 public:
+  Instr(Instr&& other)
+    : m(std::exchange(other.m, {OpCode::NOP, nullptr, 0, 0}))
+  {}
+
   ~Instr() = default;
 
-  inline OpCode OpCode() const { return m.instr; }
+  inline OpCode OpCode() const { return m.op_code; }
 
-  inline void SetOpCode(enum OpCode cmd) { m.instr = cmd; }
+  inline void SetOpCode(enum OpCode cmd) { m.op_code = cmd; }
 
   inline bool IsJump() const {
-    return m.instr == OpCode::JUMP_ZERO || m.instr == OpCode::JUMP_NON_ZERO;
+    return m.op_code == OpCode::JUMP_ZERO || m.op_code == OpCode::JUMP_NON_ZERO;
   }
 
   inline bool IsIO() const {
-    return m.instr == OpCode::READ || m.instr == OpCode::WRITE;
+    return m.op_code == OpCode::READ || m.op_code == OpCode::WRITE;
   }
 
   inline uintptr_t Operand1() const { return m.operand1; }
@@ -58,23 +67,27 @@ public:
 
   inline void SetNext(Instr *next) { m.next = next; }
 
-  static Instr Create(enum OpCode instr, uintptr_t op1 = 0, uintptr_t op2 = 0) {
+  static Instr Create(enum OpCode op_code, uintptr_t op1 = 0, uintptr_t op2 = 0) {
     return Instr(M{
-        .instr = instr,
+        .op_code = op_code,
         .next = nullptr,
         .operand1 = op1,
         .operand2 = op2,
     });
   }
 
-  static Instr *Allocate(enum OpCode instr, uintptr_t op1 = 0,
+  static Instr *Allocate(enum OpCode op_code, uintptr_t op1 = 0,
                          uintptr_t op2 = 0) {
-    return new Instr(M{
-        .instr = instr,
+    Instr *instr = new Instr(M{
+        .op_code = op_code,
         .next = nullptr,
         .operand1 = op1,
         .operand2 = op2,
-    });
+      });
+    if (!instr) {
+      Error(Err::OutOfMemory());
+    }
+    return instr;
   }
 };
 

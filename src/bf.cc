@@ -154,41 +154,44 @@ Instr *parse(char *input) {
   return head;
 }
 
-static char *read_content(const char *filename) {
+static std::variant<char*, Err> read_content(const char *filename) {
   char *fcontent = NULL;
   int fsize = 0;
   FILE *fp;
   fp = fopen(filename, "r");
-  if (fp) {
-    fseek(fp, 0, SEEK_END);
-    fsize = ftell(fp);
-    rewind(fp);
-    fcontent = (char *)calloc(fsize + 1, sizeof(char));
-    fread(fcontent, 1, fsize, fp);
-    fclose(fp);
+  if (!fp) {
+    return Err::IO(errno);
   }
+  fseek(fp, 0, SEEK_END);
+  fsize = ftell(fp);
+  rewind(fp);
+  fcontent = (char *)calloc(fsize + 1, sizeof(char));
+  fread(fcontent, 1, fsize, fp);
+  fclose(fp);
   return fcontent;
 }
 
 int main(int argc, char **argv) {
   parse_opts(argc, argv);
-  auto heap = Heap::Create(heap_size);
-  auto optimizer = Optimizer::Create();
-  char *content = read_content(input_file_path);
+  char *content = std::get<char*>(read_content(input_file_path));
   auto op = parse(content);
   free(content);
+  auto optimizer = Optimizer::Create();
   op = optimizer.Run(op);
   switch (execution_mode) {
   case ExecMode::INTERPRETER: {
+    auto heap = Heap::Create(heap_size);
     auto interpreter = Interpreter::Create();
-    interpreter.Run(heap, op);
+    interpreter.Run(std::get<Heap>(heap), op);
   } break;
   case ExecMode::COMPILER: {
     auto code_area = CodeArea::Create();
-    auto assembler = AssemblerX8664::Create(code_area);
-    assembler.Assemble(op);
-    code_area.MakeExecutable();
-    ((code_entry)code_area.BaseAddr())(heap.BaseAddress());
+    auto assembler = AssemblerX8664::Create(std::get<CodeArea>(code_area));
+    auto entry = (code_entry) std::get<CodeArea>(code_area).BaseAddress();
+    auto heap = Ensure(Heap::Create(heap_size));
+    Ensure(assembler.Assemble(op));
+    Ensure(std::get<CodeArea>(code_area).MakeExecutable());
+    entry(heap.BaseAddress());
   } break;
   }
   fflush(stdout);
