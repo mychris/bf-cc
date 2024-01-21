@@ -207,12 +207,32 @@ static inline void PatchJumpNonZero(CodeArea &mem, uintptr_t position,
   mem.PatchCode(position - 4, offset32);
 }
 
-static inline void EmitFindCellHigh(CodeArea &mem, uintptr_t value, uintptr_t move_size) {
-  assert(0 && "FIND_CELL_HIGH not implmented");
+static inline void EmitFindCellHigh(CodeArea &mem, uint8_t value,
+                                    uintptr_t move_size) {
+  assert(move_size < UINT32_MAX);
+  mem.EmitCodeListing({// CMP byte[rdx], value
+                       0x80, 0x3A, value,
+                       // JE "to the end"
+                       0x74, 0x09,
+                       // ADD rdx, move_size
+                       0x48, 0x81, 0xC2});
+  mem.EmitCode((uint32_t)move_size);
+  mem.EmitCodeListing({// JMP "back to SUB"
+                       0xEB, 0xF2});
 }
 
-static inline void EmitFindCellLow(CodeArea &mem, uintptr_t value, uintptr_t move_size) {
-  assert(0 && "FIND_CELL_LOW not implmented");
+static inline void EmitFindCellLow(CodeArea &mem, uint8_t value,
+                                   uintptr_t move_size) {
+  assert(move_size < UINT32_MAX);
+  mem.EmitCodeListing({// CMP byte[rdx], value
+                       0x80, 0x3A, value,
+                       // JE "to the end"
+                       0x74, 0x09,
+                       // SUB rdx, move_size
+                       0x48, 0x81, 0xEA});
+  mem.EmitCode((uint32_t)move_size);
+  mem.EmitCodeListing({// JMP "back to SUB"
+                       0xEB, 0xF2});
 }
 
 void AssemblerX8664::Assemble(Instr *code) {
@@ -253,10 +273,10 @@ void AssemblerX8664::Assemble(Instr *code) {
       jump_list.push_back({code, m.mem.CurrentWriteAddr()});
       break;
     case OpCode::FIND_CELL_HIGH:
-      EmitFindCellHigh(m.mem, code->Operand1(), code->Operand2());
+      EmitFindCellHigh(m.mem, (uint8_t)code->Operand1(), code->Operand2());
       break;
     case OpCode::FIND_CELL_LOW:
-      EmitFindCellLow(m.mem, code->Operand1(), code->Operand2());
+      EmitFindCellLow(m.mem, (uint8_t)code->Operand1(), code->Operand2());
       break;
     }
     code = code->Next();

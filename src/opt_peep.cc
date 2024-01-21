@@ -5,7 +5,7 @@
 
 Instr *OptPeep::Run(Instr *op) {
   op = ReplaceSingleInstructionLoops(op);
-  //op = ReplaceFindCellLoops(op);
+  op = ReplaceFindCellLoops(op);
   op = MergeSetIncrDecr(op);
   return op;
 }
