@@ -1,7 +1,7 @@
 #ifndef BF_CC_MACHINE_H
 #define BF_CC_MACHINE_H 1
 
-#define MEMORY_SIZE 10000
+#define MEMORY_SIZE 32768
 
 #include <cassert>
 #include <cstdint>

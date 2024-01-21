@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
   if (1) {
     auto code_area = CodeArea::Create();
     auto assembler = AssemblerX8664::Create(code_area);
-    void* heap = calloc(1000, sizeof(char));
+    void* heap = calloc(32768, sizeof(char));
     assembler.Assemble(op);
     code_area.MakeExecutable();
     ((code_entry) code_area.BaseAddr())((uintptr_t)heap);
