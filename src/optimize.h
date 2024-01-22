@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT License
 #include <csignal>
 #ifndef BF_CC_OPTIMIZE_H
 #define BF_CC_OPTIMIZE_H 1

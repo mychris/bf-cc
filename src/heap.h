@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT License
 #ifndef BF_CC_HEAP_H
 #define BF_CC_HEAP_H 1
 

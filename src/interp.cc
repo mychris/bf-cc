@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT License
 #include "interp.h"
 
 #include <stdint.h>

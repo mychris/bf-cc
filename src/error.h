@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT License
 #ifndef BF_CC_ERROR_H
 #define BF_CC_ERROR_H 1
 
