@@ -23,7 +23,8 @@ private:
     OptLevel level;
   } m;
 
-  explicit Optimizer(M m) : m(std::move(m)) {}
+  explicit Optimizer(M m) : m(std::move(m)) {
+  }
 
 public:
   Instr *Run(Instr *) const noexcept;

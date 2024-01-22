@@ -6,12 +6,15 @@
 
 class Interpreter final {
 private:
-  Interpreter() {}
+  Interpreter() {
+  }
 
 public:
   void Run(Heap &, Instr *);
 
-  static Interpreter Create() { return Interpreter(); }
+  static Interpreter Create() {
+    return Interpreter();
+  }
 };
 
 #endif /* BF_CC_INTERP_H */

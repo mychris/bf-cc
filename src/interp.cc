@@ -1,9 +1,11 @@
 #include "interp.h"
-#include "heap.h"
-#include "instr.h"
+
+#include <stdint.h>
 
 #include <cstdio>
-#include <stdint.h>
+
+#include "heap.h"
+#include "instr.h"
 
 void Interpreter::Run(Heap &heap, Instr *code) {
   while (code) {
@@ -17,7 +19,7 @@ void Interpreter::Run(Heap &heap, Instr *code) {
       heap.DecrementCell(code->Operand1());
     } break;
     case Instr::Code::SET_CELL: {
-      heap.SetCell((uint8_t)code->Operand1());
+      heap.SetCell((uint8_t) code->Operand1());
     } break;
     case Instr::Code::INCR_PTR: {
       heap.IncrementDataPointer(code->Operand1());
@@ -26,31 +28,31 @@ void Interpreter::Run(Heap &heap, Instr *code) {
       heap.DecrementDataPointer(code->Operand1());
     } break;
     case Instr::Code::READ: {
-      const uint8_t input = (uint8_t)std::getchar();
+      const uint8_t input = (uint8_t) std::getchar();
       heap.SetCell(input);
     } break;
     case Instr::Code::WRITE: {
       const uint8_t output = heap.GetCell();
-      std::putchar((int)output);
+      std::putchar((int) output);
     } break;
     case Instr::Code::JUMP_ZERO: {
       if (heap.GetCell() == 0) {
-        code = (Instr *)code->Operand1();
+        code = (Instr *) code->Operand1();
       }
     } break;
     case Instr::Code::JUMP_NON_ZERO: {
       if (heap.GetCell() != 0) {
-        code = (Instr *)code->Operand1();
+        code = (Instr *) code->Operand1();
       }
     } break;
     case Instr::Code::FIND_CELL_HIGH: {
-      const uint8_t val = (uint8_t)code->Operand1();
+      const uint8_t val = (uint8_t) code->Operand1();
       while (heap.GetCell() != val) {
         heap.IncrementDataPointer(code->Operand2());
       }
     } break;
     case Instr::Code::FIND_CELL_LOW: {
-      const uint8_t val = (uint8_t)code->Operand1();
+      const uint8_t val = (uint8_t) code->Operand1();
       while (heap.GetCell() != val) {
         heap.DecrementDataPointer(code->Operand2());
       }

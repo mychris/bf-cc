@@ -9,9 +9,8 @@ Instr *OptFusionOp(Instr *op) {
   }
   while (op) {
     Instr::Code seq_cmd = op->OpCode();
-    if (seq_cmd == Instr::Code::INCR_CELL ||
-        seq_cmd == Instr::Code::DECR_CELL || seq_cmd == Instr::Code::INCR_PTR ||
-        seq_cmd == Instr::Code::DECR_PTR) {
+    if (seq_cmd == Instr::Code::INCR_CELL || seq_cmd == Instr::Code::DECR_CELL || seq_cmd == Instr::Code::INCR_PTR
+        || seq_cmd == Instr::Code::DECR_PTR) {
       Instr *seq_head = op;
       uintptr_t amount = op->Operand1();
       op = op->Next();

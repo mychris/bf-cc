@@ -1,4 +1,5 @@
 #include "optimize.h"
+
 #include "instr.h"
 
 Instr *Optimizer::Run(Instr *i) const noexcept {

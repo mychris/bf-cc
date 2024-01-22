@@ -21,7 +21,8 @@ private:
     uint8_t *mem;
   } m;
 
-  explicit CodeArea(M m) noexcept : m(std::move(m)) {}
+  explicit CodeArea(M m) noexcept : m(std::move(m)) {
+  }
 
   CodeArea(const CodeArea &) = delete;
   CodeArea &operator=(const CodeArea &) = delete;
@@ -31,29 +32,35 @@ private:
   Err PatchData(uint8_t *, uint8_t *, size_t);
 
 public:
-  CodeArea(CodeArea &&other) noexcept
-      : m(std::exchange(other.m, {0, 0, 0, 0, nullptr})) {}
+  CodeArea(CodeArea &&other) noexcept : m(std::exchange(other.m, {0, 0, 0, 0, nullptr})) {
+  }
 
   ~CodeArea();
   static std::variant<CodeArea, Err> Create() noexcept;
 
-  Err EmitCode(uint32_t c) { return EmitData((uint8_t *)&c, sizeof(uint32_t)); }
+  Err EmitCode(uint32_t c) {
+    return EmitData((uint8_t *) &c, sizeof(uint32_t));
+  }
   Err EmitCodeListing(std::initializer_list<uint8_t> l) {
-    return EmitData((uint8_t *)std::data(l), l.size());
+    return EmitData((uint8_t *) std::data(l), l.size());
   }
 
   Err PatchCode(uint8_t *p, uint32_t c) {
-    return PatchData(p, (uint8_t *)&c, sizeof(uint32_t));
+    return PatchData(p, (uint8_t *) &c, sizeof(uint32_t));
   }
   Err PatchCodeListing(uint8_t *p, std::initializer_list<uint8_t> l) {
-    return PatchData(p, (uint8_t *)std::data(l), l.size());
+    return PatchData(p, (uint8_t *) std::data(l), l.size());
   }
 
   Err MakeExecutable();
 
-  inline uint8_t *BaseAddress() const { return m.mem + m.page_size; }
+  inline uint8_t *BaseAddress() const {
+    return m.mem + m.page_size;
+  }
 
-  inline uint8_t *CurrentWriteAddr() const { return m.mem + m.size; }
+  inline uint8_t *CurrentWriteAddr() const {
+    return m.mem + m.size;
+  }
 
   void Dump();
 };
@@ -66,7 +73,8 @@ private:
     CodeArea &mem;
   } m;
 
-  explicit AssemblerX8664(M m) : m(std::move(m)) {}
+  explicit AssemblerX8664(M m) : m(std::move(m)) {
+  }
 
 public:
   static AssemblerX8664 Create(CodeArea &mem) {

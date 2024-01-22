@@ -10,7 +10,7 @@ Instr *OptCommentLoop(Instr *op) {
   if (comment_loop && comment_loop->IsJump()) {
     op = op->Next();
     while (op) {
-      bool last = op->IsJump() && op->Operand1() == (uintptr_t)comment_loop;
+      bool last = op->IsJump() && op->Operand1() == (uintptr_t) comment_loop;
       comment_loop->SetNext(op->Next());
       delete op;
       op = comment_loop->Next();

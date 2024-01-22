@@ -1,4 +1,5 @@
 #include "heap.h"
+
 #include <utility>
 #include <variant>
 
@@ -17,22 +18,17 @@ std::variant<Heap, Err> Heap::Create(size_t size) noexcept {
   size = ((size + page_size - 1) / page_size) * page_size;
   // Add guard pages in the front and the back
   size += page_size * (GUARD_PAGES * 2);
-  uint8_t *mem = (uint8_t *)mmap(nullptr, size, PROT_READ | PROT_WRITE,
-                                 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  uint8_t *mem = (uint8_t *) mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   if (mem == MAP_FAILED) {
     return Err::HeapMmap(errno);
   }
   if (0 != mprotect(mem, page_size * GUARD_PAGES, PROT_NONE)) {
     return Err::HeapMprotect(errno);
   }
-  if (0 != mprotect(mem + (size - (page_size * GUARD_PAGES)),
-                    page_size * GUARD_PAGES, PROT_NONE)) {
+  if (0 != mprotect(mem + (size - (page_size * GUARD_PAGES)), page_size * GUARD_PAGES, PROT_NONE)) {
     return Err::HeapMprotect(errno);
   }
-  return Heap(M{.page_size = page_size,
-                .allocated = size,
-                .data_pointer = 0,
-                .data = mem + (page_size * GUARD_PAGES)});
+  return Heap(M{.page_size = page_size, .allocated = size, .data_pointer = 0, .data = mem + (page_size * GUARD_PAGES)});
 }
 
 Heap::~Heap() {

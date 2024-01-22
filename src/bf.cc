@@ -2,20 +2,18 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-
-#include "fcntl.h"
-#include "unistd.h"
-
 #include <memory>
 #include <utility>
 #include <vector>
 
 #include "assembler.h"
 #include "error.h"
+#include "fcntl.h"
 #include "heap.h"
 #include "instr.h"
 #include "interp.h"
 #include "optimize.h"
+#include "unistd.h"
 
 #define OP_INCR '+'
 #define OP_DECR '-'
@@ -39,16 +37,12 @@ static struct {
 } args;
 
 static void usage(void) {
-  fprintf(stderr,
-          "Usage: %s [-h] [-O(0|1|2|3)] [-mMEMORY_SIZE] [(-i|-c)] PROGRAM\n",
-          program_name);
+  fprintf(stderr, "Usage: %s [-h] [-O(0|1|2|3)] [-mMEMORY_SIZE] [(-i|-c)] PROGRAM\n", program_name);
   fprintf(stderr, "\n");
   fprintf(stderr, "Options:\n");
-  fprintf(stderr,
-          "  -O, --optimize=  Set the optimization level to 0, 1, 2, or 3\n");
+  fprintf(stderr, "  -O, --optimize=  Set the optimization level to 0, 1, 2, or 3\n");
   fprintf(stderr, "  -m, --memory=    Set the heap memory size\n");
-  fprintf(stderr,
-          "  -i, --interp     Set the execution mode to: interpreter\n");
+  fprintf(stderr, "  -i, --interp     Set the execution mode to: interpreter\n");
   fprintf(stderr, "  -c, --compiler   Set the execution mode to: compiler\n");
   fprintf(stderr, "  -h, --help       Display this help message\n");
 }
@@ -65,14 +59,12 @@ static void parse_opts(int argc, char **argv) {
       exit(0);
     } else if (0 == strncmp("-O", argv[0], 2)) {
       opt_level = argv[0][2];
-      if (argv[0][2] == '\0' || argv[0][3] != '\0' || opt_level < '0' ||
-          opt_level > '3') {
+      if (argv[0][2] == '\0' || argv[0][3] != '\0' || opt_level < '0' || opt_level > '3') {
         Error("Invalid optimization level: %s", argv[0]);
       }
     } else if (0 == strncmp("--optimize=", argv[0], 11)) {
       opt_level = argv[0][11];
-      if (argv[0][11] == '\0' || argv[0][12] != '\0' || opt_level < '0' ||
-          opt_level > '3') {
+      if (argv[0][11] == '\0' || argv[0][12] != '\0' || opt_level < '0' || opt_level > '3') {
         Error("Invalid optimization level: %s", argv[0]);
       }
     } else if (0 == strncmp("-m", argv[0], 2)) {
@@ -157,8 +149,8 @@ Instr *parse(const char *input) {
     case OP_JMPB: {
       Instr *other = jump_stack.back();
       jump_stack.pop_back();
-      this_op = Instr::Allocate(Instr::Code::JUMP_NON_ZERO, (uintptr_t)other);
-      other->SetOperand1((uintptr_t)this_op);
+      this_op = Instr::Allocate(Instr::Code::JUMP_NON_ZERO, (uintptr_t) other);
+      other->SetOperand1((uintptr_t) this_op);
     } break;
     default:
       break;
@@ -189,10 +181,9 @@ static std::variant<char *, Err> read_content(const char *filename) {
     close(fp);
     return Err::IO(errno);
   }
-  content = (char *)calloc(fsize + 1, sizeof(char));
+  content = (char *) calloc(fsize + 1, sizeof(char));
   while (bytes_read < fsize) {
-    const ssize_t r =
-        read(fp, content + bytes_read, (size_t)(fsize - bytes_read));
+    const ssize_t r = read(fp, content + bytes_read, (size_t) (fsize - bytes_read));
     if (0 > r && errno != EAGAIN) {
       free(content);
       close(fp);
@@ -219,7 +210,7 @@ int main(int argc, char **argv) {
   case ExecMode::COMPILER: {
     auto code_area = CodeArea::Create();
     auto assembler = AssemblerX8664::Create(std::get<CodeArea>(code_area));
-    auto entry = (code_entry)std::get<CodeArea>(code_area).BaseAddress();
+    auto entry = (code_entry) std::get<CodeArea>(code_area).BaseAddress();
     Ensure(assembler.Assemble(op));
     Ensure(std::get<CodeArea>(code_area).MakeExecutable());
     entry(heap.BaseAddress());

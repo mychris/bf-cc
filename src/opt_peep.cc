@@ -10,13 +10,10 @@ static Instr *ReplaceSingleInstructionLoops(Instr *op) {
       Instr *first = op;
       Instr *second = op->Next();
       Instr *third = (second) ? second->Next() : nullptr;
-      if (first && second && third &&
-          first->OpCode() == Instr::Code::JUMP_ZERO &&
-          third->OpCode() == Instr::Code::JUMP_NON_ZERO &&
-          first->Operand1() == (uintptr_t)third &&
-          third->Operand1() == (uintptr_t)first) {
-        if (second->OpCode() == Instr::Code::DECR_CELL ||
-            second->OpCode() == Instr::Code::INCR_CELL) {
+      if (first && second && third && first->OpCode() == Instr::Code::JUMP_ZERO
+          && third->OpCode() == Instr::Code::JUMP_NON_ZERO && first->Operand1() == (uintptr_t) third
+          && third->Operand1() == (uintptr_t) first) {
+        if (second->OpCode() == Instr::Code::DECR_CELL || second->OpCode() == Instr::Code::INCR_CELL) {
           // [+] [-]
           first->SetOpCode(Instr::Code::SET_CELL);
           first->SetOperand1(0);
@@ -38,11 +35,9 @@ static Instr *ReplaceFindCellLoops(Instr *op) {
       Instr *first = op;
       Instr *second = op->Next();
       Instr *third = (second) ? second->Next() : nullptr;
-      if (first && second && third &&
-          first->OpCode() == Instr::Code::JUMP_ZERO &&
-          third->OpCode() == Instr::Code::JUMP_NON_ZERO &&
-          first->Operand1() == (uintptr_t)third &&
-          third->Operand1() == (uintptr_t)first) {
+      if (first && second && third && first->OpCode() == Instr::Code::JUMP_ZERO
+          && third->OpCode() == Instr::Code::JUMP_NON_ZERO && first->Operand1() == (uintptr_t) third
+          && third->Operand1() == (uintptr_t) first) {
         bool replaced = false;
         if (second->OpCode() == Instr::Code::INCR_PTR) {
           // [>]
@@ -76,12 +71,12 @@ static Instr *MergeSetIncrDecr(Instr *op) {
       bool replaced = false;
       uint8_t value = 0;
       if (op->Next() && op->Next()->OpCode() == Instr::Code::INCR_CELL) {
-        value = (uint8_t)op->Operand1() + (uint8_t)op->Next()->Operand1();
-        op->SetOperand1((uintptr_t)value);
+        value = (uint8_t) op->Operand1() + (uint8_t) op->Next()->Operand1();
+        op->SetOperand1((uintptr_t) value);
         replaced = true;
       } else if (op->Next() && op->Next()->OpCode() == Instr::Code::DECR_CELL) {
-        value = (uint8_t)op->Operand1() - (uint8_t)op->Next()->Operand1();
-        op->SetOperand1((uintptr_t)value);
+        value = (uint8_t) op->Operand1() - (uint8_t) op->Next()->Operand1();
+        op->SetOperand1((uintptr_t) value);
         replaced = true;
       }
       if (replaced) {

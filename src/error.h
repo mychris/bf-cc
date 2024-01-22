@@ -25,7 +25,8 @@ private:
     int native;
   } m;
 
-  explicit Err(M m) noexcept : m(std::move(m)) {}
+  explicit Err(M m) noexcept : m(std::move(m)) {
+  }
 
 public:
   static Err Ok() noexcept {
@@ -53,20 +54,28 @@ public:
     return Err(M{.code = Err::Code::IO, .native = err});
   }
 
-  inline bool IsOk() const noexcept { return m.code == Err::Code::OK; }
+  inline bool IsOk() const noexcept {
+    return m.code == Err::Code::OK;
+  }
 
-  inline Err::Code Code() const noexcept { return m.code; }
+  inline Err::Code Code() const noexcept {
+    return m.code;
+  }
 
-  inline int NativeErrno() const noexcept { return m.native; }
+  inline int NativeErrno() const noexcept {
+    return m.native;
+  }
 
-  template <class F> constexpr auto and_then(F &&f) const & {
+  template <class F>
+  constexpr auto and_then(F &&f) const & {
     if (IsOk()) {
       return f();
     }
     return *this;
   }
 
-  template <class F> constexpr auto and_then(F &&f) const && {
+  template <class F>
+  constexpr auto and_then(F &&f) const && {
     if (IsOk()) {
       return f();
     }
@@ -84,7 +93,8 @@ inline void Ensure(const Err &err) {
   }
 }
 
-template <class T> inline T Ensure(std::variant<T, Err> &&err) noexcept {
+template <class T>
+inline T Ensure(std::variant<T, Err> &&err) noexcept {
   if (0 != err.index()) {
     Error(std::get<Err>(std::move(err)));
   }
