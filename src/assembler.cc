@@ -13,7 +13,7 @@
 #include "instr.h"
 
 std::variant<CodeArea, Err> CodeArea::Create() noexcept {
-  const size_t page_size = sysconf(_SC_PAGESIZE);
+  const size_t page_size = (size_t) sysconf(_SC_PAGESIZE);
   size_t reserved = 512 * 1024 * 1024;
   // Round reserved up to page_size
   reserved = ((reserved + page_size - 1) / page_size) * page_size;
@@ -49,7 +49,7 @@ CodeArea::~CodeArea() {
   }
 }
 
-Err CodeArea::EmitData(uint8_t *data, size_t length) {
+Err CodeArea::EmitData(const uint8_t *data, const size_t length) {
   while (m.size + length >= m.allocated) {
     if (m.allocated == m.reserved) {
       return Err::CodeMmap(0);
@@ -66,7 +66,7 @@ Err CodeArea::EmitData(uint8_t *data, size_t length) {
   return Err::Ok();
 }
 
-Err CodeArea::PatchData(uint8_t *p, uint8_t *data, size_t length) {
+Err CodeArea::PatchData(uint8_t *p, const uint8_t *data, const size_t length) {
   std::memcpy(p, data, length);
   return Err::Ok();
 }
@@ -286,9 +286,10 @@ static Err EmitFindCellLow(CodeArea &mem, uint8_t value, uintptr_t move_size) {
       });
 }
 
-Err AssemblerX8664::Assemble(Instr *code) {
+std::variant<CodeEntry, Err> AssemblerX8664::Assemble(Instr *code) {
   std::vector<std::pair<Instr *, uint8_t *>> jump_list = {};
   Err err = Err::Ok();
+  void *entry = m.mem.CurrentWriteAddr();
   err = EmitEntry(m.mem);
   if (!err.IsOk()) {
     return err;
@@ -350,12 +351,12 @@ Err AssemblerX8664::Assemble(Instr *code) {
     }
     assert(target_pos > (uint8_t *) 0 && "Jump destination not found");
     if (jump->OpCode() == Instr::Code::JUMP_ZERO) {
-      err = PatchJumpZero(m.mem, code_pos, target_pos - code_pos);
+      err = PatchJumpZero(m.mem, code_pos, (uintptr_t) (target_pos - code_pos));
       if (!err.IsOk()) {
         return err;
       }
     } else if (jump->OpCode() == Instr::Code::JUMP_NON_ZERO) {
-      err = PatchJumpNonZero(m.mem, code_pos, target_pos - code_pos);
+      err = PatchJumpNonZero(m.mem, code_pos, (uintptr_t) (target_pos - code_pos));
       if (!err.IsOk()) {
         return err;
       }
@@ -363,5 +364,9 @@ Err AssemblerX8664::Assemble(Instr *code) {
       assert(0 && "Invalid op code in jump list");
     }
   }
-  return EmitExit(m.mem);
+  err = EmitExit(m.mem);
+  if (!err.IsOk()) {
+    return err;
+  }
+  return (CodeEntry) entry;
 }

@@ -10,7 +10,7 @@
 #endif
 
 std::variant<Heap, Err> Heap::Create(size_t size) noexcept {
-  const size_t page_size = sysconf(_SC_PAGESIZE);
+  const size_t page_size = (size_t) sysconf(_SC_PAGESIZE);
   if (size > (UINT32_MAX >> 1)) {
     return Err::HeapMmap(0);
   }

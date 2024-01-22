@@ -69,7 +69,7 @@ public:
     m.operand1 = val;
   }
 
-  inline int32_t Operand2() const {
+  inline uintptr_t Operand2() const {
     return m.operand2;
   }
 
@@ -95,7 +95,7 @@ public:
   }
 
   static Instr *Allocate(enum Instr::Code op_code, uintptr_t op1 = 0, uintptr_t op2 = 0) {
-    Instr *instr = new Instr(M{
+    Instr *instr = new (std::nothrow) Instr(M{
         .op_code = op_code,
         .next = nullptr,
         .operand1 = op1,

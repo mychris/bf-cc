@@ -90,7 +90,7 @@ static void parse_opts(int argc, char **argv) {
       if (result < 0 || errno == ERANGE || NULL == end || *end != '\0') {
         Error("Invalid heap memory size: %s", mem_size_string);
       }
-      args.heap_size = result;
+      args.heap_size = (size_t) result;
     }
     argv++;
   }
@@ -181,7 +181,7 @@ static std::variant<char *, Err> read_content(const char *filename) {
     close(fp);
     return Err::IO(errno);
   }
-  content = (char *) calloc(fsize + 1, sizeof(char));
+  content = (char *) calloc((size_t) fsize + 1, sizeof(char));
   while (bytes_read < fsize) {
     const ssize_t r = read(fp, content + bytes_read, (size_t) (fsize - bytes_read));
     if (0 > r && errno != EAGAIN) {
@@ -208,11 +208,10 @@ int main(int argc, char **argv) {
     interpreter.Run(heap, op);
   } break;
   case ExecMode::COMPILER: {
-    auto code_area = CodeArea::Create();
-    auto assembler = AssemblerX8664::Create(std::get<CodeArea>(code_area));
-    auto entry = (code_entry) std::get<CodeArea>(code_area).BaseAddress();
-    Ensure(assembler.Assemble(op));
-    Ensure(std::get<CodeArea>(code_area).MakeExecutable());
+    auto code_area = Ensure(CodeArea::Create());
+    auto assembler = AssemblerX8664::Create(code_area);
+    auto entry = Ensure(assembler.Assemble(op));
+    Ensure(code_area.MakeExecutable());
     entry(heap.BaseAddress());
   } break;
   }
