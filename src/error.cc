@@ -1,13 +1,12 @@
-#include <cstdio>
-#include <cstring>
-#include <cstdarg>
-#include <cstdlib>
 #include "error.h"
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 const char *program_name = "bf-cc";
 
-void Error(const char *fmt, ...)
-{
+void Error(const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   std::fprintf(stderr, "%s: ", program_name);
@@ -19,7 +18,7 @@ void Error(const char *fmt, ...)
   std::exit(1);
 }
 
-void Error(const Err& error) {
+void Error(const Err &error) {
   char native_err_str[128] = {};
   if (error.NativeErrno() != 0) {
     sprintf(native_err_str, ": %s", strerror(error.NativeErrno()));

@@ -4,8 +4,8 @@
 #include <unistd.h>
 
 #include <iterator>
-#include <vector>
 #include <variant>
+#include <vector>
 
 #include "assembler.h"
 #include "error.h"
@@ -27,7 +27,7 @@ std::variant<CodeArea, Err> CodeArea::Create() noexcept {
       .reserved = reserved,
       .page_size = page_size,
       .mem = (uint8_t *)mem,
-      });
+  });
 }
 
 void CodeArea::Dump() {
@@ -42,7 +42,11 @@ void CodeArea::Dump() {
   printf("\n");
 }
 
-CodeArea::~CodeArea() { if (m.mem) { munmap(m.mem, m.allocated); } }
+CodeArea::~CodeArea() {
+  if (m.mem) {
+    munmap(m.mem, m.allocated);
+  }
+}
 
 Err CodeArea::EmitData(uint8_t *data, size_t length) {
   while (m.size + length >= m.allocated) {
@@ -253,42 +257,43 @@ Err AssemblerX8664::Assemble(Instr *code) {
   }
   while (code) {
     switch (code->OpCode()) {
-    case OpCode::NOP:
+    case Instr::Code::NOP:
       err = EmitNop(m.mem);
       break;
-    case OpCode::INCR_CELL:
+    case Instr::Code::INCR_CELL:
       err = EmitIncrCell(m.mem, (uint8_t)code->Operand1());
       break;
-    case OpCode::DECR_CELL:
+    case Instr::Code::DECR_CELL:
       err = EmitDecrCell(m.mem, (uint8_t)code->Operand1());
       break;
-    case OpCode::SET_CELL:
+    case Instr::Code::SET_CELL:
       err = EmitSetCell(m.mem, (uint8_t)code->Operand1());
       break;
-    case OpCode::INCR_PTR:
+    case Instr::Code::INCR_PTR:
       err = EmitIncrPtr(m.mem, (uintptr_t)code->Operand1());
       break;
-    case OpCode::DECR_PTR:
+    case Instr::Code::DECR_PTR:
       err = EmitDecrPtr(m.mem, (uintptr_t)code->Operand1());
       break;
-    case OpCode::READ:
+    case Instr::Code::READ:
       err = EmitRead(m.mem);
       break;
-    case OpCode::WRITE:
+    case Instr::Code::WRITE:
       err = EmitWrite(m.mem);
       break;
-    case OpCode::JUMP_ZERO:
+    case Instr::Code::JUMP_ZERO:
       err = EmitJumpZero(m.mem);
       jump_list.push_back({code, m.mem.CurrentWriteAddr()});
       break;
-    case OpCode::JUMP_NON_ZERO:
+    case Instr::Code::JUMP_NON_ZERO:
       err = EmitJumpNonZero(m.mem);
       jump_list.push_back({code, m.mem.CurrentWriteAddr()});
       break;
-    case OpCode::FIND_CELL_HIGH:
-      err = EmitFindCellHigh(m.mem, (uint8_t)code->Operand1(), code->Operand2());
+    case Instr::Code::FIND_CELL_HIGH:
+      err =
+          EmitFindCellHigh(m.mem, (uint8_t)code->Operand1(), code->Operand2());
       break;
-    case OpCode::FIND_CELL_LOW:
+    case Instr::Code::FIND_CELL_LOW:
       err = EmitFindCellLow(m.mem, (uint8_t)code->Operand1(), code->Operand2());
       break;
     }
@@ -307,9 +312,9 @@ Err AssemblerX8664::Assemble(Instr *code) {
       }
     }
     assert(target_pos > 0 && "Jump destination not found");
-    if (jump->OpCode() == OpCode::JUMP_ZERO) {
+    if (jump->OpCode() == Instr::Code::JUMP_ZERO) {
       PatchJumpZero(m.mem, code_pos, target_pos - code_pos);
-    } else if (jump->OpCode() == OpCode::JUMP_NON_ZERO) {
+    } else if (jump->OpCode() == Instr::Code::JUMP_NON_ZERO) {
       PatchJumpNonZero(m.mem, code_pos, target_pos - code_pos);
     } else {
       assert(0 && "Invalid op code in jump list");

@@ -6,53 +6,54 @@
 
 #include "error.h"
 
-enum class OpCode {
-  NOP = 1 << 0,
-  INCR_CELL = 1 << 1,
-  DECR_CELL = 1 << 2,
-  SET_CELL = 1 << 3,
-  INCR_PTR = 1 << 4,
-  DECR_PTR = 1 << 5,
-  // SET_PTR = 1 << 6,
-  READ = 1 << 7,
-  WRITE = 1 << 8,
-  JUMP_ZERO = 1 << 9,
-  JUMP_NON_ZERO = 1 << 10,
-  FIND_CELL_LOW = 1 << 11,
-  FIND_CELL_HIGH = 1 << 12,
-};
-
 class Instr final {
+public:
+  enum class Code {
+    NOP = 1 << 0,
+    INCR_CELL = 1 << 1,
+    DECR_CELL = 1 << 2,
+    SET_CELL = 1 << 3,
+    INCR_PTR = 1 << 4,
+    DECR_PTR = 1 << 5,
+    // SET_PTR = 1 << 6,
+    READ = 1 << 7,
+    WRITE = 1 << 8,
+    JUMP_ZERO = 1 << 9,
+    JUMP_NON_ZERO = 1 << 10,
+    FIND_CELL_LOW = 1 << 11,
+    FIND_CELL_HIGH = 1 << 12,
+  };
+
 private:
   struct M {
-    OpCode op_code;
+    Instr::Code op_code;
     Instr *next;
     uintptr_t operand1;
     uintptr_t operand2;
   } m;
 
-  Instr(const Instr&) = delete;
-  Instr& operator=(const Instr&) = delete;
+  Instr(const Instr &) = delete;
+  Instr &operator=(const Instr &) = delete;
 
   explicit Instr(M m) : m(std::move(m)) {}
 
 public:
-  Instr(Instr&& other)
-    : m(std::exchange(other.m, {OpCode::NOP, nullptr, 0, 0}))
-  {}
+  Instr(Instr &&other)
+      : m(std::exchange(other.m, {Instr::Code::NOP, nullptr, 0, 0})) {}
 
   ~Instr() = default;
 
-  inline OpCode OpCode() const { return m.op_code; }
+  inline Instr::Code OpCode() const { return m.op_code; }
 
-  inline void SetOpCode(enum OpCode cmd) { m.op_code = cmd; }
+  inline void SetOpCode(enum Instr::Code cmd) { m.op_code = cmd; }
 
   inline bool IsJump() const {
-    return m.op_code == OpCode::JUMP_ZERO || m.op_code == OpCode::JUMP_NON_ZERO;
+    return m.op_code == Instr::Code::JUMP_ZERO ||
+           m.op_code == Instr::Code::JUMP_NON_ZERO;
   }
 
   inline bool IsIO() const {
-    return m.op_code == OpCode::READ || m.op_code == OpCode::WRITE;
+    return m.op_code == Instr::Code::READ || m.op_code == Instr::Code::WRITE;
   }
 
   inline uintptr_t Operand1() const { return m.operand1; }
@@ -67,7 +68,8 @@ public:
 
   inline void SetNext(Instr *next) { m.next = next; }
 
-  static Instr Create(enum OpCode op_code, uintptr_t op1 = 0, uintptr_t op2 = 0) {
+  static Instr Create(enum Instr::Code op_code, uintptr_t op1 = 0,
+                      uintptr_t op2 = 0) {
     return Instr(M{
         .op_code = op_code,
         .next = nullptr,
@@ -76,14 +78,14 @@ public:
     });
   }
 
-  static Instr *Allocate(enum OpCode op_code, uintptr_t op1 = 0,
+  static Instr *Allocate(enum Instr::Code op_code, uintptr_t op1 = 0,
                          uintptr_t op2 = 0) {
     Instr *instr = new Instr(M{
         .op_code = op_code,
         .next = nullptr,
         .operand1 = op1,
         .operand2 = op2,
-      });
+    });
     if (!instr) {
       Error(Err::OutOfMemory());
     }

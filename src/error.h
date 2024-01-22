@@ -4,7 +4,7 @@
 #include <utility>
 #include <variant>
 
-extern const char* program_name;
+extern const char *program_name;
 
 enum class ErrorCode {
   OK = 0,
@@ -23,41 +23,43 @@ private:
     int native;
   } m;
 
-  explicit Err(M m)
-    : m(std::move(m))
-  {}
+  explicit Err(M m) : m(std::move(m)) {}
 
 public:
-  static Err Ok() { return Err(M{ .code = ErrorCode::OK, .native = 0}); }
-  static Err OutOfMemory() { return Err(M{ .code = ErrorCode::OUT_OF_MEMORY, .native = 0}); }
-  static Err HeapMmap(int err) { return Err(M{ .code = ErrorCode::HEAP_MMAP, .native = err}); }
-  static Err HeapMprotect(int err) { return Err(M{ .code = ErrorCode::HEAP_MPROTECT, .native = err}); }
-  static Err CodeMmap(int err) { return Err(M{ .code = ErrorCode::CODE_MMAP, .native = err}); }
-  static Err CodeMprotect(int err) { return Err(M{ .code = ErrorCode::CODE_MPROTECT, .native = err}); }
-  static Err IO(int err) { return Err(M{ .code = ErrorCode::IO, .native = err}); }
-
-  inline bool IsOk() const {
-    return m.code == ErrorCode::OK;
+  static Err Ok() { return Err(M{.code = ErrorCode::OK, .native = 0}); }
+  static Err OutOfMemory() {
+    return Err(M{.code = ErrorCode::OUT_OF_MEMORY, .native = 0});
+  }
+  static Err HeapMmap(int err) {
+    return Err(M{.code = ErrorCode::HEAP_MMAP, .native = err});
+  }
+  static Err HeapMprotect(int err) {
+    return Err(M{.code = ErrorCode::HEAP_MPROTECT, .native = err});
+  }
+  static Err CodeMmap(int err) {
+    return Err(M{.code = ErrorCode::CODE_MMAP, .native = err});
+  }
+  static Err CodeMprotect(int err) {
+    return Err(M{.code = ErrorCode::CODE_MPROTECT, .native = err});
+  }
+  static Err IO(int err) {
+    return Err(M{.code = ErrorCode::IO, .native = err});
   }
 
-  inline ErrorCode Code() const {
-    return m.code;
-  }
+  inline bool IsOk() const { return m.code == ErrorCode::OK; }
 
-  inline int NativeErrno() const {
-    return m.native;
-  }
+  inline ErrorCode Code() const { return m.code; }
 
-  template<class F>
-  constexpr auto and_then(F&& f) const & {
+  inline int NativeErrno() const { return m.native; }
+
+  template <class F> constexpr auto and_then(F &&f) const & {
     if (IsOk()) {
       return f();
     }
     return *this;
   }
 
-  template<class F>
-  constexpr auto and_then(F&& f) const && {
+  template <class F> constexpr auto and_then(F &&f) const && {
     if (IsOk()) {
       return f();
     }
@@ -75,9 +77,7 @@ inline void Ensure(const Err &err) {
   }
 }
 
-template <class T>
-inline T Ensure(std::variant<T, Err> &&err) noexcept
-{
+template <class T> inline T Ensure(std::variant<T, Err> &&err) noexcept {
   if (0 != err.index()) {
     Error(std::get<Err>(std::move(err)));
   }

@@ -3,15 +3,15 @@
 
 #define DEFAULT_HEAP_SIZE 32768
 
+#include <cerrno>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <cerrno>
+#include <memory>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <utility>
 #include <variant>
-#include <memory>
 
 #include "error.h"
 
@@ -26,20 +26,22 @@ private:
 
   explicit Heap(M m) noexcept : m(std::move(m)) {}
 
-  Heap(const Heap&) = delete;
-  Heap& operator=(const Heap&) = delete;
+  Heap(const Heap &) = delete;
+  Heap &operator=(const Heap &) = delete;
 
 public:
-  Heap(Heap&& other)
-    : m(std::exchange(other.m, {0, 0, 0, nullptr}))
-  {}
+  Heap(Heap &&other) : m(std::exchange(other.m, {0, 0, 0, nullptr})) {}
 
   ~Heap();
   static std::variant<Heap, Err> Create(size_t size) noexcept;
 
-  inline void IncrementCell(uint8_t amount) { m.data[m.data_pointer] += amount; }
+  inline void IncrementCell(uint8_t amount) {
+    m.data[m.data_pointer] += amount;
+  }
 
-  inline void DecrementCell(uint8_t amount) { m.data[m.data_pointer] -= amount; }
+  inline void DecrementCell(uint8_t amount) {
+    m.data[m.data_pointer] -= amount;
+  }
 
   inline void SetCell(uint8_t value) { m.data[m.data_pointer] = value; }
 

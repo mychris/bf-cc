@@ -2,9 +2,9 @@
 #define BF_CC_ASSEMBLER_H 1
 
 #include <initializer_list>
-#include <variant>
 #include <iterator>
 #include <memory>
+#include <variant>
 
 #include "error.h"
 #include "instr.h"
@@ -23,24 +23,21 @@ private:
 
   explicit CodeArea(M m) noexcept : m(std::move(m)) {}
 
-  CodeArea(const CodeArea&) = delete;
-  CodeArea& operator=(const CodeArea&) = delete;
+  CodeArea(const CodeArea &) = delete;
+  CodeArea &operator=(const CodeArea &) = delete;
 
   Err EmitData(uint8_t *, size_t);
 
   void PatchData(uintptr_t, uint8_t *, size_t);
 
 public:
-  CodeArea(CodeArea&& other)
-    : m(std::exchange(other.m, {0, 0, 0, 0, nullptr}))
-  {}
+  CodeArea(CodeArea &&other) noexcept
+      : m(std::exchange(other.m, {0, 0, 0, 0, nullptr})) {}
 
   ~CodeArea();
   static std::variant<CodeArea, Err> Create() noexcept;
 
-  Err EmitCode(uint32_t c) {
-    return EmitData((uint8_t *)&c, sizeof(uint32_t));
-  }
+  Err EmitCode(uint32_t c) { return EmitData((uint8_t *)&c, sizeof(uint32_t)); }
   Err EmitCodeListing(std::initializer_list<uint8_t> l) {
     return EmitData((uint8_t *)std::data(l), l.size());
   }

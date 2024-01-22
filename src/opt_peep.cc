@@ -17,14 +17,15 @@ Instr *OptPeep::ReplaceSingleInstructionLoops(Instr *op) {
       Instr *first = op;
       Instr *second = op->Next();
       Instr *third = (second) ? second->Next() : nullptr;
-      if (first && second && third && first->OpCode() == OpCode::JUMP_ZERO &&
-          third->OpCode() == OpCode::JUMP_NON_ZERO &&
+      if (first && second && third &&
+          first->OpCode() == Instr::Code::JUMP_ZERO &&
+          third->OpCode() == Instr::Code::JUMP_NON_ZERO &&
           first->Operand1() == (uintptr_t)third &&
           third->Operand1() == (uintptr_t)first) {
-        if (second->OpCode() == OpCode::DECR_CELL ||
-            second->OpCode() == OpCode::INCR_CELL) {
+        if (second->OpCode() == Instr::Code::DECR_CELL ||
+            second->OpCode() == Instr::Code::INCR_CELL) {
           // [+] [-]
-          first->SetOpCode(OpCode::SET_CELL);
+          first->SetOpCode(Instr::Code::SET_CELL);
           first->SetOperand1(0);
           first->SetNext(third->Next());
           delete second;
@@ -44,20 +45,21 @@ Instr *OptPeep::ReplaceFindCellLoops(Instr *op) {
       Instr *first = op;
       Instr *second = op->Next();
       Instr *third = (second) ? second->Next() : nullptr;
-      if (first && second && third && first->OpCode() == OpCode::JUMP_ZERO &&
-          third->OpCode() == OpCode::JUMP_NON_ZERO &&
+      if (first && second && third &&
+          first->OpCode() == Instr::Code::JUMP_ZERO &&
+          third->OpCode() == Instr::Code::JUMP_NON_ZERO &&
           first->Operand1() == (uintptr_t)third &&
           third->Operand1() == (uintptr_t)first) {
         bool replaced = false;
-        if (second->OpCode() == OpCode::INCR_PTR) {
+        if (second->OpCode() == Instr::Code::INCR_PTR) {
           // [>]
-          first->SetOpCode(OpCode::FIND_CELL_HIGH);
+          first->SetOpCode(Instr::Code::FIND_CELL_HIGH);
           first->SetOperand1(0);
           first->SetOperand2(second->Operand1());
           replaced = true;
-        } else if (second->OpCode() == OpCode::DECR_PTR) {
+        } else if (second->OpCode() == Instr::Code::DECR_PTR) {
           // [<]
-          first->SetOpCode(OpCode::FIND_CELL_LOW);
+          first->SetOpCode(Instr::Code::FIND_CELL_LOW);
           first->SetOperand1(0);
           first->SetOperand2(second->Operand1());
           replaced = true;
@@ -77,14 +79,14 @@ Instr *OptPeep::ReplaceFindCellLoops(Instr *op) {
 Instr *OptPeep::MergeSetIncrDecr(Instr *op) {
   Instr *head = op;
   while (op) {
-    if (op->OpCode() == OpCode::SET_CELL) {
+    if (op->OpCode() == Instr::Code::SET_CELL) {
       bool replaced = false;
       uint8_t value = 0;
-      if (op->Next() && op->Next()->OpCode() == OpCode::INCR_CELL) {
+      if (op->Next() && op->Next()->OpCode() == Instr::Code::INCR_CELL) {
         value = (uint8_t)op->Operand1() + (uint8_t)op->Next()->Operand1();
         op->SetOperand1((uintptr_t)value);
         replaced = true;
-      } else if (op->Next() && op->Next()->OpCode() == OpCode::DECR_CELL) {
+      } else if (op->Next() && op->Next()->OpCode() == Instr::Code::DECR_CELL) {
         value = (uint8_t)op->Operand1() - (uint8_t)op->Next()->Operand1();
         op->SetOperand1((uintptr_t)value);
         replaced = true;

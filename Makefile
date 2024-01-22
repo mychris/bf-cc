@@ -5,10 +5,13 @@ EXE := bf-cc
 SRC != find . -name '*.cc'
 HDR != find . -name '*.h'
 
+CXXFLAGS = --std=c++20 -pedantic
+CXXFLAGS += -Wall -Wextra
+
 all: $(EXE)
 
 $(EXE): $(SRC) $(HDR)
-	$(CXX) -O0 -g -Wall -Wextra --std=c++17 $(SRC) -o $(EXE)
+	$(CXX) -O2 -g $(CXXFLAGS) $(SRC) -o $(EXE)
 
 clean:
 	$(RM) $(EXE)

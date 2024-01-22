@@ -3,14 +3,15 @@
 
 Instr *OptFusionOp::Run(Instr *op) {
   Instr *head = op;
-  if (op->OpCode() != OpCode::NOP) {
-    head = Instr::Allocate(OpCode::NOP, 0);
+  if (op->OpCode() != Instr::Code::NOP) {
+    head = Instr::Allocate(Instr::Code::NOP, 0);
     head->SetNext(op);
   }
   while (op) {
-    OpCode seq_cmd = op->OpCode();
-    if (seq_cmd == OpCode::INCR_CELL || seq_cmd == OpCode::DECR_CELL ||
-        seq_cmd == OpCode::INCR_PTR || seq_cmd == OpCode::DECR_PTR) {
+    Instr::Code seq_cmd = op->OpCode();
+    if (seq_cmd == Instr::Code::INCR_CELL ||
+        seq_cmd == Instr::Code::DECR_CELL || seq_cmd == Instr::Code::INCR_PTR ||
+        seq_cmd == Instr::Code::DECR_PTR) {
       Instr *seq_head = op;
       uintptr_t amount = op->Operand1();
       op = op->Next();

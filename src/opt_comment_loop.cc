@@ -3,7 +3,7 @@
 
 Instr *OptCommentLoop::Run(Instr *op) {
   Instr *head = op;
-  while (op && op->OpCode() == OpCode::NOP) {
+  while (op && op->OpCode() == Instr::Code::NOP) {
     op = op->Next();
   }
   Instr *comment_loop = op;
@@ -18,7 +18,7 @@ Instr *OptCommentLoop::Run(Instr *op) {
         break;
       }
     }
-    comment_loop->SetOpCode(OpCode::NOP);
+    comment_loop->SetOpCode(Instr::Code::NOP);
     comment_loop->SetOperand1(0);
   }
   return head;

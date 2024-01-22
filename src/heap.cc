@@ -1,7 +1,6 @@
 #include "heap.h"
-#include <cstdio>
-#include <variant>
 #include <utility>
+#include <variant>
 
 #if defined(BF_HEAP_GUARD_PAGES)
 #define GUARD_PAGES BF_HEAP_GUARD_PAGES
@@ -30,12 +29,10 @@ std::variant<Heap, Err> Heap::Create(size_t size) noexcept {
                     page_size * GUARD_PAGES, PROT_NONE)) {
     return Err::HeapMprotect(errno);
   }
-  return Heap(M{
-      .page_size = page_size,
-      .allocated = size,
-      .data_pointer = 0,
-      .data = mem + (page_size * GUARD_PAGES)
-    });
+  return Heap(M{.page_size = page_size,
+                .allocated = size,
+                .data_pointer = 0,
+                .data = mem + (page_size * GUARD_PAGES)});
 }
 
 Heap::~Heap() {
