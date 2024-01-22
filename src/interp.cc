@@ -29,8 +29,12 @@ void Interpreter::Run(Heap &heap, Instr *code) {
       heap.DecrementDataPointer((int64_t) code->Operand1());
     } break;
     case Instr::Code::READ: {
-      const uint8_t input = (uint8_t) std::getchar();
-      heap.SetCell(input);
+      const int input = std::getchar();
+      if (EOF == input) {
+        heap.SetCell(0);
+      } else {
+        heap.SetCell((uint8_t) input); 
+      }
     } break;
     case Instr::Code::WRITE: {
       const uint8_t output = heap.GetCell();

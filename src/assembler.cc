@@ -171,7 +171,13 @@ static Err EmitRead(CodeArea &mem) {
       // syscall
       0x0F, 0x05,
       // POP rdx
-      0x5A
+      0x5A,
+      // CMP rax, 0x0
+      0x48, 0x83, 0xF8, 0x00,
+      // JNZ "next instruction"
+      0x75, 0x03,
+      // MOV byte[rdx], 0x0
+      0xC6, 0x02, 0x00
     });
   // clang-format on
 }
