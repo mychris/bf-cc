@@ -30,10 +30,15 @@ private:
   Heap &operator=(const Heap &) = delete;
 
 public:
-  Heap(Heap &&other) : m(std::exchange(other.m, {0, 0, 0, nullptr})) {}
-
-  ~Heap();
   static std::variant<Heap, Err> Create(size_t size) noexcept;
+  ~Heap();
+
+  Heap(Heap &&other) noexcept : m(std::exchange(other.m, {0, 0, 0, nullptr})) {}
+
+  Heap &operator=(Heap &&other) noexcept {
+    std::swap(m, other.m);
+    return *this;
+  }
 
   inline void IncrementCell(uint8_t amount) {
     m.data[m.data_pointer] += amount;
@@ -43,15 +48,21 @@ public:
     m.data[m.data_pointer] -= amount;
   }
 
-  inline void SetCell(uint8_t value) { m.data[m.data_pointer] = value; }
+  inline void SetCell(const uint8_t value) noexcept {
+    m.data[m.data_pointer] = value;
+  }
 
-  inline uint8_t GetCell() const { return m.data[m.data_pointer]; }
+  inline uint8_t GetCell() const noexcept { return m.data[m.data_pointer]; }
 
-  inline void IncrementDataPointer(int64_t amount) { m.data_pointer += amount; }
+  inline void IncrementDataPointer(const int64_t amount) noexcept {
+    m.data_pointer += amount;
+  }
 
-  inline void DecrementDataPointer(int64_t amount) { m.data_pointer -= amount; }
+  inline void DecrementDataPointer(const int64_t amount) noexcept {
+    m.data_pointer -= amount;
+  }
 
-  inline uintptr_t BaseAddress() { return (uintptr_t)(m.data); }
+  inline uint8_t *BaseAddress() noexcept { return m.data; }
 };
 
 #endif /* BF_CC_HEAP_H */

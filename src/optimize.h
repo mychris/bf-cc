@@ -1,3 +1,4 @@
+#include <csignal>
 #ifndef BF_CC_OPTIMIZE_H
 #define BF_CC_OPTIMIZE_H 1
 
@@ -10,56 +11,28 @@ enum class OptLevel {
   O3 = '3',
 };
 
-extern OptLevel OL;
+Instr *OptCommentLoop(Instr *);
 
-class OptStage {
-public:
-  virtual Instr *Run(Instr *) = 0;
-};
+Instr *OptFusionOp(Instr *);
 
-class OptCommentLoop : OptStage {
-private:
-  OptCommentLoop() {}
-
-public:
-  Instr *Run(Instr *);
-
-  static OptCommentLoop Create() { return OptCommentLoop(); }
-};
-
-class OptFusionOp : OptStage {
-private:
-  OptFusionOp() {}
-
-public:
-  Instr *Run(Instr *);
-
-  static OptFusionOp Create() { return OptFusionOp(); }
-};
-
-class OptPeep : OptStage {
-private:
-  OptPeep() {}
-
-public:
-  Instr *Run(Instr *);
-
-  static OptPeep Create() { return OptPeep(); }
-
-private:
-  Instr *ReplaceSingleInstructionLoops(Instr *);
-  Instr *ReplaceFindCellLoops(Instr *op);
-  Instr *MergeSetIncrDecr(Instr *);
-};
+Instr *OptPeep(Instr *);
 
 class Optimizer final {
 private:
-  Optimizer() {}
+  struct M {
+    OptLevel level;
+  } m;
+
+  explicit Optimizer(M m) : m(std::move(m)) {}
 
 public:
-  Instr *Run(Instr *);
+  Instr *Run(Instr *) const noexcept;
 
-  static Optimizer Create() { return Optimizer(); }
+  static Optimizer Create(OptLevel level) noexcept {
+    return Optimizer(M{
+        .level = level,
+    });
+  }
 };
 
 #endif /* BF_CC_OPTIMIZE_H */

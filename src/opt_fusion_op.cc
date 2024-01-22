@@ -1,7 +1,7 @@
 #include "instr.h"
 #include "optimize.h"
 
-Instr *OptFusionOp::Run(Instr *op) {
+Instr *OptFusionOp(Instr *op) {
   Instr *head = op;
   if (op->OpCode() != Instr::Code::NOP) {
     head = Instr::Allocate(Instr::Code::NOP, 0);

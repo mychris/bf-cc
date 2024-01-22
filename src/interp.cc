@@ -26,11 +26,11 @@ void Interpreter::Run(Heap &heap, Instr *code) {
       heap.DecrementDataPointer(code->Operand1());
     } break;
     case Instr::Code::READ: {
-      uint8_t input = (uint8_t)std::getchar();
+      const uint8_t input = (uint8_t)std::getchar();
       heap.SetCell(input);
     } break;
     case Instr::Code::WRITE: {
-      uint8_t output = heap.GetCell();
+      const uint8_t output = heap.GetCell();
       std::putchar((int)output);
     } break;
     case Instr::Code::JUMP_ZERO: {
@@ -44,13 +44,13 @@ void Interpreter::Run(Heap &heap, Instr *code) {
       }
     } break;
     case Instr::Code::FIND_CELL_HIGH: {
-      uint8_t val = (uint8_t)code->Operand1();
+      const uint8_t val = (uint8_t)code->Operand1();
       while (heap.GetCell() != val) {
         heap.IncrementDataPointer(code->Operand2());
       }
     } break;
     case Instr::Code::FIND_CELL_LOW: {
-      uint8_t val = (uint8_t)code->Operand1();
+      const uint8_t val = (uint8_t)code->Operand1();
       while (heap.GetCell() != val) {
         heap.DecrementDataPointer(code->Operand2());
       }

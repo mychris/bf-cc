@@ -3,14 +3,7 @@
 #include "instr.h"
 #include "optimize.h"
 
-Instr *OptPeep::Run(Instr *op) {
-  op = ReplaceSingleInstructionLoops(op);
-  op = ReplaceFindCellLoops(op);
-  op = MergeSetIncrDecr(op);
-  return op;
-}
-
-Instr *OptPeep::ReplaceSingleInstructionLoops(Instr *op) {
+static Instr *ReplaceSingleInstructionLoops(Instr *op) {
   Instr *head = op;
   while (op) {
     if (op->IsJump()) {
@@ -38,7 +31,7 @@ Instr *OptPeep::ReplaceSingleInstructionLoops(Instr *op) {
   return head;
 }
 
-Instr *OptPeep::ReplaceFindCellLoops(Instr *op) {
+static Instr *ReplaceFindCellLoops(Instr *op) {
   Instr *head = op;
   while (op) {
     if (op->IsJump()) {
@@ -76,7 +69,7 @@ Instr *OptPeep::ReplaceFindCellLoops(Instr *op) {
   return head;
 }
 
-Instr *OptPeep::MergeSetIncrDecr(Instr *op) {
+static Instr *MergeSetIncrDecr(Instr *op) {
   Instr *head = op;
   while (op) {
     if (op->OpCode() == Instr::Code::SET_CELL) {
@@ -100,4 +93,11 @@ Instr *OptPeep::MergeSetIncrDecr(Instr *op) {
     op = op->Next();
   }
   return head;
+}
+
+Instr *OptPeep(Instr *op) {
+  op = ReplaceSingleInstructionLoops(op);
+  op = ReplaceFindCellLoops(op);
+  op = MergeSetIncrDecr(op);
+  return op;
 }

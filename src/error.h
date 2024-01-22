@@ -6,51 +6,58 @@
 
 extern const char *program_name;
 
-enum class ErrorCode {
-  OK = 0,
-  OUT_OF_MEMORY,
-  HEAP_MMAP,
-  HEAP_MPROTECT,
-  CODE_MMAP,
-  CODE_MPROTECT,
-  IO,
-};
-
 class Err final {
+public:
+  enum class Code {
+    OK = 0,
+    OUT_OF_MEMORY,
+    HEAP_MMAP,
+    HEAP_MPROTECT,
+    CODE_MMAP,
+    CODE_MPROTECT,
+    CODE_INVALID_OFFSET,
+    IO,
+  };
+
 private:
   struct M {
-    ErrorCode code;
+    Err::Code code;
     int native;
   } m;
 
-  explicit Err(M m) : m(std::move(m)) {}
+  explicit Err(M m) noexcept : m(std::move(m)) {}
 
 public:
-  static Err Ok() { return Err(M{.code = ErrorCode::OK, .native = 0}); }
-  static Err OutOfMemory() {
-    return Err(M{.code = ErrorCode::OUT_OF_MEMORY, .native = 0});
+  static Err Ok() noexcept {
+    return Err(M{.code = Err::Code::OK, .native = 0});
   }
-  static Err HeapMmap(int err) {
-    return Err(M{.code = ErrorCode::HEAP_MMAP, .native = err});
+  static Err OutOfMemory() noexcept {
+    return Err(M{.code = Err::Code::OUT_OF_MEMORY, .native = 0});
   }
-  static Err HeapMprotect(int err) {
-    return Err(M{.code = ErrorCode::HEAP_MPROTECT, .native = err});
+  static Err HeapMmap(const int err) noexcept {
+    return Err(M{.code = Err::Code::HEAP_MMAP, .native = err});
   }
-  static Err CodeMmap(int err) {
-    return Err(M{.code = ErrorCode::CODE_MMAP, .native = err});
+  static Err HeapMprotect(const int err) noexcept {
+    return Err(M{.code = Err::Code::HEAP_MPROTECT, .native = err});
   }
-  static Err CodeMprotect(int err) {
-    return Err(M{.code = ErrorCode::CODE_MPROTECT, .native = err});
+  static Err CodeMmap(const int err) noexcept {
+    return Err(M{.code = Err::Code::CODE_MMAP, .native = err});
   }
-  static Err IO(int err) {
-    return Err(M{.code = ErrorCode::IO, .native = err});
+  static Err CodeMprotect(const int err) noexcept {
+    return Err(M{.code = Err::Code::CODE_MPROTECT, .native = err});
+  }
+  static Err CodeInvalidOffset() noexcept {
+    return Err(M{.code = Err::Code::CODE_INVALID_OFFSET, .native = 0});
+  }
+  static Err IO(const int err) noexcept {
+    return Err(M{.code = Err::Code::IO, .native = err});
   }
 
-  inline bool IsOk() const { return m.code == ErrorCode::OK; }
+  inline bool IsOk() const noexcept { return m.code == Err::Code::OK; }
 
-  inline ErrorCode Code() const { return m.code; }
+  inline Err::Code Code() const noexcept { return m.code; }
 
-  inline int NativeErrno() const { return m.native; }
+  inline int NativeErrno() const noexcept { return m.native; }
 
   template <class F> constexpr auto and_then(F &&f) const & {
     if (IsOk()) {

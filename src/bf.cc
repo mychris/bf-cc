@@ -3,6 +3,9 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "fcntl.h"
+#include "unistd.h"
+
 #include <memory>
 #include <utility>
 #include <vector>
@@ -28,11 +31,14 @@ enum class ExecMode {
   COMPILER = 'c',
 };
 
-static const char *input_file_path = "\0";
-static size_t heap_size = DEFAULT_HEAP_SIZE;
-static ExecMode execution_mode = ExecMode::COMPILER;
+static struct {
+  const char *input_file_path = "\0";
+  size_t heap_size = DEFAULT_HEAP_SIZE;
+  ExecMode execution_mode = ExecMode::COMPILER;
+  OptLevel optimization_level = OptLevel::O2;
+} args;
 
-static void usage() {
+static void usage(void) {
   fprintf(stderr,
           "Usage: %s [-h] [-O(0|1|2|3)] [-mMEMORY_SIZE] [(-i|-c)] PROGRAM\n",
           program_name);
@@ -51,7 +57,7 @@ static void parse_opts(int argc, char **argv) {
   program_name = argv[0];
   argc--;
   argv++;
-  char opt_level = '1';
+  char opt_level = '2';
   const char *mem_size_string = NULL;
   while (argc--) {
     if (0 == strcmp("-h", argv[0]) || 0 == strcmp("--help", argv[0])) {
@@ -74,11 +80,13 @@ static void parse_opts(int argc, char **argv) {
     } else if (0 == strncmp("--memory=", argv[0], 9)) {
       mem_size_string = &argv[0][9];
     } else if (0 == strcmp("--interp", argv[0]) || 0 == strcmp("-i", argv[0])) {
-      execution_mode = ExecMode::INTERPRETER;
+      args.execution_mode = ExecMode::INTERPRETER;
     } else if (0 == strcmp("--comp", argv[0]) || 0 == strcmp("-c", argv[0])) {
-      execution_mode = ExecMode::COMPILER;
+      args.execution_mode = ExecMode::COMPILER;
     } else if (argv[0][0] != '-') {
-      input_file_path = argv[0];
+      args.input_file_path = argv[0];
+    } else if (0 == strcmp("-", argv[0])) {
+      args.input_file_path = "/dev/stdin";
     } else {
       Error("Invalid argument: %s", argv[0]);
     }
@@ -90,16 +98,33 @@ static void parse_opts(int argc, char **argv) {
       if (result < 0 || errno == ERANGE || NULL == end || *end != '\0') {
         Error("Invalid heap memory size: %s", mem_size_string);
       }
-      heap_size = result;
+      args.heap_size = result;
     }
     argv++;
   }
-  if (0 == strlen(input_file_path)) {
+  switch (opt_level) {
+  case '0':
+    args.optimization_level = OptLevel::O0;
+    break;
+  case '1':
+    args.optimization_level = OptLevel::O1;
+    break;
+  case '2':
+    args.optimization_level = OptLevel::O2;
+    break;
+  case '3':
+    args.optimization_level = OptLevel::O3;
+    break;
+  default:
+    args.optimization_level = OptLevel::O2;
+    break;
+  }
+  if (0 == strlen(args.input_file_path)) {
     Error("No input file given");
   }
 }
 
-Instr *parse(char *input) {
+Instr *parse(const char *input) {
   Instr *head = Instr::Allocate(Instr::Code::NOP);
   Instr *tail = head;
   std::vector<Instr *> jump_stack = {};
@@ -149,40 +174,52 @@ Instr *parse(char *input) {
 }
 
 static std::variant<char *, Err> read_content(const char *filename) {
-  char *fcontent = NULL;
-  int fsize = 0;
-  FILE *fp;
-  fp = fopen(filename, "r");
-  if (!fp) {
+  char *content = NULL;
+  off_t bytes_read = 0;
+  const int fp = open(filename, O_RDONLY);
+  if (0 > fp) {
     return Err::IO(errno);
   }
-  fseek(fp, 0, SEEK_END);
-  fsize = ftell(fp);
-  rewind(fp);
-  fcontent = (char *)calloc(fsize + 1, sizeof(char));
-  fread(fcontent, 1, fsize, fp);
-  fclose(fp);
-  return fcontent;
+  const off_t fsize = lseek(fp, 0, SEEK_END);
+  if (0 > fsize) {
+    close(fp);
+    return Err::IO(errno);
+  }
+  if (0 > lseek(fp, 0, SEEK_SET)) {
+    close(fp);
+    return Err::IO(errno);
+  }
+  content = (char *)calloc(fsize + 1, sizeof(char));
+  while (bytes_read < fsize) {
+    const ssize_t r =
+        read(fp, content + bytes_read, (size_t)(fsize - bytes_read));
+    if (0 > r && errno != EAGAIN) {
+      free(content);
+      close(fp);
+      return Err::IO(errno);
+    }
+    bytes_read += r;
+  }
+  close(fp);
+  return content;
 }
 
 int main(int argc, char **argv) {
   parse_opts(argc, argv);
-  char *content = std::get<char *>(read_content(input_file_path));
+  char *content = Ensure(read_content(args.input_file_path));
   auto op = parse(content);
   free(content);
-  auto optimizer = Optimizer::Create();
-  op = optimizer.Run(op);
-  switch (execution_mode) {
+  Optimizer::Create(args.optimization_level).Run(op);
+  auto heap = Ensure(Heap::Create(args.heap_size));
+  switch (args.execution_mode) {
   case ExecMode::INTERPRETER: {
-    auto heap = Heap::Create(heap_size);
     auto interpreter = Interpreter::Create();
-    interpreter.Run(std::get<Heap>(heap), op);
+    interpreter.Run(heap, op);
   } break;
   case ExecMode::COMPILER: {
     auto code_area = CodeArea::Create();
     auto assembler = AssemblerX8664::Create(std::get<CodeArea>(code_area));
     auto entry = (code_entry)std::get<CodeArea>(code_area).BaseAddress();
-    auto heap = Ensure(Heap::Create(heap_size));
     Ensure(assembler.Assemble(op));
     Ensure(std::get<CodeArea>(code_area).MakeExecutable());
     entry(heap.BaseAddress());

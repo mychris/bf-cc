@@ -24,19 +24,27 @@ void Error(const Err &error) {
     sprintf(native_err_str, ": %s", strerror(error.NativeErrno()));
   }
   switch (error.Code()) {
-  case ErrorCode::OUT_OF_MEMORY:
+  case Err::Code::OUT_OF_MEMORY:
     Error("Out of memory%s", native_err_str);
-  case ErrorCode::HEAP_MMAP:
+    break;
+  case Err::Code::HEAP_MMAP:
     Error("Out of heap memory%s", native_err_str);
-  case ErrorCode::HEAP_MPROTECT:
+    break;
+  case Err::Code::HEAP_MPROTECT:
     Error("Failed to protect heap guard pages%s", native_err_str);
-  case ErrorCode::CODE_MMAP:
+    break;
+  case Err::Code::CODE_MMAP:
     Error("Out of code memory%s", native_err_str);
-  case ErrorCode::CODE_MPROTECT:
+    break;
+  case Err::Code::CODE_MPROTECT:
     Error("Failed to protect code area%s", native_err_str);
-  case ErrorCode::IO:
-    Error("IO error: %s", native_err_str);
-  case ErrorCode::OK:
+    break;
+  case Err::Code::IO:
+    Error("IO error%s", native_err_str);
+    break;
+  case Err::Code::CODE_INVALID_OFFSET:
+    Error("Cannot emmit instruction - invalid offset");
+  case Err::Code::OK:
     std::exit(1);
     break;
   }

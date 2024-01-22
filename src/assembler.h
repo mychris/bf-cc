@@ -9,7 +9,7 @@
 #include "error.h"
 #include "instr.h"
 
-typedef void (*code_entry)(uintptr_t);
+typedef void (*code_entry)(uint8_t *);
 
 class CodeArea final {
 private:
@@ -28,7 +28,7 @@ private:
 
   Err EmitData(uint8_t *, size_t);
 
-  void PatchData(uintptr_t, uint8_t *, size_t);
+  Err PatchData(uint8_t *, uint8_t *, size_t);
 
 public:
   CodeArea(CodeArea &&other) noexcept
@@ -42,20 +42,18 @@ public:
     return EmitData((uint8_t *)std::data(l), l.size());
   }
 
-  void PatchCode(uintptr_t p, uint32_t c) {
+  Err PatchCode(uint8_t *p, uint32_t c) {
     return PatchData(p, (uint8_t *)&c, sizeof(uint32_t));
   }
-  void PatchCodeListing(uintptr_t p, std::initializer_list<uint8_t> l) {
+  Err PatchCodeListing(uint8_t *p, std::initializer_list<uint8_t> l) {
     return PatchData(p, (uint8_t *)std::data(l), l.size());
   }
 
   Err MakeExecutable();
 
-  inline uintptr_t BaseAddress() const { return (uintptr_t)m.mem; }
+  inline uint8_t *BaseAddress() const { return m.mem + m.page_size; }
 
-  inline uintptr_t CurrentWriteAddr() const {
-    return (uintptr_t)(m.mem + m.size);
-  }
+  inline uint8_t *CurrentWriteAddr() const { return m.mem + m.size; }
 
   void Dump();
 };

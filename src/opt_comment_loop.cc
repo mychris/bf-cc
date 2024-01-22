@@ -1,7 +1,7 @@
 #include "instr.h"
 #include "optimize.h"
 
-Instr *OptCommentLoop::Run(Instr *op) {
+Instr *OptCommentLoop(Instr *op) {
   Instr *head = op;
   while (op && op->OpCode() == Instr::Code::NOP) {
     op = op->Next();

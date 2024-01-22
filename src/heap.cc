@@ -13,7 +13,7 @@ std::variant<Heap, Err> Heap::Create(size_t size) noexcept {
   if (size > (UINT32_MAX >> 1)) {
     return Err::HeapMmap(0);
   }
-  // Round to size up to page_size
+  // Round size up to page_size
   size = ((size + page_size - 1) / page_size) * page_size;
   // Add guard pages in the front and the back
   size += page_size * (GUARD_PAGES * 2);

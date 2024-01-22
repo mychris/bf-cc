@@ -14,7 +14,7 @@
 std::variant<CodeArea, Err> CodeArea::Create() noexcept {
   const size_t page_size = sysconf(_SC_PAGESIZE);
   size_t reserved = 512 * 1024 * 1024;
-  // Round to size up to page_size
+  // Round reserved up to page_size
   reserved = ((reserved + page_size - 1) / page_size) * page_size;
   const int flags = MAP_PRIVATE | MAP_ANONYMOUS;
   void *mem = mmap(nullptr, reserved, PROT_NONE, flags, -1, 0);
@@ -22,7 +22,7 @@ std::variant<CodeArea, Err> CodeArea::Create() noexcept {
     return Err::CodeMmap(errno);
   }
   return CodeArea(M{
-      .size = 0,
+      .size = page_size, // keep the first page clean as guard page
       .allocated = 0,
       .reserved = reserved,
       .page_size = page_size,
@@ -31,7 +31,7 @@ std::variant<CodeArea, Err> CodeArea::Create() noexcept {
 }
 
 void CodeArea::Dump() {
-  for (size_t i = 0; i < m.size; ++i) {
+  for (size_t i = m.page_size; i < m.size; ++i) {
     if (i > 0 && i % 16 == 0) {
       printf("\n");
     } else if (i > 0 && i % 2 == 0) {
@@ -65,8 +65,9 @@ Err CodeArea::EmitData(uint8_t *data, size_t length) {
   return Err::Ok();
 }
 
-void CodeArea::PatchData(uintptr_t p, uint8_t *data, size_t length) {
-  std::memcpy((void *)p, data, length);
+Err CodeArea::PatchData(uint8_t *p, uint8_t *data, size_t length) {
+  std::memcpy(p, data, length);
+  return Err::Ok();
 }
 
 Err CodeArea::MakeExecutable() {
@@ -76,7 +77,7 @@ Err CodeArea::MakeExecutable() {
   return Err::Ok();
 }
 
-static inline Err EmitEntry(CodeArea &mem) {
+static Err EmitEntry(CodeArea &mem) {
   // Just to be save, push all callee saved registers
   // r12, r13, r14, r15, rbx, rsp, rbp
   return mem.EmitCodeListing({0x41, 0x54, // PUSH r12
@@ -91,7 +92,7 @@ static inline Err EmitEntry(CodeArea &mem) {
                               0x48, 0x89, 0xFA});
 }
 
-static inline Err EmitExit(CodeArea &mem) {
+static Err EmitExit(CodeArea &mem) {
   return mem.EmitCodeListing({0x5D,       // POP rbp
                               0x5C,       // POP rsp
                               0x5B,       // POP rbx
@@ -103,28 +104,28 @@ static inline Err EmitExit(CodeArea &mem) {
                               0xC3});
 }
 
-static inline Err EmitNop(CodeArea &mem) {
+static Err EmitNop(CodeArea &mem) {
   // Only used for debugging, so emit a bit more
   // NOPs
   return mem.EmitCodeListing({0x90, 0x90, 0x90, 0x90});
 }
 
-static inline Err EmitIncrCell(CodeArea &mem, uint8_t amount) {
+static Err EmitIncrCell(CodeArea &mem, uint8_t amount) {
   // ADD byte[rdx], amount
   return mem.EmitCodeListing({0x80, 0x02, amount});
 }
 
-static inline Err EmitDecrCell(CodeArea &mem, uint8_t amount) {
+static Err EmitDecrCell(CodeArea &mem, uint8_t amount) {
   // SUB byte[rdx], amount
   return mem.EmitCodeListing({0x80, 0x2A, amount});
 }
 
-static inline Err EmitSetCell(CodeArea &mem, uint8_t amount) {
+static Err EmitSetCell(CodeArea &mem, uint8_t amount) {
   // MOV byte[rdx], amount
   return mem.EmitCodeListing({0xC6, 0x02, amount});
 }
 
-static inline Err EmitIncrPtr(CodeArea &mem, uintptr_t amount) {
+static Err EmitIncrPtr(CodeArea &mem, uintptr_t amount) {
   // ADD rdx, amount
   if (amount <= 127LLU) {
     return mem.EmitCodeListing({0x48, 0x83, 0xC2, (uint8_t)amount});
@@ -136,7 +137,7 @@ static inline Err EmitIncrPtr(CodeArea &mem, uintptr_t amount) {
   }
 }
 
-static inline Err EmitDecrPtr(CodeArea &mem, uintptr_t amount) {
+static Err EmitDecrPtr(CodeArea &mem, uintptr_t amount) {
   // SUB rdx, amount
   if (amount <= 127LLU) {
     return mem.EmitCodeListing({0x48, 0x83, 0xEA, (uint8_t)amount});
@@ -148,7 +149,7 @@ static inline Err EmitDecrPtr(CodeArea &mem, uintptr_t amount) {
   }
 }
 
-static inline Err EmitRead(CodeArea &mem) {
+static Err EmitRead(CodeArea &mem) {
   return mem.EmitCodeListing({// PUSH rdx
                               0x52,
                               // MOV rax, 0 (SYS_read)
@@ -165,7 +166,7 @@ static inline Err EmitRead(CodeArea &mem) {
                               0x5A});
 }
 
-static inline Err EmitWrite(CodeArea &mem) {
+static Err EmitWrite(CodeArea &mem) {
   return mem.EmitCodeListing({// PUSH rdx
                               0x52,
                               // MOV rax, 1 (SYS_write)
@@ -182,7 +183,7 @@ static inline Err EmitWrite(CodeArea &mem) {
                               0x5A});
 }
 
-static inline Err EmitJumpZero(CodeArea &mem) {
+static Err EmitJumpZero(CodeArea &mem) {
   // CMP byte[rdx], 0
   return mem.EmitCodeListing({// CMP byte[rdx], 0
                               0x80, 0x3A, 0x00,
@@ -192,13 +193,17 @@ static inline Err EmitJumpZero(CodeArea &mem) {
                               0x00, 0x00, 0x00, 0x00});
 }
 
-static inline void PatchJumpZero(CodeArea &mem, uintptr_t position,
-                                 uintptr_t offset) {
+static Err PatchJumpZero(CodeArea &mem, uint8_t *position, uintptr_t offset) {
+  intptr_t signed_offset = (intptr_t)offset;
+  if (signed_offset > (intptr_t)INT32_MAX ||
+      signed_offset < (intptr_t)INT32_MIN) {
+    return Err::CodeInvalidOffset();
+  }
   uint32_t offset32 = (uint32_t)offset;
-  mem.PatchCode(position - 4, offset32);
+  return mem.PatchCode(position - 4, offset32);
 }
 
-static inline Err EmitJumpNonZero(CodeArea &mem) {
+static Err EmitJumpNonZero(CodeArea &mem) {
   // CMP byte[rdx], 0
   return mem.EmitCodeListing({// CMP byte[rdx], 0
                               0x80, 0x3A, 0x00,
@@ -208,15 +213,21 @@ static inline Err EmitJumpNonZero(CodeArea &mem) {
                               0x00, 0x00, 0x00, 0x00});
 }
 
-static inline void PatchJumpNonZero(CodeArea &mem, uintptr_t position,
-                                    uintptr_t offset) {
+static Err PatchJumpNonZero(CodeArea &mem, uint8_t *position,
+                            uintptr_t offset) {
+  intptr_t signed_offset = (intptr_t)offset;
+  if (signed_offset > (intptr_t)INT32_MAX ||
+      signed_offset < (intptr_t)INT32_MIN) {
+    return Err::CodeInvalidOffset();
+  }
   uint32_t offset32 = (uint32_t)offset;
-  mem.PatchCode(position - 4, offset32);
+  return mem.PatchCode(position - 4, offset32);
 }
 
-static inline Err EmitFindCellHigh(CodeArea &mem, uint8_t value,
-                                   uintptr_t move_size) {
-  assert(move_size < UINT32_MAX);
+static Err EmitFindCellHigh(CodeArea &mem, uint8_t value, uintptr_t move_size) {
+  if (move_size >= (uintptr_t)UINT32_MAX) {
+    return Err::CodeInvalidOffset();
+  }
   return mem
       .EmitCodeListing({// CMP byte[rdx], value
                         0x80, 0x3A, value,
@@ -231,9 +242,10 @@ static inline Err EmitFindCellHigh(CodeArea &mem, uint8_t value,
       });
 }
 
-static inline Err EmitFindCellLow(CodeArea &mem, uint8_t value,
-                                  uintptr_t move_size) {
-  assert(move_size < UINT32_MAX);
+static Err EmitFindCellLow(CodeArea &mem, uint8_t value, uintptr_t move_size) {
+  if (move_size >= (uintptr_t)UINT32_MAX) {
+    return Err::CodeInvalidOffset();
+  }
   return mem
       .EmitCodeListing({// CMP byte[rdx], value
                         0x80, 0x3A, value,
@@ -249,7 +261,7 @@ static inline Err EmitFindCellLow(CodeArea &mem, uint8_t value,
 }
 
 Err AssemblerX8664::Assemble(Instr *code) {
-  std::vector<std::pair<Instr *, uintptr_t>> jump_list = {};
+  std::vector<std::pair<Instr *, uint8_t *>> jump_list = {};
   Err err = Err::Ok();
   err = EmitEntry(m.mem);
   if (!err.IsOk()) {
@@ -304,18 +316,24 @@ Err AssemblerX8664::Assemble(Instr *code) {
   }
   // Patch the jumps
   for (const auto &[jump, code_pos] : jump_list) {
-    uintptr_t target_pos = 0;
+    uint8_t *target_pos = 0;
     for (const auto &[target_jump, pos2] : jump_list) {
       if (jump->Operand1() == (uintptr_t)target_jump) {
-        assert(target_pos == 0 && "Multiple jumps to the same destination");
         target_pos = pos2;
+        break;
       }
     }
-    assert(target_pos > 0 && "Jump destination not found");
+    assert(target_pos > (uint8_t *)0 && "Jump destination not found");
     if (jump->OpCode() == Instr::Code::JUMP_ZERO) {
-      PatchJumpZero(m.mem, code_pos, target_pos - code_pos);
+      err = PatchJumpZero(m.mem, code_pos, target_pos - code_pos);
+      if (!err.IsOk()) {
+        return err;
+      }
     } else if (jump->OpCode() == Instr::Code::JUMP_NON_ZERO) {
-      PatchJumpNonZero(m.mem, code_pos, target_pos - code_pos);
+      err = PatchJumpNonZero(m.mem, code_pos, target_pos - code_pos);
+      if (!err.IsOk()) {
+        return err;
+      }
     } else {
       assert(0 && "Invalid op code in jump list");
     }
