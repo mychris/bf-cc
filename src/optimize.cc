@@ -3,21 +3,17 @@
 
 #include "instr.h"
 
-Instr *Optimizer::Run(Instr *i) const noexcept {
-  if (m.level == OptLevel::O0) {
-    return i;
+Instr* Optimizer::Run(Instr* instr) const noexcept {
+  static OptimizerPass pipeline[] = {
+    OptimizerPass::Create("Remove comment loops", OptCommentLoop, Optimizer::Level::O1),
+    OptimizerPass::Create("Fuse operators", OptFusionOp, Optimizer::Level::O1),
+    OptimizerPass::Create("Peephole", OptPeep, Optimizer::Level::O2),
+  };
+
+  for (auto &stage : pipeline) {
+    if (stage.Level() <= m.level) {
+      instr = stage.Run(instr);
+    }
   }
-  // O1
-  i = OptCommentLoop(i);
-  i = OptFusionOp(i);
-  if (m.level == OptLevel::O1) {
-    return i;
-  }
-  // O2
-  i = OptPeep(i);
-  if (m.level == OptLevel::O2) {
-    return i;
-  }
-  // O3
-  return i;
+  return instr;
 }

@@ -34,7 +34,7 @@ static struct {
   const char *input_file_path = "\0";
   size_t heap_size = DEFAULT_HEAP_SIZE;
   ExecMode execution_mode = ExecMode::COMPILER;
-  OptLevel optimization_level = OptLevel::O2;
+  Optimizer::Level optimization_level = Optimizer::Level::O2;
 } args;
 
 static void usage(void) {
@@ -97,19 +97,19 @@ static void parse_opts(int argc, char **argv) {
   }
   switch (opt_level) {
   case '0':
-    args.optimization_level = OptLevel::O0;
+    args.optimization_level = Optimizer::Level::O0;
     break;
   case '1':
-    args.optimization_level = OptLevel::O1;
+    args.optimization_level = Optimizer::Level::O1;
     break;
   case '2':
-    args.optimization_level = OptLevel::O2;
+    args.optimization_level = Optimizer::Level::O2;
     break;
   case '3':
-    args.optimization_level = OptLevel::O3;
+    args.optimization_level = Optimizer::Level::O3;
     break;
   default:
-    args.optimization_level = OptLevel::O2;
+    args.optimization_level = Optimizer::Level::O2;
     break;
   }
   if (0 == strlen(args.input_file_path)) {
