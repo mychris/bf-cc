@@ -117,53 +117,48 @@ static void parse_opts(int argc, char **argv) {
   }
 }
 
-Instr *parse(const char *input) {
-  Instr *head = Instr::Allocate(Instr::Code::NOP);
-  Instr *tail = head;
+Instr::Stream parse(const char *input) {
+  Instr::Stream stream = Instr::Stream::Create();
+  stream.Prepend(Instr::Code::NOP);
   std::vector<Instr *> jump_stack = {};
   while (*input) {
     const char c = *input;
-    Instr *this_op = nullptr;
     switch (c) {
     case OP_INCR: {
-      this_op = Instr::Allocate(Instr::Code::INCR_CELL, 1);
+      stream.Append(Instr::Code::INCR_CELL, 1);
     } break;
     case OP_DECR: {
-      this_op = Instr::Allocate(Instr::Code::DECR_CELL, 1);
+      stream.Append(Instr::Code::DECR_CELL, 1);
     } break;
     case OP_NEXT: {
-      this_op = Instr::Allocate(Instr::Code::INCR_PTR, 1);
+      stream.Append(Instr::Code::INCR_PTR, 1);
     } break;
     case OP_PREV: {
-      this_op = Instr::Allocate(Instr::Code::DECR_PTR, 1);
+      stream.Append(Instr::Code::DECR_PTR, 1);
     } break;
     case OP_READ: {
-      this_op = Instr::Allocate(Instr::Code::READ, 0);
+      stream.Append(Instr::Code::READ, 0);
     } break;
     case OP_WRIT: {
-      this_op = Instr::Allocate(Instr::Code::WRITE, 0);
+      stream.Append(Instr::Code::WRITE, 0);
     } break;
     case OP_JMPF: {
-      this_op = Instr::Allocate(Instr::Code::JUMP_ZERO, 0);
+      Instr *this_op = stream.Append(Instr::Code::JUMP_ZERO, 0);
       jump_stack.push_back(this_op);
     } break;
     case OP_JMPB: {
       Instr *other = jump_stack.back();
       jump_stack.pop_back();
-      this_op = Instr::Allocate(Instr::Code::JUMP_NON_ZERO, (uintptr_t) other);
+      Instr *this_op = stream.Append(Instr::Code::JUMP_NON_ZERO, (uintptr_t) other);
       other->SetOperand1((uintptr_t) this_op);
     } break;
     default:
       break;
     }
-    if (this_op) {
-      tail->SetNext(this_op);
-      tail = this_op;
-    }
     ++input;
   }
-  tail->SetNext(Instr::Allocate(Instr::Code::NOP));
-  return head;
+  stream.Append(Instr::Code::NOP);
+  return stream;
 }
 
 static std::variant<char *, Err> read_content(const char *filename) {
@@ -201,26 +196,21 @@ int main(int argc, char **argv) {
   char *content = Ensure(read_content(args.input_file_path));
   auto op = parse(content);
   free(content);
-  Optimizer::Create(args.optimization_level).Run(op);
+  Optimizer::Create(args.optimization_level).Run(*op.Begin());
   auto heap = Ensure(Heap::Create(args.heap_size));
   switch (args.execution_mode) {
   case ExecMode::INTERPRETER: {
     auto interpreter = Interpreter::Create();
-    interpreter.Run(heap, op);
+    interpreter.Run(heap, *op.Begin());
   } break;
   case ExecMode::COMPILER: {
     auto code_area = Ensure(CodeArea::Create());
     auto assembler = AssemblerX8664::Create(code_area);
-    auto entry = Ensure(assembler.Assemble(op));
+    auto entry = Ensure(assembler.Assemble(*op.Begin()));
     Ensure(code_area.MakeExecutable());
     entry(heap.BaseAddress());
   } break;
   }
   fflush(stdout);
-  while (op) {
-    Instr *next = op->Next();
-    delete op;
-    op = next;
-  }
   return 0;
 }

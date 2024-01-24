@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT License
+#include <initializer_list>
 #ifndef BF_CC_INSTR_H
 #define BF_CC_INSTR_H 1
 
-#include <stdint.h>
+#include <cassert>
+#include <cstdint>
 
 #include <utility>
 
@@ -24,12 +26,14 @@ public:
     JUMP_NON_ZERO = 1 << 10,
     FIND_CELL_LOW = 1 << 11,
     FIND_CELL_HIGH = 1 << 12,
+    ANY = 1 << 13,
   };
 
 private:
   struct M {
     Instr::Code op_code;
     Instr *next;
+    Instr *prev;
     uintptr_t operand1;
     uintptr_t operand2;
   } m;
@@ -41,7 +45,43 @@ private:
   }
 
 public:
-  Instr(Instr &&other) : m(std::exchange(other.m, {Instr::Code::NOP, nullptr, 0, 0})) {
+  static Instr Create(enum Instr::Code op_code, uintptr_t op1 = 0, uintptr_t op2 = 0) {
+    return Instr(M{
+        .op_code = op_code,
+        .next = nullptr,
+        .prev = nullptr,
+        .operand1 = op1,
+        .operand2 = op2,
+    });
+  }
+
+  static Instr *Allocate(enum Instr::Code op_code, uintptr_t op1 = 0, uintptr_t op2 = 0) {
+    Instr *instr = new (std::nothrow) Instr(M{
+        .op_code = op_code,
+        .next = nullptr,
+        .operand1 = op1,
+        .operand2 = op2,
+    });
+    if (!instr) {
+      Error(Err::OutOfMemory());
+    }
+    return instr;
+  }
+
+  inline void SetNext(Instr *next) {
+    m.next = next;
+  }
+
+  inline void SetPrev(Instr *prev) {
+    m.prev = prev;
+  }
+
+  Instr(Instr &&other) : m(std::exchange(other.m, {Instr::Code::NOP, nullptr, nullptr, 0, 0})) {
+  }
+
+  Instr &operator=(Instr &&other) noexcept {
+    std::swap(m, other.m);
+    return *this;
   }
 
   ~Instr() = default;
@@ -78,35 +118,277 @@ public:
     m.operand2 = val;
   }
 
-  inline Instr *Next() const {
+  inline Instr *Next() {
     return m.next;
   }
 
-  inline void SetNext(Instr *next) {
-    m.next = next;
+  inline Instr *Prev() {
+    return m.prev;
   }
 
-  static Instr Create(enum Instr::Code op_code, uintptr_t op1 = 0, uintptr_t op2 = 0) {
-    return Instr(M{
-        .op_code = op_code,
-        .next = nullptr,
-        .operand1 = op1,
-        .operand2 = op2,
-    });
-  }
+  class Stream final {
+  private:
+    struct M {
+      Instr *head;
+      Instr *tail;
+      std::size_t length;
+    } m;
 
-  static Instr *Allocate(enum Instr::Code op_code, uintptr_t op1 = 0, uintptr_t op2 = 0) {
-    Instr *instr = new (std::nothrow) Instr(M{
-        .op_code = op_code,
-        .next = nullptr,
-        .operand1 = op1,
-        .operand2 = op2,
-    });
-    if (!instr) {
-      Error(Err::OutOfMemory());
+    Stream(const Stream &) = delete;
+    Stream &operator=(const Stream &) = delete;
+
+    explicit Stream(M m) : m(std::move(m)) {
     }
-    return instr;
-  }
+
+  public:
+    Stream(Stream &&other) noexcept : m(std::exchange(other.m, {})) {
+    }
+
+    Stream &operator=(Stream &&other) noexcept {
+      std::swap(m, other.m);
+      return *this;
+    }
+
+    static Stream Create() noexcept {
+      return Stream(M{});
+    }
+
+    ~Stream() {
+      Instr *op = m.head;
+      while (op) {
+        Instr *next = op->Next();
+        delete op;
+        op = next;
+      }
+      m.head = nullptr;
+      m.tail = nullptr;
+      m.length = 0;
+    }
+
+    inline void Append(Instr *instr) {
+      ++m.length;
+      if (!m.head) {
+        m.head = instr;
+        m.tail = instr;
+        instr->SetNext(nullptr);
+        instr->SetPrev(nullptr);
+      } else {
+        m.tail->SetNext(instr);
+        instr->SetPrev(m.tail);
+        m.tail = instr;
+      }
+    }
+
+    inline Instr *Append(Instr::Code code, uintptr_t op1 = 0, uintptr_t op2 = 0) {
+      Instr *instr = Instr::Allocate(code, op1, op2);
+      Append(instr);
+      return instr;
+    }
+
+    inline void Prepend(Instr *instr) {
+      ++m.length;
+      if (!m.head) {
+        m.head = instr;
+        m.tail = instr;
+        instr->SetNext(nullptr);
+        instr->SetPrev(nullptr);
+      } else {
+        instr->SetNext(m.head);
+        m.head->SetPrev(instr);
+        m.head = instr;
+      }
+    }
+
+    inline Instr *Prepend(Instr::Code code, uintptr_t op1 = 0, uintptr_t op2 = 0) {
+      Instr *instr = Instr::Allocate(code, op1, op2);
+      Prepend(instr);
+      return instr;
+    }
+
+    inline void Unlink(Instr &instr) {
+      --m.length;
+      if (m.head == &instr) {
+        if (m.tail == &instr) {
+          m.head = nullptr;
+          m.tail = nullptr;
+        } else {
+          m.head = instr.Next();
+          m.head->SetPrev(nullptr);
+        }
+      } else if (m.tail == &instr) {
+        m.tail = instr.Prev();
+        m.tail->SetNext(nullptr);
+      } else {
+        instr.Prev()->SetNext(instr.Next());
+        instr.Next()->SetPrev(instr.Prev());
+      }
+      instr.SetNext(nullptr);
+      instr.SetPrev(nullptr);
+    }
+
+    inline void Unlink(Instr *instr) {
+      Unlink(*instr);
+    }
+
+    inline void Delete(Instr *instr) {
+      Unlink(instr);
+      delete instr;
+    }
+
+    class Iterator final {
+    private:
+      struct M {
+        Stream *stream;
+        Instr *current;
+      } m;
+
+      explicit Iterator(M m) noexcept : m(std::move(m)) {
+      }
+
+    public:
+
+      static Iterator Create(Stream *stream, Instr *instr) {
+        return Iterator(M{
+            .stream = stream,
+            .current = instr,
+        });
+      }
+
+      Iterator(const Iterator &other)
+        : m(M{ .stream = other.m.stream, .current = other.m.current} ) {
+      }
+
+      Iterator &operator=(const Iterator &other) {
+        m.stream = other.m.stream;
+        m.current = other.m.current;
+        return *this;
+      }
+
+      inline Iterator &operator++() {
+        if (m.current) {
+          m.current = m.current->Next();
+        }
+        return *this;
+      }
+
+      inline Iterator operator++(int) {
+        Iterator iter = *this;
+        ++*this;
+        return iter;
+      }
+
+      inline Iterator &operator--() {
+        if (m.current) {
+          m.current = m.current->Prev();
+        } else {
+          m.current = m.stream->m.tail;
+        }
+        return *this;
+      }
+
+      inline Iterator operator--(int) {
+        Iterator iter = *this;
+        --*this;
+        return iter;
+      }
+
+      inline bool operator!=(const Iterator &iter) const noexcept {
+        return m.current != iter.m.current;
+      }
+
+      inline bool operator==(const Iterator &iter) const noexcept {
+        return m.current == iter.m.current;
+      }
+
+      inline Instr *operator*() {
+        return m.current;
+      }
+
+      inline Iterator &TakeJump() {
+        if (m.current) {
+          assert(m.current->IsJump());
+          uintptr_t target = m.current->Operand1();
+          m.current = (Instr *) target;
+        }
+        return *this;
+      }
+    };
+
+    Iterator Begin() {
+      return Iterator::Create(this, m.head);
+    }
+
+    Iterator begin() {
+      return Begin();
+    }
+
+    Iterator End() {
+      return Iterator::Create(this, nullptr);
+    }
+
+    Iterator end() {
+      return End();
+    }
+
+    Iterator From(Instr *instr) {
+      return Iterator::Create(this, instr);
+    }
+
+    inline void Unlink(Iterator &iter) {
+      Unlink(*iter);
+    }
+
+    inline void Unlink(Iterator &&iter) {
+      Unlink(*iter);
+    }
+
+    inline void Delete(Iterator &iter) {
+      Delete(*iter);
+    }
+
+    inline void Delete(Iterator &&iter) {
+      Delete(*iter);
+    }
+
+    void VisitPattern(std::initializer_list<Instr::Code> pattern, void (*fun)(Instr*)) {
+      if (0 == pattern.size()) {
+        return;
+      }
+      Instr::Code first = *pattern.begin();
+      auto iter = Begin();
+      const auto end = End();
+      while (iter != end) {
+        if ((*iter)->OpCode() == first) {
+          auto stream_iter = From(*iter);
+          auto stream_end = End();
+          auto pattern_iter = pattern.begin();
+          auto pattern_end = pattern.end();
+          long matches = 0;
+          while (stream_iter != stream_end
+                 && pattern_iter != pattern_end
+                 && (*pattern_iter == Instr::Code::ANY || *pattern_iter == (*stream_iter)->OpCode())) {
+            ++stream_iter;
+            ++pattern_iter;
+            ++matches;
+          }
+          iter = From(*stream_iter);
+          if (matches == (long) pattern.size()) {
+            fun(*iter);
+          }
+          stream_iter = From(*iter);
+          while (matches > 0 && stream_iter != stream_end) {
+            if ((*stream_iter)->OpCode() == Instr::Code::NOP) {
+              Delete(stream_iter++);
+            } else {
+              ++stream_iter;
+            }
+          }
+        } else {
+          ++iter;
+        }
+      }
+    }
+  };
 };
 
 #endif /* BF_CC_INSTR_H */
