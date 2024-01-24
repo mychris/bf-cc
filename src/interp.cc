@@ -8,9 +8,15 @@
 #include "heap.h"
 #include "instr.h"
 
-void Interpreter::Run(Heap &heap, Instr *code) {
-  while (code) {
+void Interpreter::Run(Heap &heap, Instr::Stream &stream) {
+  auto iter = stream.Begin();
+  const auto end = stream.End();
+  while (iter != end) {
+    Instr *code = *iter;
     switch (code->OpCode()) {
+    case Instr::Code::ANY: {
+      // TODO: should not be in the stream!
+    } break;
     case Instr::Code::NOP: {
     } break;
     case Instr::Code::INCR_CELL: {
@@ -42,12 +48,12 @@ void Interpreter::Run(Heap &heap, Instr *code) {
     } break;
     case Instr::Code::JUMP_ZERO: {
       if (heap.GetCell() == 0) {
-        code = (Instr *) code->Operand1();
+        iter.TakeJump();
       }
     } break;
     case Instr::Code::JUMP_NON_ZERO: {
       if (heap.GetCell() != 0) {
-        code = (Instr *) code->Operand1();
+        iter.TakeJump();
       }
     } break;
     case Instr::Code::FIND_CELL_HIGH: {
@@ -63,6 +69,6 @@ void Interpreter::Run(Heap &heap, Instr *code) {
       }
     } break;
     }
-    code = code->Next();
+    ++iter;
   }
 }

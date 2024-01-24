@@ -194,19 +194,19 @@ static std::variant<char *, Err> read_content(const char *filename) {
 int main(int argc, char **argv) {
   parse_opts(argc, argv);
   char *content = Ensure(read_content(args.input_file_path));
-  auto op = parse(content);
+  auto stream = parse(content);
   free(content);
-  Optimizer::Create(args.optimization_level).Run(*op.Begin());
+  Optimizer::Create(args.optimization_level).Run(stream);
   auto heap = Ensure(Heap::Create(args.heap_size));
   switch (args.execution_mode) {
   case ExecMode::INTERPRETER: {
     auto interpreter = Interpreter::Create();
-    interpreter.Run(heap, *op.Begin());
+    interpreter.Run(heap, stream);
   } break;
   case ExecMode::COMPILER: {
     auto code_area = Ensure(CodeArea::Create());
     auto assembler = AssemblerX8664::Create(code_area);
-    auto entry = Ensure(assembler.Assemble(*op.Begin()));
+    auto entry = Ensure(assembler.Assemble(stream));
     Ensure(code_area.MakeExecutable());
     entry(heap.BaseAddress());
   } break;

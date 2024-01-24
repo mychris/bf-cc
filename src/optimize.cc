@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT License
 #include "optimize.h"
+#include <cstdio>
 
 #include "instr.h"
 
-Instr* Optimizer::Run(Instr* instr) const noexcept {
+void Optimizer::Run(Instr::Stream &stream) const noexcept {
   static OptimizerPass pipeline[] = {
     OptimizerPass::Create("Remove comment loops", OptCommentLoop, Optimizer::Level::O1),
     OptimizerPass::Create("Fuse operators", OptFusionOp, Optimizer::Level::O1),
@@ -12,8 +13,7 @@ Instr* Optimizer::Run(Instr* instr) const noexcept {
 
   for (auto &stage : pipeline) {
     if (stage.Level() <= m.level) {
-      instr = stage.Run(instr);
+      stage.Run(stream);
     }
   }
-  return instr;
 }

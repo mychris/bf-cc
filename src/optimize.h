@@ -4,12 +4,13 @@
 
 #include "instr.h"
 
+#include <cstdio>
 
-Instr *OptCommentLoop(Instr *);
+void OptCommentLoop(Instr::Stream &);
 
-Instr *OptFusionOp(Instr *);
+void OptFusionOp(Instr::Stream &);
 
-Instr *OptPeep(Instr *);
+void OptPeep(Instr::Stream &);
 
 class Optimizer final {
 public:
@@ -29,7 +30,7 @@ private:
   }
 
 public:
-  Instr *Run(Instr *) const noexcept;
+  void Run(Instr::Stream &) const noexcept;
 
   static Optimizer Create(Optimizer::Level level) noexcept {
     return Optimizer(M{
@@ -43,14 +44,14 @@ private:
   struct M {
     Optimizer::Level level;
     const char *name;
-    Instr* (*function)(Instr*);
+    void (*function)(Instr::Stream &);
   } m;
 
   explicit OptimizerPass(M m) : m(std::move(m)) {
   }
 
 public:
-  static OptimizerPass Create(const char *name, Instr* (*function)(Instr* ), Optimizer::Level level) {
+  static OptimizerPass Create(const char *name, void (*function)(Instr::Stream &), Optimizer::Level level) {
     return OptimizerPass(M{.level = level, .name = name, .function = function});
   }
 
@@ -62,8 +63,8 @@ public:
     return m.name;
   }
 
-  Instr* Run(Instr* instr) const {
-    return m.function(instr);
+  void Run(Instr::Stream &stream) const {
+    m.function(stream);
   }
 };
 

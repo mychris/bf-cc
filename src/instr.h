@@ -44,7 +44,6 @@ private:
   explicit Instr(M m) : m(std::move(m)) {
   }
 
-public:
   static Instr Create(enum Instr::Code op_code, uintptr_t op1 = 0, uintptr_t op2 = 0) {
     return Instr(M{
         .op_code = op_code,
@@ -76,6 +75,7 @@ public:
     m.prev = prev;
   }
 
+public:
   Instr(Instr &&other) : m(std::exchange(other.m, {Instr::Code::NOP, nullptr, nullptr, 0, 0})) {
   }
 
@@ -371,7 +371,6 @@ public:
             ++pattern_iter;
             ++matches;
           }
-          iter = From(*stream_iter);
           if (matches == (long) pattern.size()) {
             fun(*iter);
           }
@@ -382,10 +381,10 @@ public:
             } else {
               ++stream_iter;
             }
+            --matches;
           }
-        } else {
-          ++iter;
         }
+        ++iter;
       }
     }
   };

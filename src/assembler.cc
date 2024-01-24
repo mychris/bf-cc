@@ -293,33 +293,39 @@ static Err EmitFindCellLow(CodeArea &mem, uint8_t value, uintptr_t move_size) {
       });
 }
 
-std::variant<CodeEntry, Err> AssemblerX8664::Assemble(Instr *code) {
+std::variant<CodeEntry, Err> AssemblerX8664::Assemble(Instr::Stream &stream) {
   std::vector<std::pair<Instr *, uint8_t *>> jump_list = {};
   Err err = Err::Ok();
   void *entry = m.mem.CurrentWriteAddr();
+  auto iter = stream.Begin();
+  auto end = stream.End();
   err = EmitEntry(m.mem);
   if (!err.IsOk()) {
     return err;
   }
-  while (code) {
-    switch (code->OpCode()) {
+  while (iter != end) {
+    auto instruction = *iter;
+    switch (instruction->OpCode()) {
+    case Instr::Code::ANY:
+      // should not be in the stream!
+      break;
     case Instr::Code::NOP:
       err = EmitNop(m.mem);
       break;
     case Instr::Code::INCR_CELL:
-      err = EmitIncrCell(m.mem, (uint8_t) code->Operand1());
+      err = EmitIncrCell(m.mem, (uint8_t) instruction->Operand1());
       break;
     case Instr::Code::DECR_CELL:
-      err = EmitDecrCell(m.mem, (uint8_t) code->Operand1());
+      err = EmitDecrCell(m.mem, (uint8_t) instruction->Operand1());
       break;
     case Instr::Code::SET_CELL:
-      err = EmitSetCell(m.mem, (uint8_t) code->Operand1());
+      err = EmitSetCell(m.mem, (uint8_t) instruction->Operand1());
       break;
     case Instr::Code::INCR_PTR:
-      err = EmitIncrPtr(m.mem, (uintptr_t) code->Operand1());
+      err = EmitIncrPtr(m.mem, (uintptr_t) instruction->Operand1());
       break;
     case Instr::Code::DECR_PTR:
-      err = EmitDecrPtr(m.mem, (uintptr_t) code->Operand1());
+      err = EmitDecrPtr(m.mem, (uintptr_t) instruction->Operand1());
       break;
     case Instr::Code::READ:
       err = EmitRead(m.mem);
@@ -329,23 +335,23 @@ std::variant<CodeEntry, Err> AssemblerX8664::Assemble(Instr *code) {
       break;
     case Instr::Code::JUMP_ZERO:
       err = EmitJumpZero(m.mem);
-      jump_list.push_back({code, m.mem.CurrentWriteAddr()});
+      jump_list.push_back({instruction, m.mem.CurrentWriteAddr()});
       break;
     case Instr::Code::JUMP_NON_ZERO:
       err = EmitJumpNonZero(m.mem);
-      jump_list.push_back({code, m.mem.CurrentWriteAddr()});
+      jump_list.push_back({instruction, m.mem.CurrentWriteAddr()});
       break;
     case Instr::Code::FIND_CELL_HIGH:
-      err = EmitFindCellHigh(m.mem, (uint8_t) code->Operand1(), code->Operand2());
+      err = EmitFindCellHigh(m.mem, (uint8_t) instruction->Operand1(), instruction->Operand2());
       break;
     case Instr::Code::FIND_CELL_LOW:
-      err = EmitFindCellLow(m.mem, (uint8_t) code->Operand1(), code->Operand2());
+      err = EmitFindCellLow(m.mem, (uint8_t) instruction->Operand1(), instruction->Operand2());
       break;
     }
     if (!err.IsOk()) {
       return err;
     }
-    code = code->Next();
+    ++iter;
   }
   // Patch the jumps
   for (const auto &[jump, code_pos] : jump_list) {

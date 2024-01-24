@@ -4,37 +4,30 @@
 #include "instr.h"
 #include "optimize.h"
 
-static Instr *ReplaceSingleInstructionLoops(Instr *op) {
-  Instr *head = op;
-  while (op) {
-    if (op->IsJump()) {
-      Instr *first = op;
-      Instr *second = op->Next();
-      Instr *third = (second) ? second->Next() : nullptr;
-      if (first && second && third && first->OpCode() == Instr::Code::JUMP_ZERO
-          && third->OpCode() == Instr::Code::JUMP_NON_ZERO && first->Operand1() == (uintptr_t) third
-          && third->Operand1() == (uintptr_t) first) {
-        if (second->OpCode() == Instr::Code::DECR_CELL || second->OpCode() == Instr::Code::INCR_CELL) {
-          // [+] [-]
+static void ReplaceSingleInstructionLoops(Instr::Stream &stream) {
+  auto callback = [](Instr *instr) {
+    Instr *first = instr;
+    Instr *second = first->Next();
+    Instr *third = second->Next();
+    if (first->Operand1() == (uintptr_t) third && third->Operand1() == (uintptr_t) first &&
+        second->Operand1() % 2 == 1) {
           first->SetOpCode(Instr::Code::SET_CELL);
           first->SetOperand1(0);
-          first->SetNext(third->Next());
-          delete second;
-          delete third;
-        }
-      }
+          second->SetOpCode(Instr::Code::NOP);
+          third->SetOpCode(Instr::Code::NOP);
     }
-    op = op->Next();
-  }
-  return head;
+  };
+  stream.VisitPattern({Instr::Code::JUMP_ZERO, Instr::Code::INCR_CELL, Instr::Code::JUMP_NON_ZERO}, callback);
+  stream.VisitPattern({Instr::Code::JUMP_ZERO, Instr::Code::DECR_CELL, Instr::Code::JUMP_NON_ZERO}, callback);
 }
 
-static Instr *ReplaceFindCellLoops(Instr *op) {
-  Instr *head = op;
-  while (op) {
-    if (op->IsJump()) {
-      Instr *first = op;
-      Instr *second = op->Next();
+static void ReplaceFindCellLoops(Instr::Stream &stream) {
+  auto iter = stream.Begin();
+  const auto end = stream.End();
+  while (iter != end) {
+    if ((*iter)->IsJump()) {
+      Instr *first = (*iter++);
+      Instr *second = first->Next();
       Instr *third = (second) ? second->Next() : nullptr;
       if (first && second && third && first->OpCode() == Instr::Code::JUMP_ZERO
           && third->OpCode() == Instr::Code::JUMP_NON_ZERO && first->Operand1() == (uintptr_t) third
@@ -54,46 +47,47 @@ static Instr *ReplaceFindCellLoops(Instr *op) {
           replaced = true;
         }
         if (replaced) {
-          first->SetNext(third->Next());
-          delete second;
-          delete third;
+          stream.Delete(iter++);
+          stream.Delete(iter++);
         }
       }
+    } else {
+      ++iter;
     }
-    op = op->Next();
   }
-  return head;
 }
 
-static Instr *MergeSetIncrDecr(Instr *op) {
-  Instr *head = op;
-  while (op) {
-    if (op->OpCode() == Instr::Code::SET_CELL) {
-      bool replaced = false;
+static void MergeSetIncrDecr(Instr::Stream &stream) {
+  auto iter = stream.Begin();
+  const auto end = stream.End();
+  while (iter != end) {
+    if ((*iter)->OpCode() == Instr::Code::SET_CELL) {
+      Instr *instr = *iter;
+      Instr::Code next_op_code = Instr::Code::NOP;
+      if (instr->Next()) {
+        next_op_code = instr->Next()->OpCode();
+      }
       uint8_t value = 0;
-      if (op->Next() && op->Next()->OpCode() == Instr::Code::INCR_CELL) {
-        value = (uint8_t) op->Operand1() + (uint8_t) op->Next()->Operand1();
-        op->SetOperand1((uintptr_t) value);
-        replaced = true;
-      } else if (op->Next() && op->Next()->OpCode() == Instr::Code::DECR_CELL) {
-        value = (uint8_t) op->Operand1() - (uint8_t) op->Next()->Operand1();
-        op->SetOperand1((uintptr_t) value);
-        replaced = true;
+      if (next_op_code == Instr::Code::INCR_CELL || next_op_code == Instr::Code::DECR_CELL) {
+        value = (uint8_t) instr->Operand1();
+        if (next_op_code == Instr::Code::INCR_CELL) {
+          value += (uint8_t) instr->Next()->Operand1();
+        } else {
+          value -= (uint8_t) instr->Next()->Operand1();
+        }
+        instr->SetOperand1(value);
+        stream.Delete(++iter);
+      } else {
+        ++iter;
       }
-      if (replaced) {
-        Instr *next = op->Next();
-        op->SetNext(op->Next()->Next());
-        delete next;
-      }
+    } else {
+      ++iter;
     }
-    op = op->Next();
   }
-  return head;
 }
 
-Instr *OptPeep(Instr *op) {
-  op = ReplaceSingleInstructionLoops(op);
-  op = ReplaceFindCellLoops(op);
-  op = MergeSetIncrDecr(op);
-  return op;
+void OptPeep(Instr::Stream &stream) {
+  ReplaceSingleInstructionLoops(stream);
+  ReplaceFindCellLoops(stream);
+  MergeSetIncrDecr(stream);
 }
