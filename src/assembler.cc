@@ -333,8 +333,7 @@ std::variant<CodeEntry, Err> AssemblerX8664::Assemble(Instr::Stream &stream) {
     return err;
   }
   while (iter != end) {
-    auto instruction = *iter;
-    switch (instruction->OpCode()) {
+    switch (iter->OpCode()) {
     case InstrCode::ANY:
       // should not be in the stream!
       break;
@@ -342,43 +341,43 @@ std::variant<CodeEntry, Err> AssemblerX8664::Assemble(Instr::Stream &stream) {
       err = EmitNop(m.mem);
       break;
     case InstrCode::INCR_CELL:
-      err = EmitIncrCell(m.mem, (uint8_t) instruction->Operand1(), instruction->Operand2());
+      err = EmitIncrCell(m.mem, (uint8_t) iter->Operand1(), iter->Operand2());
       break;
     case InstrCode::DECR_CELL:
-      err = EmitDecrCell(m.mem, (uint8_t) instruction->Operand1(), instruction->Operand2());
+      err = EmitDecrCell(m.mem, (uint8_t) iter->Operand1(), iter->Operand2());
       break;
     case InstrCode::SET_CELL:
-      err = EmitSetCell(m.mem, (uint8_t) instruction->Operand1(), instruction->Operand2());
+      err = EmitSetCell(m.mem, (uint8_t) iter->Operand1(), iter->Operand2());
       break;
     case InstrCode::INCR_PTR:
-      err = EmitIncrPtr(m.mem, instruction->Operand1());
+      err = EmitIncrPtr(m.mem, iter->Operand1());
       break;
     case InstrCode::DECR_PTR:
-      err = EmitDecrPtr(m.mem, instruction->Operand1());
+      err = EmitDecrPtr(m.mem, iter->Operand1());
       break;
     case InstrCode::READ:
-      err = EmitIncrPtr(m.mem, instruction->Operand2()).and_then([&]() { return EmitRead(m.mem); }).and_then([&]() {
-        return EmitDecrPtr(m.mem, instruction->Operand2());
+      err = EmitIncrPtr(m.mem, iter->Operand2()).and_then([&]() { return EmitRead(m.mem); }).and_then([&]() {
+        return EmitDecrPtr(m.mem, iter->Operand2());
       });
       break;
     case InstrCode::WRITE:
-      err = EmitIncrPtr(m.mem, instruction->Operand2()).and_then([&]() { return EmitWrite(m.mem); }).and_then([&]() {
-        return EmitDecrPtr(m.mem, instruction->Operand2());
+      err = EmitIncrPtr(m.mem, iter->Operand2()).and_then([&]() { return EmitWrite(m.mem); }).and_then([&]() {
+        return EmitDecrPtr(m.mem, iter->Operand2());
       });
       break;
     case InstrCode::JUMP_ZERO:
       err = EmitJumpZero(m.mem);
-      jump_list.push_back({instruction, m.mem.CurrentWriteAddr()});
+      jump_list.push_back({*iter, m.mem.CurrentWriteAddr()});
       break;
     case InstrCode::JUMP_NON_ZERO:
       err = EmitJumpNonZero(m.mem);
-      jump_list.push_back({instruction, m.mem.CurrentWriteAddr()});
+      jump_list.push_back({*iter, m.mem.CurrentWriteAddr()});
       break;
     case InstrCode::FIND_CELL_HIGH:
-      err = EmitFindCellHigh(m.mem, (uint8_t) instruction->Operand1(), (uintptr_t) instruction->Operand2());
+      err = EmitFindCellHigh(m.mem, (uint8_t) iter->Operand1(), (uintptr_t) iter->Operand2());
       break;
     case InstrCode::FIND_CELL_LOW:
-      err = EmitFindCellLow(m.mem, (uint8_t) instruction->Operand1(), (uintptr_t) instruction->Operand2());
+      err = EmitFindCellLow(m.mem, (uint8_t) iter->Operand1(), (uintptr_t) iter->Operand2());
       break;
     }
     if (!err.IsOk()) {
