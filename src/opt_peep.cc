@@ -26,7 +26,7 @@ static void ReplaceFindCellLoops(Instr::Stream &stream) {
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {
-    if ((*iter)->IsJump()) {
+    if (iter->IsJump()) {
       Instr *first = (*iter++);
       Instr *second = *iter;
       Instr *third = (second) ? *(iter + 1) : nullptr;
