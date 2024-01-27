@@ -55,7 +55,7 @@ void OperationStream::Dump() {
 }
 
 void OperationStream::VisitPattern(std::initializer_list<Instruction> pattern,
-                                     void (*fun)(OperationStream &, OperationStream::Iterator &)) {
+                                   void (*fun)(OperationStream &, OperationStream::Iterator &)) {
   if (0 == pattern.size()) {
     return;
   }

@@ -2,9 +2,7 @@
 #include "instr.h"
 #include "optimize.h"
 
-static void do_it(OperationStream &stream,
-                  OperationStream::Iterator &iter,
-                  const OperationStream::Iterator &end) {
+static void do_it(OperationStream &stream, OperationStream::Iterator &iter, const OperationStream::Iterator &end) {
   intptr_t offset = 0;
   while (iter != end) {
     switch ((*iter)->OpCode()) {

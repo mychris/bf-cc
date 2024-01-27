@@ -23,7 +23,6 @@ enum class OptimizerLevel {
 
 class Optimizer final {
 public:
-
 private:
   struct M {
     OptimizerLevel level;
