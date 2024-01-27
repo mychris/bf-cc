@@ -168,6 +168,14 @@ public:
       m.length = 0;
     }
 
+    inline Instr *First() {
+      return m.head;
+    }
+
+    inline Instr *Last() {
+      return m.tail;
+    }
+
     inline void Append(Instr *instr) {
       ++m.length;
       if (!m.head) {
@@ -182,10 +190,9 @@ public:
       }
     }
 
-    inline Instr *Append(InstrCode code, intptr_t op1 = 0, intptr_t op2 = 0) {
+    inline void Append(InstrCode code, intptr_t op1 = 0, intptr_t op2 = 0) {
       Instr *instr = Instr::Allocate(code, op1, op2);
       Append(instr);
-      return instr;
     }
 
     inline void Prepend(Instr *instr) {
@@ -202,10 +209,25 @@ public:
       }
     }
 
-    inline Instr *Prepend(InstrCode code, intptr_t op1 = 0, intptr_t op2 = 0) {
+    inline void InsertBefore(Instr *instr, InstrCode code, intptr_t op1 = 0, intptr_t op2 = 0) {
+      if (nullptr == instr) {
+        Append(code, op1, op2);
+      } else if (nullptr == instr->Prev()) {
+        Prepend(code, op1, op2);
+      } else {
+        Instr *prev = instr->Prev();
+        Instr *next = instr;
+        Instr *new_instr = Instr::Allocate(code, op1, op2);
+        prev->SetNext(new_instr);
+        next->SetPrev(new_instr);
+        new_instr->SetPrev(prev);
+        new_instr->SetNext(next);
+      }
+    }
+
+    inline void Prepend(InstrCode code, intptr_t op1 = 0, intptr_t op2 = 0) {
       Instr *instr = Instr::Allocate(code, op1, op2);
       Prepend(instr);
-      return instr;
     }
 
     inline void Unlink(Instr &instr) {
@@ -307,12 +329,8 @@ public:
         return m.current;
       }
 
-      inline Iterator &TakeJump() {
-        if (m.current) {
-          assert(m.current->IsJump());
-          intptr_t target = m.current->Operand1();
-          m.current = (Instr *) target;
-        }
+      inline Iterator &JumpTo(Instr *instr) {
+        m.current = instr;
         return *this;
       }
 

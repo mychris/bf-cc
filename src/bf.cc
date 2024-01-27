@@ -143,13 +143,15 @@ Instr::Stream parse(const char *input) {
       stream.Append(InstrCode::WRITE, 0);
     } break;
     case OP_JMPF: {
-      Instr *this_op = stream.Append(InstrCode::JUMP_ZERO, 0);
+      stream.Append(InstrCode::JUMP_ZERO, 0);
+      Instr *this_op = stream.Last();
       jump_stack.push_back(this_op);
     } break;
     case OP_JMPB: {
       Instr *other = jump_stack.back();
       jump_stack.pop_back();
-      Instr *this_op = stream.Append(InstrCode::JUMP_NON_ZERO, (Instr::operand_type) other);
+      stream.Append(InstrCode::JUMP_NON_ZERO, (Instr::operand_type) other);
+      Instr *this_op = stream.Last();
       other->SetOperand1((Instr::operand_type) this_op);
     } break;
     default:

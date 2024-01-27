@@ -12,6 +12,8 @@ void OptFusionOp(Instr::Stream &);
 
 void OptPeep(Instr::Stream &);
 
+void OptDelayPtr(Instr::Stream &);
+
 class Optimizer final {
 public:
   enum class Level {

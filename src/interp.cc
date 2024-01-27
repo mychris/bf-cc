@@ -20,13 +20,13 @@ void Interpreter::Run(Heap &heap, Instr::Stream &stream) {
     case InstrCode::NOP: {
     } break;
     case InstrCode::INCR_CELL: {
-      heap.IncrementCell((uint8_t) code->Operand1());
+      heap.IncrementCell((uint8_t) code->Operand1(), code->Operand2());
     } break;
     case InstrCode::DECR_CELL: {
-      heap.DecrementCell((uint8_t) code->Operand1());
+      heap.DecrementCell((uint8_t) code->Operand1(), code->Operand2());
     } break;
     case InstrCode::SET_CELL: {
-      heap.SetCell((uint8_t) code->Operand1());
+      heap.SetCell((uint8_t) code->Operand1() ,code->Operand2());
     } break;
     case InstrCode::INCR_PTR: {
       heap.IncrementDataPointer((int64_t) code->Operand1());
@@ -37,23 +37,23 @@ void Interpreter::Run(Heap &heap, Instr::Stream &stream) {
     case InstrCode::READ: {
       const int input = std::getchar();
       if (EOF == input) {
-        heap.SetCell(0);
+        heap.SetCell(0, code->Operand2());
       } else {
-        heap.SetCell((uint8_t) input); 
+        heap.SetCell((uint8_t) input, code->Operand2()); 
       }
     } break;
     case InstrCode::WRITE: {
-      const uint8_t output = heap.GetCell();
+      const uint8_t output = heap.GetCell(code->Operand2());
       std::putchar((int) output);
     } break;
     case InstrCode::JUMP_ZERO: {
       if (heap.GetCell() == 0) {
-        iter.TakeJump();
+        iter.JumpTo((Instr*) code->Operand1());
       }
     } break;
     case InstrCode::JUMP_NON_ZERO: {
       if (heap.GetCell() != 0) {
-        iter.TakeJump();
+        iter.JumpTo((Instr*) code->Operand1());
       }
     } break;
     case InstrCode::FIND_CELL_HIGH: {

@@ -44,20 +44,20 @@ public:
     return *this;
   }
 
-  inline void IncrementCell(uint8_t amount) {
-    m.data[m.data_pointer] += amount;
+  inline void IncrementCell(uint8_t amount, int64_t offset = 0) noexcept {
+    m.data[m.data_pointer + offset] += amount;
   }
 
-  inline void DecrementCell(uint8_t amount) {
-    m.data[m.data_pointer] -= amount;
+  inline void DecrementCell(uint8_t amount, int64_t offset = 0) noexcept {
+    m.data[m.data_pointer + offset] -= amount;
   }
 
-  inline void SetCell(const uint8_t value) noexcept {
-    m.data[m.data_pointer] = value;
+  inline void SetCell(const uint8_t value, int64_t offset = 0) noexcept {
+    m.data[m.data_pointer + offset] = value;
   }
 
-  inline uint8_t GetCell() const noexcept {
-    return m.data[m.data_pointer];
+  inline uint8_t GetCell(int64_t offset = 0) const noexcept {
+    return m.data[m.data_pointer + offset];
   }
 
   inline void IncrementDataPointer(const int64_t amount) noexcept {

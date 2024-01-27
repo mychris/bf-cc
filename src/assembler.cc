@@ -120,34 +120,69 @@ static Err EmitNop(CodeArea &mem) {
   return mem.EmitCodeListing({0x90, 0x90, 0x90, 0x90});
 }
 
-static Err EmitIncrCell(CodeArea &mem, uint8_t amount) {
-  // ADD byte[rdx], amount
-  return mem.EmitCodeListing({0x80, 0x02, amount});
+static Err EmitIncrCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
+  if (0 == offset) {
+    // ADD byte[rdx], amount
+    return mem.EmitCodeListing({0x80, 0x02, amount});
+  } else if (128 > offset && -128 < offset) {
+    // ADD byte[rdx+offset], amount
+    return mem.EmitCodeListing({0x80, 0x42, (uint8_t) offset, (uint8_t) amount});
+  } else {
+    // ADD byte[rdx+offset], amount
+    return mem.EmitCodeListing({0x80, 0x82}).and_then([&] {
+      return mem.EmitCode((uint32_t) offset);
+    }).and_then([&] {
+      return mem.EmitCodeListing({amount});
+    });
+  }
 }
 
-static Err EmitDecrCell(CodeArea &mem, uint8_t amount) {
-  // SUB byte[rdx], amount
-  return mem.EmitCodeListing({0x80, 0x2A, amount});
+static Err EmitDecrCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
+  if (offset == 0) {
+    // SUB byte[rdx], amount
+    return mem.EmitCodeListing({0x80, 0x2A, amount});
+  } else if (128 > offset && -128 < offset) {
+    // SUB byte[rdx+offset], amount
+    return mem.EmitCodeListing({0x80, 0x6A, (uint8_t) offset, (uint8_t) amount});
+  } else {
+    // SUB byte[rdx+offset], amount
+    return mem.EmitCodeListing({0x80, 0xAA}).and_then([&] {
+      return mem.EmitCode((uint32_t) offset);
+    }).and_then([&] {
+      return mem.EmitCodeListing({amount});
+    });
+  }
 }
 
-static Err EmitSetCell(CodeArea &mem, uint8_t amount) {
-  // MOV byte[rdx], amount
-  return mem.EmitCodeListing({0xC6, 0x02, amount});
+static Err EmitSetCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
+  if (offset == 0) {
+    // MOV byte[rdx], amount
+    return mem.EmitCodeListing({0xC6, 0x02, amount});
+  } else if (128 > offset && -128 < offset) {
+    // MOV byte[rdx+offset], amount
+    return mem.EmitCodeListing({0xC6, 0x42, (uint8_t) offset, (uint8_t) amount});
+  } else {
+    // MOV byte[rdx+offset], amount
+    return mem.EmitCodeListing({0xC6, 0x82}).and_then([&] {
+      return mem.EmitCode((uint32_t) offset);
+    }).and_then([&] {
+      return mem.EmitCodeListing({amount});
+    });
+  }
 }
 
-static Err EmitIncrPtr(CodeArea &mem, uintptr_t amount) {
+static Err EmitIncrPtr(CodeArea &mem, intptr_t amount) {
   // ADD rdx, amount
-  if (amount <= 127LLU) {
+  if (128 > amount && -128 < amount) {
     return mem.EmitCodeListing({0x48, 0x83, 0xC2, (uint8_t) amount});
   } else {
-    assert(amount < UINT32_MAX);
     return mem.EmitCodeListing({0x48, 0x81, 0xC2}).and_then([&] { return mem.EmitCode((uint32_t) amount); });
   }
 }
 
-static Err EmitDecrPtr(CodeArea &mem, uintptr_t amount) {
+static Err EmitDecrPtr(CodeArea &mem, intptr_t amount) {
   // SUB rdx, amount
-  if (amount <= 127LLU) {
+  if (128 > amount && -128 < amount) {
     return mem.EmitCodeListing({0x48, 0x83, 0xEA, (uint8_t) amount});
   } else {
     assert(amount < UINT32_MAX);
@@ -313,25 +348,33 @@ std::variant<CodeEntry, Err> AssemblerX8664::Assemble(Instr::Stream &stream) {
       err = EmitNop(m.mem);
       break;
     case InstrCode::INCR_CELL:
-      err = EmitIncrCell(m.mem, (uint8_t) instruction->Operand1());
+      err = EmitIncrCell(m.mem, (uint8_t) instruction->Operand1(), instruction->Operand2());
       break;
     case InstrCode::DECR_CELL:
-      err = EmitDecrCell(m.mem, (uint8_t) instruction->Operand1());
+      err = EmitDecrCell(m.mem, (uint8_t) instruction->Operand1(), instruction->Operand2());
       break;
     case InstrCode::SET_CELL:
-      err = EmitSetCell(m.mem, (uint8_t) instruction->Operand1());
+      err = EmitSetCell(m.mem, (uint8_t) instruction->Operand1(), instruction->Operand2());
       break;
     case InstrCode::INCR_PTR:
-      err = EmitIncrPtr(m.mem, (uintptr_t) instruction->Operand1());
+      err = EmitIncrPtr(m.mem, instruction->Operand1());
       break;
     case InstrCode::DECR_PTR:
-      err = EmitDecrPtr(m.mem, (uintptr_t) instruction->Operand1());
+      err = EmitDecrPtr(m.mem, instruction->Operand1());
       break;
     case InstrCode::READ:
-      err = EmitRead(m.mem);
+      err = EmitIncrPtr(m.mem, instruction->Operand2()).and_then([&] () {
+        return EmitRead(m.mem);
+      }).and_then([&] () {
+        return EmitDecrPtr(m.mem, instruction->Operand2());
+      });
       break;
     case InstrCode::WRITE:
-      err = EmitWrite(m.mem);
+      err = EmitIncrPtr(m.mem, instruction->Operand2()).and_then([&] () {
+        return EmitWrite(m.mem);
+      }).and_then([&] () {
+        return EmitDecrPtr(m.mem, instruction->Operand2());
+      });
       break;
     case InstrCode::JUMP_ZERO:
       err = EmitJumpZero(m.mem);
