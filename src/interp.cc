@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT License
 #include "interp.h"
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <cstdio>
 
 #include "heap.h"
@@ -38,7 +37,7 @@ void Interpreter::Run(Heap &heap, Instr::Stream &stream) {
       if (EOF == input) {
         heap.SetCell(0, iter->Operand2());
       } else {
-        heap.SetCell((uint8_t) input, iter->Operand2()); 
+        heap.SetCell((uint8_t) input, iter->Operand2());
       }
     } break;
     case InstrCode::WRITE: {
@@ -47,12 +46,12 @@ void Interpreter::Run(Heap &heap, Instr::Stream &stream) {
     } break;
     case InstrCode::JUMP_ZERO: {
       if (heap.GetCell(0) == 0) {
-        iter.JumpTo((Instr*) iter->Operand1());
+        iter.JumpTo((Instr *) iter->Operand1());
       }
     } break;
     case InstrCode::JUMP_NON_ZERO: {
       if (heap.GetCell(0) != 0) {
-        iter.JumpTo((Instr*) iter->Operand1());
+        iter.JumpTo((Instr *) iter->Operand1());
       }
     } break;
     case InstrCode::FIND_CELL_HIGH: {

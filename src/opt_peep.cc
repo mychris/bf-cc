@@ -10,12 +10,12 @@ static void ReplaceSingleInstructionLoops(Instr::Stream &stream) {
     Instr *first = *iter;
     Instr *second = *(iter + 1);
     Instr *third = *(iter + 2);
-    if (first->Operand1() == (Instr::operand_type) third && third->Operand1() == (Instr::operand_type) first &&
-        second->Operand1() % 2 == 1) {
-          first->SetOpCode(InstrCode::SET_CELL);
-          first->SetOperand1(0);
-          second->SetOpCode(InstrCode::NOP);
-          third->SetOpCode(InstrCode::NOP);
+    if (first->Operand1() == (Instr::operand_type) third && third->Operand1() == (Instr::operand_type) first
+        && second->Operand1() % 2 == 1) {
+      first->SetOpCode(InstrCode::SET_CELL);
+      first->SetOperand1(0);
+      second->SetOpCode(InstrCode::NOP);
+      third->SetOpCode(InstrCode::NOP);
     }
   };
   stream.VisitPattern({InstrCode::JUMP_ZERO, InstrCode::INCR_CELL, InstrCode::JUMP_NON_ZERO}, callback);
@@ -59,8 +59,8 @@ static void ReplaceFindCellLoops(Instr::Stream &stream) {
 }
 
 static void MergeSetIncrDecr(Instr::Stream &stream) {
-  static const auto incr_pattern = { InstrCode::SET_CELL, InstrCode::INCR_CELL };
-  static const auto decr_pattern = { InstrCode::SET_CELL, InstrCode::DECR_CELL };
+  static const auto incr_pattern = {InstrCode::SET_CELL, InstrCode::INCR_CELL};
+  static const auto decr_pattern = {InstrCode::SET_CELL, InstrCode::DECR_CELL};
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {

@@ -5,7 +5,6 @@
 
 #include <cassert>
 #include <cstdint>
-
 #include <utility>
 
 #include "error.h"
@@ -50,7 +49,7 @@ private:
         .op_code = op_code,
         .next = nullptr,
         .prev = nullptr,
-        .operands = { op1, op2 },
+        .operands = {op1, op2},
     });
   }
 
@@ -59,7 +58,7 @@ private:
         .op_code = op_code,
         .next = nullptr,
         .prev = nullptr,
-        .operands = { op1, op2 },
+        .operands = {op1, op2},
     });
     if (!instr) {
       Error(Err::OutOfMemory());
@@ -260,7 +259,6 @@ public:
       }
 
     public:
-
       static Iterator Create(Stream *stream, Instr *instr) {
         return Iterator(M{
             .stream = stream,
@@ -268,8 +266,7 @@ public:
         });
       }
 
-      Iterator(const Iterator &other)
-        : m(M{ .stream = other.m.stream, .current = other.m.current} ) {
+      Iterator(const Iterator &other) : m(M{.stream = other.m.stream, .current = other.m.current}) {
       }
 
       Iterator &operator=(const Iterator &other) {
@@ -394,8 +391,8 @@ public:
 
     void Dump();
 
-    void VisitPattern(std::initializer_list<InstrCode> pattern, void (*fun)(Instr::Stream &, Instr::Stream::Iterator &));
-
+    void VisitPattern(std::initializer_list<InstrCode> pattern,
+                      void (*fun)(Instr::Stream &, Instr::Stream::Iterator &));
   };
 };
 

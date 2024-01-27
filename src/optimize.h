@@ -2,9 +2,9 @@
 #ifndef BF_CC_OPTIMIZE_H
 #define BF_CC_OPTIMIZE_H 1
 
-#include "instr.h"
-
 #include <cstdio>
+
+#include "instr.h"
 
 void OptCommentLoop(Instr::Stream &);
 
