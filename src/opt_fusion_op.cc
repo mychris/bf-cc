@@ -6,11 +6,11 @@ void OptFusionOp(Instr::Stream &stream) {
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {
-    Instr::Code seq_cmd = (*iter)->OpCode();
-    if (seq_cmd == Instr::Code::INCR_CELL || seq_cmd == Instr::Code::DECR_CELL || seq_cmd == Instr::Code::INCR_PTR
-        || seq_cmd == Instr::Code::DECR_PTR) {
+    InstrCode seq_cmd = (*iter)->OpCode();
+    if (seq_cmd == InstrCode::INCR_CELL || seq_cmd == InstrCode::DECR_CELL || seq_cmd == InstrCode::INCR_PTR
+        || seq_cmd == InstrCode::DECR_PTR) {
       Instr *seq_head = *iter;
-      uintptr_t amount = (*iter)->Operand1();
+      Instr::operand_type amount = (*iter)->Operand1();
       ++iter;
       while (iter != end && (*iter)->OpCode() == seq_cmd) {
         Instr *cur = *iter;

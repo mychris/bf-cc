@@ -119,45 +119,45 @@ static void parse_opts(int argc, char **argv) {
 
 Instr::Stream parse(const char *input) {
   Instr::Stream stream = Instr::Stream::Create();
-  stream.Prepend(Instr::Code::NOP);
+  stream.Prepend(InstrCode::NOP);
   std::vector<Instr *> jump_stack = {};
   while (*input) {
     const char c = *input;
     switch (c) {
     case OP_INCR: {
-      stream.Append(Instr::Code::INCR_CELL, 1);
+      stream.Append(InstrCode::INCR_CELL, 1);
     } break;
     case OP_DECR: {
-      stream.Append(Instr::Code::DECR_CELL, 1);
+      stream.Append(InstrCode::DECR_CELL, 1);
     } break;
     case OP_NEXT: {
-      stream.Append(Instr::Code::INCR_PTR, 1);
+      stream.Append(InstrCode::INCR_PTR, 1);
     } break;
     case OP_PREV: {
-      stream.Append(Instr::Code::DECR_PTR, 1);
+      stream.Append(InstrCode::DECR_PTR, 1);
     } break;
     case OP_READ: {
-      stream.Append(Instr::Code::READ, 0);
+      stream.Append(InstrCode::READ, 0);
     } break;
     case OP_WRIT: {
-      stream.Append(Instr::Code::WRITE, 0);
+      stream.Append(InstrCode::WRITE, 0);
     } break;
     case OP_JMPF: {
-      Instr *this_op = stream.Append(Instr::Code::JUMP_ZERO, 0);
+      Instr *this_op = stream.Append(InstrCode::JUMP_ZERO, 0);
       jump_stack.push_back(this_op);
     } break;
     case OP_JMPB: {
       Instr *other = jump_stack.back();
       jump_stack.pop_back();
-      Instr *this_op = stream.Append(Instr::Code::JUMP_NON_ZERO, (uintptr_t) other);
-      other->SetOperand1((uintptr_t) this_op);
+      Instr *this_op = stream.Append(InstrCode::JUMP_NON_ZERO, (Instr::operand_type) other);
+      other->SetOperand1((Instr::operand_type) this_op);
     } break;
     default:
       break;
     }
     ++input;
   }
-  stream.Append(Instr::Code::NOP);
+  stream.Append(InstrCode::NOP);
   return stream;
 }
 

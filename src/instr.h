@@ -10,32 +10,34 @@
 
 #include "error.h"
 
+enum class InstrCode {
+  NOP = 1 << 0,
+  INCR_CELL = 1 << 1,
+  DECR_CELL = 1 << 2,
+  SET_CELL = 1 << 3,
+  INCR_PTR = 1 << 4,
+  DECR_PTR = 1 << 5,
+  // SET_PTR = 1 << 6,
+  READ = 1 << 7,
+  WRITE = 1 << 8,
+  JUMP_ZERO = 1 << 9,
+  JUMP_NON_ZERO = 1 << 10,
+  FIND_CELL_LOW = 1 << 11,
+  FIND_CELL_HIGH = 1 << 12,
+  ANY = 1 << 13,
+};
+
 class Instr final {
 public:
-  enum class Code {
-    NOP = 1 << 0,
-    INCR_CELL = 1 << 1,
-    DECR_CELL = 1 << 2,
-    SET_CELL = 1 << 3,
-    INCR_PTR = 1 << 4,
-    DECR_PTR = 1 << 5,
-    // SET_PTR = 1 << 6,
-    READ = 1 << 7,
-    WRITE = 1 << 8,
-    JUMP_ZERO = 1 << 9,
-    JUMP_NON_ZERO = 1 << 10,
-    FIND_CELL_LOW = 1 << 11,
-    FIND_CELL_HIGH = 1 << 12,
-    ANY = 1 << 13,
-  };
+  typedef intptr_t operand_type;
 
 private:
   struct M {
-    Instr::Code op_code;
-    Instr *next;
-    Instr *prev;
-    uintptr_t operand1;
-    uintptr_t operand2;
+    InstrCode op_code{InstrCode::NOP};
+    Instr *next{nullptr};
+    Instr *prev{nullptr};
+    intptr_t operand1{0};
+    intptr_t operand2{0};
   } m;
 
   Instr(const Instr &) = delete;
@@ -44,7 +46,7 @@ private:
   explicit Instr(M m) : m(std::move(m)) {
   }
 
-  static Instr Create(enum Instr::Code op_code, uintptr_t op1 = 0, uintptr_t op2 = 0) {
+  static Instr Create(enum InstrCode op_code, intptr_t op1 = 0, intptr_t op2 = 0) {
     return Instr(M{
         .op_code = op_code,
         .next = nullptr,
@@ -54,10 +56,11 @@ private:
     });
   }
 
-  static Instr *Allocate(enum Instr::Code op_code, uintptr_t op1 = 0, uintptr_t op2 = 0) {
+  static Instr *Allocate(enum InstrCode op_code, intptr_t op1 = 0, intptr_t op2 = 0) {
     Instr *instr = new (std::nothrow) Instr(M{
         .op_code = op_code,
         .next = nullptr,
+        .prev = nullptr,
         .operand1 = op1,
         .operand2 = op2,
     });
@@ -76,7 +79,7 @@ private:
   }
 
 public:
-  Instr(Instr &&other) : m(std::exchange(other.m, {Instr::Code::NOP, nullptr, nullptr, 0, 0})) {
+  Instr(Instr &&other) : m(std::exchange(other.m, {InstrCode::NOP, nullptr, nullptr, 0, 0})) {
   }
 
   Instr &operator=(Instr &&other) noexcept {
@@ -86,35 +89,35 @@ public:
 
   ~Instr() = default;
 
-  inline Instr::Code OpCode() const {
+  inline InstrCode OpCode() const {
     return m.op_code;
   }
 
-  inline void SetOpCode(enum Instr::Code cmd) {
+  inline void SetOpCode(enum InstrCode cmd) {
     m.op_code = cmd;
   }
 
   inline bool IsJump() const {
-    return m.op_code == Instr::Code::JUMP_ZERO || m.op_code == Instr::Code::JUMP_NON_ZERO;
+    return m.op_code == InstrCode::JUMP_ZERO || m.op_code == InstrCode::JUMP_NON_ZERO;
   }
 
   inline bool IsIO() const {
-    return m.op_code == Instr::Code::READ || m.op_code == Instr::Code::WRITE;
+    return m.op_code == InstrCode::READ || m.op_code == InstrCode::WRITE;
   }
 
-  inline uintptr_t Operand1() const {
+  inline intptr_t Operand1() const {
     return m.operand1;
   }
 
-  inline void SetOperand1(uintptr_t val) {
+  inline void SetOperand1(intptr_t val) {
     m.operand1 = val;
   }
 
-  inline uintptr_t Operand2() const {
+  inline intptr_t Operand2() const {
     return m.operand2;
   }
 
-  inline void SetOperand2(uintptr_t val) {
+  inline void SetOperand2(intptr_t val) {
     m.operand2 = val;
   }
 
@@ -179,7 +182,7 @@ public:
       }
     }
 
-    inline Instr *Append(Instr::Code code, uintptr_t op1 = 0, uintptr_t op2 = 0) {
+    inline Instr *Append(InstrCode code, intptr_t op1 = 0, intptr_t op2 = 0) {
       Instr *instr = Instr::Allocate(code, op1, op2);
       Append(instr);
       return instr;
@@ -199,7 +202,7 @@ public:
       }
     }
 
-    inline Instr *Prepend(Instr::Code code, uintptr_t op1 = 0, uintptr_t op2 = 0) {
+    inline Instr *Prepend(InstrCode code, intptr_t op1 = 0, intptr_t op2 = 0) {
       Instr *instr = Instr::Allocate(code, op1, op2);
       Prepend(instr);
       return instr;
@@ -307,7 +310,7 @@ public:
       inline Iterator &TakeJump() {
         if (m.current) {
           assert(m.current->IsJump());
-          uintptr_t target = m.current->Operand1();
+          intptr_t target = m.current->Operand1();
           m.current = (Instr *) target;
         }
         return *this;
@@ -350,43 +353,10 @@ public:
       Delete(*iter);
     }
 
-    void VisitPattern(std::initializer_list<Instr::Code> pattern, void (*fun)(Instr*)) {
-      if (0 == pattern.size()) {
-        return;
-      }
-      Instr::Code first = *pattern.begin();
-      auto iter = Begin();
-      const auto end = End();
-      while (iter != end) {
-        if ((*iter)->OpCode() == first) {
-          auto stream_iter = From(*iter);
-          auto stream_end = End();
-          auto pattern_iter = pattern.begin();
-          auto pattern_end = pattern.end();
-          long matches = 0;
-          while (stream_iter != stream_end
-                 && pattern_iter != pattern_end
-                 && (*pattern_iter == Instr::Code::ANY || *pattern_iter == (*stream_iter)->OpCode())) {
-            ++stream_iter;
-            ++pattern_iter;
-            ++matches;
-          }
-          if (matches == (long) pattern.size()) {
-            fun(*iter);
-          }
-          stream_iter = From(*iter);
-          while (matches > 0 && stream_iter != stream_end) {
-            if ((*stream_iter)->OpCode() == Instr::Code::NOP) {
-              Delete(stream_iter++);
-            } else {
-              ++stream_iter;
-            }
-            --matches;
-          }
-        }
-        ++iter;
-      }
-    }
+    void Dump();
+
+    void VisitPattern(std::initializer_list<InstrCode> pattern, void (*fun)(Instr*));
+
   };
 };
 

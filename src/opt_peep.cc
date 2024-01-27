@@ -9,16 +9,16 @@ static void ReplaceSingleInstructionLoops(Instr::Stream &stream) {
     Instr *first = instr;
     Instr *second = first->Next();
     Instr *third = second->Next();
-    if (first->Operand1() == (uintptr_t) third && third->Operand1() == (uintptr_t) first &&
+    if (first->Operand1() == (Instr::operand_type) third && third->Operand1() == (Instr::operand_type) first &&
         second->Operand1() % 2 == 1) {
-          first->SetOpCode(Instr::Code::SET_CELL);
+          first->SetOpCode(InstrCode::SET_CELL);
           first->SetOperand1(0);
-          second->SetOpCode(Instr::Code::NOP);
-          third->SetOpCode(Instr::Code::NOP);
+          second->SetOpCode(InstrCode::NOP);
+          third->SetOpCode(InstrCode::NOP);
     }
   };
-  stream.VisitPattern({Instr::Code::JUMP_ZERO, Instr::Code::INCR_CELL, Instr::Code::JUMP_NON_ZERO}, callback);
-  stream.VisitPattern({Instr::Code::JUMP_ZERO, Instr::Code::DECR_CELL, Instr::Code::JUMP_NON_ZERO}, callback);
+  stream.VisitPattern({InstrCode::JUMP_ZERO, InstrCode::INCR_CELL, InstrCode::JUMP_NON_ZERO}, callback);
+  stream.VisitPattern({InstrCode::JUMP_ZERO, InstrCode::DECR_CELL, InstrCode::JUMP_NON_ZERO}, callback);
 }
 
 static void ReplaceFindCellLoops(Instr::Stream &stream) {
@@ -29,19 +29,19 @@ static void ReplaceFindCellLoops(Instr::Stream &stream) {
       Instr *first = (*iter++);
       Instr *second = first->Next();
       Instr *third = (second) ? second->Next() : nullptr;
-      if (first && second && third && first->OpCode() == Instr::Code::JUMP_ZERO
-          && third->OpCode() == Instr::Code::JUMP_NON_ZERO && first->Operand1() == (uintptr_t) third
-          && third->Operand1() == (uintptr_t) first) {
+      if (first && second && third && first->OpCode() == InstrCode::JUMP_ZERO
+          && third->OpCode() == InstrCode::JUMP_NON_ZERO && first->Operand1() == (Instr::operand_type) third
+          && third->Operand1() == (Instr::operand_type) first) {
         bool replaced = false;
-        if (second->OpCode() == Instr::Code::INCR_PTR) {
+        if (second->OpCode() == InstrCode::INCR_PTR) {
           // [>]
-          first->SetOpCode(Instr::Code::FIND_CELL_HIGH);
+          first->SetOpCode(InstrCode::FIND_CELL_HIGH);
           first->SetOperand1(0);
           first->SetOperand2(second->Operand1());
           replaced = true;
-        } else if (second->OpCode() == Instr::Code::DECR_PTR) {
+        } else if (second->OpCode() == InstrCode::DECR_PTR) {
           // [<]
-          first->SetOpCode(Instr::Code::FIND_CELL_LOW);
+          first->SetOpCode(InstrCode::FIND_CELL_LOW);
           first->SetOperand1(0);
           first->SetOperand2(second->Operand1());
           replaced = true;
@@ -58,32 +58,18 @@ static void ReplaceFindCellLoops(Instr::Stream &stream) {
 }
 
 static void MergeSetIncrDecr(Instr::Stream &stream) {
-  auto iter = stream.Begin();
-  const auto end = stream.End();
-  while (iter != end) {
-    if ((*iter)->OpCode() == Instr::Code::SET_CELL) {
-      Instr *instr = *iter;
-      Instr::Code next_op_code = Instr::Code::NOP;
-      if (instr->Next()) {
-        next_op_code = instr->Next()->OpCode();
-      }
-      uint8_t value = 0;
-      if (next_op_code == Instr::Code::INCR_CELL || next_op_code == Instr::Code::DECR_CELL) {
-        value = (uint8_t) instr->Operand1();
-        if (next_op_code == Instr::Code::INCR_CELL) {
-          value += (uint8_t) instr->Next()->Operand1();
-        } else {
-          value -= (uint8_t) instr->Next()->Operand1();
-        }
-        instr->SetOperand1(value);
-        stream.Delete(++iter);
-      } else {
-        ++iter;
-      }
+  auto callback = [](Instr *instr) {
+    Instr *set = instr;
+    Instr *incr_decr = set->Next();
+    if (incr_decr->OpCode() == InstrCode::INCR_CELL) {
+      set->SetOperand1(set->Operand1() + incr_decr->Operand1());
     } else {
-      ++iter;
+      set->SetOperand1(set->Operand1() - incr_decr->Operand1());
     }
-  }
+    incr_decr->SetOpCode(InstrCode::NOP);
+  };
+  stream.VisitPattern({InstrCode::SET_CELL, InstrCode::INCR_CELL}, callback);
+  stream.VisitPattern({InstrCode::SET_CELL, InstrCode::DECR_CELL}, callback);
 }
 
 void OptPeep(Instr::Stream &stream) {

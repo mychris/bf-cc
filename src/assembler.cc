@@ -306,46 +306,46 @@ std::variant<CodeEntry, Err> AssemblerX8664::Assemble(Instr::Stream &stream) {
   while (iter != end) {
     auto instruction = *iter;
     switch (instruction->OpCode()) {
-    case Instr::Code::ANY:
+    case InstrCode::ANY:
       // should not be in the stream!
       break;
-    case Instr::Code::NOP:
+    case InstrCode::NOP:
       err = EmitNop(m.mem);
       break;
-    case Instr::Code::INCR_CELL:
+    case InstrCode::INCR_CELL:
       err = EmitIncrCell(m.mem, (uint8_t) instruction->Operand1());
       break;
-    case Instr::Code::DECR_CELL:
+    case InstrCode::DECR_CELL:
       err = EmitDecrCell(m.mem, (uint8_t) instruction->Operand1());
       break;
-    case Instr::Code::SET_CELL:
+    case InstrCode::SET_CELL:
       err = EmitSetCell(m.mem, (uint8_t) instruction->Operand1());
       break;
-    case Instr::Code::INCR_PTR:
+    case InstrCode::INCR_PTR:
       err = EmitIncrPtr(m.mem, (uintptr_t) instruction->Operand1());
       break;
-    case Instr::Code::DECR_PTR:
+    case InstrCode::DECR_PTR:
       err = EmitDecrPtr(m.mem, (uintptr_t) instruction->Operand1());
       break;
-    case Instr::Code::READ:
+    case InstrCode::READ:
       err = EmitRead(m.mem);
       break;
-    case Instr::Code::WRITE:
+    case InstrCode::WRITE:
       err = EmitWrite(m.mem);
       break;
-    case Instr::Code::JUMP_ZERO:
+    case InstrCode::JUMP_ZERO:
       err = EmitJumpZero(m.mem);
       jump_list.push_back({instruction, m.mem.CurrentWriteAddr()});
       break;
-    case Instr::Code::JUMP_NON_ZERO:
+    case InstrCode::JUMP_NON_ZERO:
       err = EmitJumpNonZero(m.mem);
       jump_list.push_back({instruction, m.mem.CurrentWriteAddr()});
       break;
-    case Instr::Code::FIND_CELL_HIGH:
-      err = EmitFindCellHigh(m.mem, (uint8_t) instruction->Operand1(), instruction->Operand2());
+    case InstrCode::FIND_CELL_HIGH:
+      err = EmitFindCellHigh(m.mem, (uint8_t) instruction->Operand1(), (uintptr_t)instruction->Operand2());
       break;
-    case Instr::Code::FIND_CELL_LOW:
-      err = EmitFindCellLow(m.mem, (uint8_t) instruction->Operand1(), instruction->Operand2());
+    case InstrCode::FIND_CELL_LOW:
+      err = EmitFindCellLow(m.mem, (uint8_t) instruction->Operand1(), (uintptr_t)instruction->Operand2());
       break;
     }
     if (!err.IsOk()) {
@@ -357,18 +357,18 @@ std::variant<CodeEntry, Err> AssemblerX8664::Assemble(Instr::Stream &stream) {
   for (const auto &[jump, code_pos] : jump_list) {
     uint8_t *target_pos = 0;
     for (const auto &[target_jump, pos2] : jump_list) {
-      if (jump->Operand1() == (uintptr_t) target_jump) {
+      if (jump->Operand1() == (Instr::operand_type) target_jump) {
         target_pos = pos2;
         break;
       }
     }
     assert(target_pos > (uint8_t *) 0 && "Jump destination not found");
-    if (jump->OpCode() == Instr::Code::JUMP_ZERO) {
+    if (jump->OpCode() == InstrCode::JUMP_ZERO) {
       err = PatchJumpZero(m.mem, code_pos, (uintptr_t) (target_pos - code_pos));
       if (!err.IsOk()) {
         return err;
       }
-    } else if (jump->OpCode() == Instr::Code::JUMP_NON_ZERO) {
+    } else if (jump->OpCode() == InstrCode::JUMP_NON_ZERO) {
       err = PatchJumpNonZero(m.mem, code_pos, (uintptr_t) (target_pos - code_pos));
       if (!err.IsOk()) {
         return err;

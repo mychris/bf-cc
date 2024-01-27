@@ -14,27 +14,27 @@ void Interpreter::Run(Heap &heap, Instr::Stream &stream) {
   while (iter != end) {
     Instr *code = *iter;
     switch (code->OpCode()) {
-    case Instr::Code::ANY: {
+    case InstrCode::ANY: {
       // TODO: should not be in the stream!
     } break;
-    case Instr::Code::NOP: {
+    case InstrCode::NOP: {
     } break;
-    case Instr::Code::INCR_CELL: {
+    case InstrCode::INCR_CELL: {
       heap.IncrementCell((uint8_t) code->Operand1());
     } break;
-    case Instr::Code::DECR_CELL: {
+    case InstrCode::DECR_CELL: {
       heap.DecrementCell((uint8_t) code->Operand1());
     } break;
-    case Instr::Code::SET_CELL: {
+    case InstrCode::SET_CELL: {
       heap.SetCell((uint8_t) code->Operand1());
     } break;
-    case Instr::Code::INCR_PTR: {
+    case InstrCode::INCR_PTR: {
       heap.IncrementDataPointer((int64_t) code->Operand1());
     } break;
-    case Instr::Code::DECR_PTR: {
+    case InstrCode::DECR_PTR: {
       heap.DecrementDataPointer((int64_t) code->Operand1());
     } break;
-    case Instr::Code::READ: {
+    case InstrCode::READ: {
       const int input = std::getchar();
       if (EOF == input) {
         heap.SetCell(0);
@@ -42,27 +42,27 @@ void Interpreter::Run(Heap &heap, Instr::Stream &stream) {
         heap.SetCell((uint8_t) input); 
       }
     } break;
-    case Instr::Code::WRITE: {
+    case InstrCode::WRITE: {
       const uint8_t output = heap.GetCell();
       std::putchar((int) output);
     } break;
-    case Instr::Code::JUMP_ZERO: {
+    case InstrCode::JUMP_ZERO: {
       if (heap.GetCell() == 0) {
         iter.TakeJump();
       }
     } break;
-    case Instr::Code::JUMP_NON_ZERO: {
+    case InstrCode::JUMP_NON_ZERO: {
       if (heap.GetCell() != 0) {
         iter.TakeJump();
       }
     } break;
-    case Instr::Code::FIND_CELL_HIGH: {
+    case InstrCode::FIND_CELL_HIGH: {
       const uint8_t val = (uint8_t) code->Operand1();
       while (heap.GetCell() != val) {
         heap.IncrementDataPointer((int64_t) code->Operand2());
       }
     } break;
-    case Instr::Code::FIND_CELL_LOW: {
+    case InstrCode::FIND_CELL_LOW: {
       const uint8_t val = (uint8_t) code->Operand1();
       while (heap.GetCell() != val) {
         heap.DecrementDataPointer((int64_t) code->Operand2());

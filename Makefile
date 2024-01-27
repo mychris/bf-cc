@@ -2,9 +2,9 @@
 CXX = clang++
 
 EXE := bf-cc
-SRC != find . -name '*.cc'
+SRC != find src -name '*.cc'
 OBJ := ${SRC:%.cc=%.o}
-HDR != find . -name '*.h'
+HDR != find src -name '*.h'
 
 CXXFLAGS = --std=c++20 -pedantic
 CXXFLAGS += -Wall -Wextra \
