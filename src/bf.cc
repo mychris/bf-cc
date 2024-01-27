@@ -117,49 +117,49 @@ static void parse_opts(int argc, char **argv) {
   }
 }
 
-std::variant<Instr::Stream, Err> parse(const char *input) {
-  Instr::Stream stream = Instr::Stream::Create();
-  stream.Prepend(InstrCode::NOP);
-  std::vector<Instr *> jump_stack = {};
+std::variant<Operation::Stream, Err> parse(const char *input) {
+  Operation::Stream stream = Operation::Stream::Create();
+  stream.Prepend(Instruction::NOP);
+  std::vector<Operation *> jump_stack = {};
   while (*input) {
     const char c = *input;
     switch (c) {
     case OP_INCR: {
-      stream.Append(InstrCode::INCR_CELL, 1);
+      stream.Append(Instruction::INCR_CELL, 1);
     } break;
     case OP_DECR: {
-      stream.Append(InstrCode::DECR_CELL, 1);
+      stream.Append(Instruction::DECR_CELL, 1);
     } break;
     case OP_NEXT: {
-      stream.Append(InstrCode::INCR_PTR, 1);
+      stream.Append(Instruction::INCR_PTR, 1);
     } break;
     case OP_PREV: {
-      stream.Append(InstrCode::DECR_PTR, 1);
+      stream.Append(Instruction::DECR_PTR, 1);
     } break;
     case OP_READ: {
-      stream.Append(InstrCode::READ, 0);
+      stream.Append(Instruction::READ, 0);
     } break;
     case OP_WRIT: {
-      stream.Append(InstrCode::WRITE, 0);
+      stream.Append(Instruction::WRITE, 0);
     } break;
     case OP_JMPF: {
-      stream.Append(InstrCode::JUMP_ZERO, 0);
-      Instr *this_op = stream.Last();
+      stream.Append(Instruction::JUMP_ZERO, 0);
+      Operation *this_op = stream.Last();
       jump_stack.push_back(this_op);
     } break;
     case OP_JMPB: {
-      Instr *other = jump_stack.back();
+      Operation *other = jump_stack.back();
       jump_stack.pop_back();
-      stream.Append(InstrCode::JUMP_NON_ZERO, (Instr::operand_type) other);
-      Instr *this_op = stream.Last();
-      other->SetOperand1((Instr::operand_type) this_op);
+      stream.Append(Instruction::JUMP_NON_ZERO, (Operation::operand_type) other);
+      Operation *this_op = stream.Last();
+      other->SetOperand1((Operation::operand_type) this_op);
     } break;
     default:
       break;
     }
     ++input;
   }
-  stream.Append(InstrCode::NOP);
+  stream.Append(Instruction::NOP);
   if (0 != jump_stack.size()) {
     return Err::UnmatchedJump();
   }

@@ -9,7 +9,7 @@
 
 #include "error.h"
 
-enum class InstrCode {
+enum class Instruction {
   NOP = 1 << 0,
   INCR_CELL = 1 << 1,
   DECR_CELL = 1 << 2,
@@ -26,36 +26,36 @@ enum class InstrCode {
   ANY = 1 << 13,
 };
 
-class Instr final {
+class Operation final {
 public:
   typedef intptr_t operand_type;
 
 private:
   struct M {
-    InstrCode op_code{InstrCode::NOP};
-    Instr *next{nullptr};
-    Instr *prev{nullptr};
+    Instruction code{Instruction::NOP};
+    Operation *next{nullptr};
+    Operation *prev{nullptr};
     intptr_t operands[2]{0, 0};
   } m;
 
-  Instr(const Instr &) = delete;
-  Instr &operator=(const Instr &) = delete;
+  Operation(const Operation &) = delete;
+  Operation &operator=(const Operation &) = delete;
 
-  explicit Instr(M m) : m(std::move(m)) {
+  explicit Operation(M m) : m(std::move(m)) {
   }
 
-  static Instr Create(enum InstrCode op_code, intptr_t op1 = 0, intptr_t op2 = 0) {
-    return Instr(M{
-        .op_code = op_code,
+  static Operation Create(enum Instruction code, intptr_t op1 = 0, intptr_t op2 = 0) {
+    return Operation(M{
+        .code = code,
         .next = nullptr,
         .prev = nullptr,
         .operands = {op1, op2},
     });
   }
 
-  static Instr *Allocate(enum InstrCode op_code, intptr_t op1 = 0, intptr_t op2 = 0) {
-    Instr *instr = new (std::nothrow) Instr(M{
-        .op_code = op_code,
+  static Operation *Allocate(enum Instruction code, intptr_t op1 = 0, intptr_t op2 = 0) {
+    Operation *instr = new (std::nothrow) Operation(M{
+        .code = code,
         .next = nullptr,
         .prev = nullptr,
         .operands = {op1, op2},
@@ -66,39 +66,39 @@ private:
     return instr;
   }
 
-  inline void SetNext(Instr *next) {
+  inline void SetNext(Operation *next) {
     m.next = next;
   }
 
-  inline void SetPrev(Instr *prev) {
+  inline void SetPrev(Operation *prev) {
     m.prev = prev;
   }
 
 public:
-  Instr(Instr &&other) : m(std::exchange(other.m, {InstrCode::NOP, nullptr, nullptr, {0, 0}})) {
+  Operation(Operation &&other) : m(std::exchange(other.m, {Instruction::NOP, nullptr, nullptr, {0, 0}})) {
   }
 
-  Instr &operator=(Instr &&other) noexcept {
+  Operation &operator=(Operation &&other) noexcept {
     std::swap(m, other.m);
     return *this;
   }
 
-  ~Instr() = default;
+  ~Operation() = default;
 
-  inline InstrCode OpCode() const {
-    return m.op_code;
+  inline Instruction OpCode() const {
+    return m.code;
   }
 
-  inline void SetOpCode(enum InstrCode cmd) {
-    m.op_code = cmd;
+  inline void SetOpCode(enum Instruction cmd) {
+    m.code = cmd;
   }
 
   inline bool IsJump() const {
-    return m.op_code == InstrCode::JUMP_ZERO || m.op_code == InstrCode::JUMP_NON_ZERO;
+    return m.code == Instruction::JUMP_ZERO || m.code == Instruction::JUMP_NON_ZERO;
   }
 
   inline bool IsIO() const {
-    return m.op_code == InstrCode::READ || m.op_code == InstrCode::WRITE;
+    return m.code == Instruction::READ || m.code == Instruction::WRITE;
   }
 
   inline intptr_t Operand1() const {
@@ -117,19 +117,19 @@ public:
     m.operands[1] = val;
   }
 
-  inline Instr *Next() {
+  inline Operation *Next() {
     return m.next;
   }
 
-  inline Instr *Prev() {
+  inline Operation *Prev() {
     return m.prev;
   }
 
   class Stream final {
   private:
     struct M {
-      Instr *head;
-      Instr *tail;
+      Operation *head;
+      Operation *tail;
       std::size_t length;
     } m;
 
@@ -153,9 +153,9 @@ public:
     }
 
     ~Stream() {
-      Instr *op = m.head;
+      Operation *op = m.head;
       while (op) {
-        Instr *next = op->Next();
+        Operation *next = op->Next();
         delete op;
         op = next;
       }
@@ -164,16 +164,16 @@ public:
       m.length = 0;
     }
 
-    inline Instr *First() {
+    inline Operation *First() {
       return m.head;
     }
 
-    inline Instr *Last() {
+    inline Operation *Last() {
       return m.tail;
     }
 
-    inline void Append(InstrCode code, intptr_t op1 = 0, intptr_t op2 = 0) {
-      Instr *instr = Instr::Allocate(code, op1, op2);
+    inline void Append(Instruction code, intptr_t op1 = 0, intptr_t op2 = 0) {
+      Operation *instr = Operation::Allocate(code, op1, op2);
       ++m.length;
       if (!m.head) {
         m.head = instr;
@@ -187,8 +187,8 @@ public:
       }
     }
 
-    inline void Prepend(InstrCode code, intptr_t op1 = 0, intptr_t op2 = 0) {
-      Instr *instr = Instr::Allocate(code, op1, op2);
+    inline void Prepend(Instruction code, intptr_t op1 = 0, intptr_t op2 = 0) {
+      Operation *instr = Operation::Allocate(code, op1, op2);
       ++m.length;
       if (!m.head) {
         m.head = instr;
@@ -202,15 +202,15 @@ public:
       }
     }
 
-    inline void InsertBefore(Instr *instr, InstrCode code, intptr_t op1 = 0, intptr_t op2 = 0) {
+    inline void InsertBefore(Operation *instr, Instruction code, intptr_t op1 = 0, intptr_t op2 = 0) {
       if (nullptr == instr) {
         Append(code, op1, op2);
       } else if (nullptr == instr->Prev()) {
         Prepend(code, op1, op2);
       } else {
-        Instr *prev = instr->Prev();
-        Instr *next = instr;
-        Instr *new_instr = Instr::Allocate(code, op1, op2);
+        Operation *prev = instr->Prev();
+        Operation *next = instr;
+        Operation *new_instr = Operation::Allocate(code, op1, op2);
         prev->SetNext(new_instr);
         next->SetPrev(new_instr);
         new_instr->SetPrev(prev);
@@ -218,7 +218,7 @@ public:
       }
     }
 
-    inline void Unlink(Instr &instr) {
+    inline void Unlink(Operation &instr) {
       --m.length;
       if (m.head == &instr) {
         if (m.tail == &instr) {
@@ -239,11 +239,11 @@ public:
       instr.SetPrev(nullptr);
     }
 
-    inline void Unlink(Instr *instr) {
+    inline void Unlink(Operation *instr) {
       Unlink(*instr);
     }
 
-    inline void Delete(Instr *instr) {
+    inline void Delete(Operation *instr) {
       Unlink(*instr);
       delete instr;
     }
@@ -252,14 +252,14 @@ public:
     private:
       struct M {
         Stream *stream;
-        Instr *current;
+        Operation *current;
       } m;
 
       explicit Iterator(M m) noexcept : m(std::move(m)) {
       }
 
     public:
-      static Iterator Create(Stream *stream, Instr *instr) {
+      static Iterator Create(Stream *stream, Operation *instr) {
         return Iterator(M{
             .stream = stream,
             .current = instr,
@@ -345,20 +345,20 @@ public:
         return !(*this == iter);
       }
 
-      inline Instr *operator*() {
+      inline Operation *operator*() {
         return m.current;
       }
 
-      inline Instr *operator->() {
+      inline Operation *operator->() {
         return m.current;
       }
 
-      inline Iterator &JumpTo(Instr *instr) {
+      inline Iterator &JumpTo(Operation *instr) {
         m.current = instr;
         return *this;
       }
 
-      bool LookingAt(const std::initializer_list<InstrCode> pattern);
+      bool LookingAt(const std::initializer_list<Instruction> pattern);
     };
 
     Iterator Begin() {
@@ -377,7 +377,7 @@ public:
       return End();
     }
 
-    Iterator From(Instr *instr) {
+    Iterator From(Operation *instr) {
       return Iterator::Create(this, instr);
     }
 
@@ -391,8 +391,8 @@ public:
 
     void Dump();
 
-    void VisitPattern(std::initializer_list<InstrCode> pattern,
-                      void (*fun)(Instr::Stream &, Instr::Stream::Iterator &));
+    void VisitPattern(std::initializer_list<Instruction> pattern,
+                      void (*fun)(Operation::Stream &, Operation::Stream::Iterator &));
   };
 };
 

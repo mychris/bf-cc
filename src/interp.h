@@ -11,7 +11,7 @@ private:
   }
 
 public:
-  void Run(Heap &, Instr::Stream &);
+  void Run(Heap &, Operation::Stream &);
 
   static Interpreter Create() {
     return Interpreter();

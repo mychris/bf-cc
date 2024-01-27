@@ -28,7 +28,7 @@ public:
     return AssemblerX8664(M{.mem = mem});
   }
 
-  std::variant<CodeEntry, Err> Assemble(Instr::Stream &);
+  std::variant<CodeEntry, Err> Assemble(Operation::Stream &);
 };
 
 #endif /* BF_CC_ASSEMBLER_H */

@@ -4,17 +4,17 @@
 #include "optimize.h"
 
 TEST(testOptCommentLoop, emptyStream) {
-  Instr::Stream stream = Instr::Stream::Create();
+  Operation::Stream stream = Operation::Stream::Create();
   OptCommentLoop(stream);
   EXPECT_EQ(nullptr, stream.First());
   EXPECT_EQ(nullptr, stream.Last());
 }
 
 TEST(testOptCommentLoop, nopStream) {
-  Instr::Stream stream = Instr::Stream::Create();
-  stream.Prepend(InstrCode::NOP);
-  stream.Prepend(InstrCode::NOP);
-  stream.Prepend(InstrCode::NOP);
+  Operation::Stream stream = Operation::Stream::Create();
+  stream.Prepend(Instruction::NOP);
+  stream.Prepend(Instruction::NOP);
+  stream.Prepend(Instruction::NOP);
   OptCommentLoop(stream);
   size_t count = 0;
   for (auto *instr : stream) {

@@ -2,50 +2,50 @@
 
 #include <cstdio>
 
-void Instr::Stream::Dump() {
+void Operation::Stream::Dump() {
   auto iter = Begin();
   const auto end = End();
   while (iter != end) {
-    Instr *code = *iter;
+    Operation *code = *iter;
     printf("%zu ", (uintptr_t) code);
     switch (code->OpCode()) {
-    case InstrCode::ANY: {
+    case Instruction::ANY: {
       putchar('~');
     } break;
-    case InstrCode::NOP: {
+    case Instruction::NOP: {
       putchar(' ');
     } break;
-    case InstrCode::INCR_CELL: {
+    case Instruction::INCR_CELL: {
       putchar('+');
     } break;
-    case InstrCode::DECR_CELL: {
+    case Instruction::DECR_CELL: {
       putchar('-');
     } break;
-    case InstrCode::SET_CELL: {
+    case Instruction::SET_CELL: {
       putchar('=');
     } break;
-    case InstrCode::INCR_PTR: {
+    case Instruction::INCR_PTR: {
       putchar('>');
     } break;
-    case InstrCode::DECR_PTR: {
+    case Instruction::DECR_PTR: {
       putchar('<');
     } break;
-    case InstrCode::READ: {
+    case Instruction::READ: {
       putchar(',');
     } break;
-    case InstrCode::WRITE: {
+    case Instruction::WRITE: {
       putchar('.');
     } break;
-    case InstrCode::JUMP_ZERO: {
+    case Instruction::JUMP_ZERO: {
       putchar('[');
     } break;
-    case InstrCode::JUMP_NON_ZERO: {
+    case Instruction::JUMP_NON_ZERO: {
       putchar(']');
     } break;
-    case InstrCode::FIND_CELL_HIGH: {
+    case Instruction::FIND_CELL_HIGH: {
       putchar(')');
     } break;
-    case InstrCode::FIND_CELL_LOW: {
+    case Instruction::FIND_CELL_LOW: {
       putchar('(');
     } break;
     }
@@ -54,12 +54,12 @@ void Instr::Stream::Dump() {
   }
 }
 
-void Instr::Stream::VisitPattern(std::initializer_list<InstrCode> pattern,
-                                 void (*fun)(Instr::Stream &, Instr::Stream::Iterator &)) {
+void Operation::Stream::VisitPattern(std::initializer_list<Instruction> pattern,
+                                 void (*fun)(Operation::Stream &, Operation::Stream::Iterator &)) {
   if (0 == pattern.size()) {
     return;
   }
-  InstrCode first = *pattern.begin();
+  Instruction first = *pattern.begin();
   auto iter = Begin();
   const auto end = End();
   while (iter != end) {
@@ -70,7 +70,7 @@ void Instr::Stream::VisitPattern(std::initializer_list<InstrCode> pattern,
       auto pattern_end = pattern.end();
       long matches = 0;
       while (stream_iter != stream_end && pattern_iter != pattern_end
-             && (*pattern_iter == InstrCode::ANY || *pattern_iter == (*stream_iter)->OpCode())) {
+             && (*pattern_iter == Instruction::ANY || *pattern_iter == (*stream_iter)->OpCode())) {
         ++stream_iter;
         ++pattern_iter;
         ++matches;
@@ -81,7 +81,7 @@ void Instr::Stream::VisitPattern(std::initializer_list<InstrCode> pattern,
       }
       stream_iter = From(*iter);
       while (matches > 0 && stream_iter != stream_end) {
-        if ((*stream_iter)->OpCode() == InstrCode::NOP) {
+        if ((*stream_iter)->OpCode() == Instruction::NOP) {
           Delete(stream_iter++);
         } else {
           ++stream_iter;
@@ -93,12 +93,12 @@ void Instr::Stream::VisitPattern(std::initializer_list<InstrCode> pattern,
   }
 }
 
-bool Instr::Stream::Iterator::LookingAt(const std::initializer_list<InstrCode> pattern) {
+bool Operation::Stream::Iterator::LookingAt(const std::initializer_list<Instruction> pattern) {
   if (0 == pattern.size()) {
     return true;
   }
   auto counter = 0u;
-  Instr *current = m.current;
+  Operation *current = m.current;
   auto pattern_iter = pattern.begin();
   const auto pattern_end = pattern.end();
   while (current && pattern_iter != pattern_end && current->OpCode() == *pattern_iter) {

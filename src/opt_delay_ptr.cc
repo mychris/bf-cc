@@ -2,42 +2,42 @@
 #include "instr.h"
 #include "optimize.h"
 
-static void do_it(Instr::Stream &stream, Instr::Stream::Iterator &iter, const Instr::Stream::Iterator &end) {
+static void do_it(Operation::Stream &stream, Operation::Stream::Iterator &iter, const Operation::Stream::Iterator &end) {
   intptr_t offset = 0;
   while (iter != end) {
     switch ((*iter)->OpCode()) {
-    case InstrCode::NOP:
-    case InstrCode::ANY: {
+    case Instruction::NOP:
+    case Instruction::ANY: {
       ++iter;
     } break;
-    case InstrCode::FIND_CELL_LOW:
-    case InstrCode::FIND_CELL_HIGH:
-    case InstrCode::JUMP_NON_ZERO:
-    case InstrCode::JUMP_ZERO: {
+    case Instruction::FIND_CELL_LOW:
+    case Instruction::FIND_CELL_HIGH:
+    case Instruction::JUMP_NON_ZERO:
+    case Instruction::JUMP_ZERO: {
       if (offset != 0) {
-        InstrCode code = (offset > 0) ? InstrCode::INCR_PTR : InstrCode::DECR_PTR;
+        Instruction code = (offset > 0) ? Instruction::INCR_PTR : Instruction::DECR_PTR;
         offset = (offset > 0) ? offset : -offset;
         stream.InsertBefore(*iter, code, offset, 0);
       }
       ++iter;
       return;
     } break;
-    case InstrCode::SET_CELL:
-    case InstrCode::INCR_CELL:
-    case InstrCode::DECR_CELL: {
+    case Instruction::SET_CELL:
+    case Instruction::INCR_CELL:
+    case Instruction::DECR_CELL: {
       (*iter)->SetOperand2(offset);
       ++iter;
     } break;
-    case InstrCode::INCR_PTR: {
+    case Instruction::INCR_PTR: {
       offset += (*iter)->Operand1();
       stream.Delete(iter++);
     } break;
-    case InstrCode::DECR_PTR: {
+    case Instruction::DECR_PTR: {
       offset -= (*iter)->Operand1();
       stream.Delete(iter++);
     } break;
-    case InstrCode::WRITE:
-    case InstrCode::READ: {
+    case Instruction::WRITE:
+    case Instruction::READ: {
       (*iter)->SetOperand2(offset);
       ++iter;
     } break;
@@ -45,7 +45,7 @@ static void do_it(Instr::Stream &stream, Instr::Stream::Iterator &iter, const In
   }
 }
 
-void OptDelayPtr(Instr::Stream &stream) {
+void OptDelayPtr(Operation::Stream &stream) {
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {

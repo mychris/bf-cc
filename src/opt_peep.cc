@@ -4,45 +4,45 @@
 #include "instr.h"
 #include "optimize.h"
 
-static void ReplaceSingleInstructionLoops(Instr::Stream &stream) {
-  auto callback = [](Instr::Stream &stream, Instr::Stream::Iterator &iter) {
+static void ReplaceSingleInstructionLoops(Operation::Stream &stream) {
+  auto callback = [](Operation::Stream &stream, Operation::Stream::Iterator &iter) {
     (void) stream;
-    Instr *first = *iter;
-    Instr *second = *(iter + 1);
-    Instr *third = *(iter + 2);
-    if (first->Operand1() == (Instr::operand_type) third && third->Operand1() == (Instr::operand_type) first
+    Operation *first = *iter;
+    Operation *second = *(iter + 1);
+    Operation *third = *(iter + 2);
+    if (first->Operand1() == (Operation::operand_type) third && third->Operand1() == (Operation::operand_type) first
         && second->Operand1() % 2 == 1) {
-      first->SetOpCode(InstrCode::SET_CELL);
+      first->SetOpCode(Instruction::SET_CELL);
       first->SetOperand1(0);
-      second->SetOpCode(InstrCode::NOP);
-      third->SetOpCode(InstrCode::NOP);
+      second->SetOpCode(Instruction::NOP);
+      third->SetOpCode(Instruction::NOP);
     }
   };
-  stream.VisitPattern({InstrCode::JUMP_ZERO, InstrCode::INCR_CELL, InstrCode::JUMP_NON_ZERO}, callback);
-  stream.VisitPattern({InstrCode::JUMP_ZERO, InstrCode::DECR_CELL, InstrCode::JUMP_NON_ZERO}, callback);
+  stream.VisitPattern({Instruction::JUMP_ZERO, Instruction::INCR_CELL, Instruction::JUMP_NON_ZERO}, callback);
+  stream.VisitPattern({Instruction::JUMP_ZERO, Instruction::DECR_CELL, Instruction::JUMP_NON_ZERO}, callback);
 }
 
-static void ReplaceFindCellLoops(Instr::Stream &stream) {
+static void ReplaceFindCellLoops(Operation::Stream &stream) {
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {
     if (iter->IsJump()) {
-      Instr *first = (*iter++);
-      Instr *second = *iter;
-      Instr *third = (second) ? *(iter + 1) : nullptr;
-      if (first && second && third && first->OpCode() == InstrCode::JUMP_ZERO
-          && third->OpCode() == InstrCode::JUMP_NON_ZERO && first->Operand1() == (Instr::operand_type) third
-          && third->Operand1() == (Instr::operand_type) first) {
+      Operation *first = (*iter++);
+      Operation *second = *iter;
+      Operation *third = (second) ? *(iter + 1) : nullptr;
+      if (first && second && third && first->OpCode() == Instruction::JUMP_ZERO
+          && third->OpCode() == Instruction::JUMP_NON_ZERO && first->Operand1() == (Operation::operand_type) third
+          && third->Operand1() == (Operation::operand_type) first) {
         bool replaced = false;
-        if (second->OpCode() == InstrCode::INCR_PTR) {
+        if (second->OpCode() == Instruction::INCR_PTR) {
           // [>]
-          first->SetOpCode(InstrCode::FIND_CELL_HIGH);
+          first->SetOpCode(Instruction::FIND_CELL_HIGH);
           first->SetOperand1(0);
           first->SetOperand2(second->Operand1());
           replaced = true;
-        } else if (second->OpCode() == InstrCode::DECR_PTR) {
+        } else if (second->OpCode() == Instruction::DECR_PTR) {
           // [<]
-          first->SetOpCode(InstrCode::FIND_CELL_LOW);
+          first->SetOpCode(Instruction::FIND_CELL_LOW);
           first->SetOperand1(0);
           first->SetOperand2(second->Operand1());
           replaced = true;
@@ -58,24 +58,24 @@ static void ReplaceFindCellLoops(Instr::Stream &stream) {
   }
 }
 
-static void MergeSetIncrDecr(Instr::Stream &stream) {
-  static const auto incr_pattern = {InstrCode::SET_CELL, InstrCode::INCR_CELL};
-  static const auto decr_pattern = {InstrCode::SET_CELL, InstrCode::DECR_CELL};
+static void MergeSetIncrDecr(Operation::Stream &stream) {
+  static const auto incr_pattern = {Instruction::SET_CELL, Instruction::INCR_CELL};
+  static const auto decr_pattern = {Instruction::SET_CELL, Instruction::DECR_CELL};
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {
     if (iter.LookingAt(incr_pattern)) {
-      Instr *set = *iter;
+      Operation *set = *iter;
       ++iter;
-      Instr *incr = *iter;
+      Operation *incr = *iter;
       if (set->Operand2() == incr->Operand2()) {
         set->SetOperand1(set->Operand1() + incr->Operand1());
         stream.Delete(iter--);
       }
     } else if (iter.LookingAt(decr_pattern)) {
-      Instr *set = *iter;
+      Operation *set = *iter;
       ++iter;
-      Instr *decr = *iter;
+      Operation *decr = *iter;
       if (set->Operand2() == decr->Operand2()) {
         set->SetOperand1(set->Operand1() - decr->Operand1());
         stream.Delete(iter--);
@@ -86,7 +86,7 @@ static void MergeSetIncrDecr(Instr::Stream &stream) {
   }
 }
 
-void OptPeep(Instr::Stream &stream) {
+void OptPeep(Operation::Stream &stream) {
   ReplaceSingleInstructionLoops(stream);
   ReplaceFindCellLoops(stream);
   MergeSetIncrDecr(stream);
