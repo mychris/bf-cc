@@ -46,24 +46,24 @@ void Interpreter::Run(Heap &heap, Instr::Stream &stream) {
       std::putchar((int) output);
     } break;
     case InstrCode::JUMP_ZERO: {
-      if (heap.GetCell() == 0) {
+      if (heap.GetCell(0) == 0) {
         iter.JumpTo((Instr*) iter->Operand1());
       }
     } break;
     case InstrCode::JUMP_NON_ZERO: {
-      if (heap.GetCell() != 0) {
+      if (heap.GetCell(0) != 0) {
         iter.JumpTo((Instr*) iter->Operand1());
       }
     } break;
     case InstrCode::FIND_CELL_HIGH: {
       const uint8_t val = (uint8_t) iter->Operand1();
-      while (heap.GetCell() != val) {
+      while (heap.GetCell(0) != val) {
         heap.IncrementDataPointer((int64_t) iter->Operand2());
       }
     } break;
     case InstrCode::FIND_CELL_LOW: {
       const uint8_t val = (uint8_t) iter->Operand1();
-      while (heap.GetCell() != val) {
+      while (heap.GetCell(0) != val) {
         heap.DecrementDataPointer((int64_t) iter->Operand2());
       }
     } break;

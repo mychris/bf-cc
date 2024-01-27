@@ -40,23 +40,23 @@ public:
   }
 
   Heap &operator=(Heap &&other) noexcept {
-    std::swap(m, other.m);
+    m = std::move(other.m);
     return *this;
   }
 
-  inline void IncrementCell(uint8_t amount, int64_t offset = 0) noexcept {
+  inline void IncrementCell(uint8_t amount, int64_t offset) noexcept {
     m.data[m.data_pointer + offset] += amount;
   }
 
-  inline void DecrementCell(uint8_t amount, int64_t offset = 0) noexcept {
+  inline void DecrementCell(uint8_t amount, int64_t offset) noexcept {
     m.data[m.data_pointer + offset] -= amount;
   }
 
-  inline void SetCell(const uint8_t value, int64_t offset = 0) noexcept {
+  inline void SetCell(const uint8_t value, int64_t offset) noexcept {
     m.data[m.data_pointer + offset] = value;
   }
 
-  inline uint8_t GetCell(int64_t offset = 0) const noexcept {
+  inline uint8_t GetCell(int64_t offset) const noexcept {
     return m.data[m.data_pointer + offset];
   }
 
