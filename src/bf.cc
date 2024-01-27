@@ -107,6 +107,8 @@ int main(int argc, char **argv) {
   parse_opts(argc, argv);
   char *content = Ensure(read_content(args.input_file_path));
   auto stream = Ensure(parse(content));
+  stream.Prepend(Instruction::NOP);
+  stream.Append(Instruction::NOP);
   free(content);
   Optimizer::Create(args.optimization_level).Run(stream);
   auto heap = Ensure(Heap::Create(args.heap_size));

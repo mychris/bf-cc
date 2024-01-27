@@ -24,7 +24,6 @@
 
 std::variant<OperationStream, Err> parse(const char *input) {
   OperationStream stream = OperationStream::Create();
-  stream.Prepend(Instruction::NOP);
   std::vector<Operation *> jump_stack = {};
   while (*input) {
     switch (*input) {
@@ -63,7 +62,6 @@ std::variant<OperationStream, Err> parse(const char *input) {
     }
     ++input;
   }
-  stream.Append(Instruction::NOP);
   if (0 != jump_stack.size()) {
     return Err::UnmatchedJump();
   }
