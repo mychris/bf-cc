@@ -20,7 +20,7 @@ TEST(TestOptCommentLoop, nopStream) {
   OptCommentLoop(stream);
   size_t count = 0;
   for (auto *instr : stream) {
-    (void) instr;
+    EXPECT_EQ(Instruction::NOP, instr->OpCode());
     ++count;
   }
   EXPECT_EQ(3, count);
