@@ -2,7 +2,7 @@
 #ifndef BF_CC_INTERP_H
 #define BF_CC_INTERP_H 1
 
-#include "heap.h"
+#include "mem.h"
 #include "instr.h"
 
 class Interpreter final {

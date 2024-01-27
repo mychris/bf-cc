@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "heap.h"
+#include "mem.h"
 #include "instr.h"
 
 void Interpreter::Run(Heap &heap, Instr::Stream &stream) {

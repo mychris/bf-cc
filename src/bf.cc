@@ -10,7 +10,7 @@
 #include "assembler.h"
 #include "error.h"
 #include "fcntl.h"
-#include "heap.h"
+#include "mem.h"
 #include "instr.h"
 #include "interp.h"
 #include "optimize.h"

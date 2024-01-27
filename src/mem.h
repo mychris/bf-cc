@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: MIT License
-#ifndef BF_CC_HEAP_H
-#define BF_CC_HEAP_H 1
+#ifndef BF_CC_MEM_H
+#define BF_CC_MEM_H 1
 
 #define DEFAULT_HEAP_SIZE 32768
 
-#include <sys/mman.h>
-#include <unistd.h>
+#if defined(BF_HEAP_GUARD_PAGES)
+#define GUARD_PAGES BF_HEAP_GUARD_PAGES
+#else
+#define GUARD_PAGES 0
+#endif
 
-#include <cerrno>
 #include <cstdint>
-#include <cstdio>
-#include <cstdlib>
 #include <memory>
 #include <utility>
 #include <variant>
+#include <iterator>
 
 #include "error.h"
 
@@ -34,6 +35,7 @@ private:
 
 public:
   static std::variant<Heap, Err> Create(size_t size) noexcept;
+
   ~Heap();
 
   Heap(Heap &&other) noexcept : m(std::exchange(other.m, {0, 0, 0, nullptr})) {
@@ -73,4 +75,62 @@ public:
   }
 };
 
-#endif /* BF_CC_HEAP_H */
+class CodeArea final {
+private:
+  struct M {
+    size_t size;
+    size_t allocated;
+    size_t reserved;
+    size_t page_size;
+    uint8_t *mem;
+  } m;
+
+  explicit CodeArea(M m) noexcept : m(std::move(m)) {
+  }
+
+  CodeArea(const CodeArea &) = delete;
+  CodeArea &operator=(const CodeArea &) = delete;
+
+  Err EmitData(const uint8_t *, const size_t);
+
+  Err PatchData(uint8_t *, const uint8_t *, const size_t);
+
+public:
+  static std::variant<CodeArea, Err> Create() noexcept;
+
+  ~CodeArea();
+
+  CodeArea(CodeArea &&other) noexcept : m(std::exchange(other.m, {0, 0, 0, 0, nullptr})) {
+  }
+
+  CodeArea &operator=(CodeArea &&other) noexcept {
+    m = std::move(other.m);
+    return *this;
+  }
+
+  inline Err EmitCode(const uint32_t c) {
+    return EmitData((const uint8_t *) &c, sizeof(uint32_t));
+  }
+
+  inline Err EmitCodeListing(std::initializer_list<uint8_t> l) {
+    return EmitData((const uint8_t *) std::data(l), l.size());
+  }
+
+  inline Err PatchCode(uint8_t *p, const uint32_t c) {
+    return PatchData(p, (const uint8_t *) &c, sizeof(uint32_t));
+  }
+
+  inline Err PatchCodeListing(uint8_t *p, std::initializer_list<uint8_t> l) {
+    return PatchData(p, (const uint8_t *) std::data(l), l.size());
+  }
+
+  inline uint8_t *CurrentWriteAddr() {
+    return m.mem + m.size;
+  }
+
+  Err MakeExecutable();
+
+  void Dump();
+};
+
+#endif /* BF_CC_MEM_H */
