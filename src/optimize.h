@@ -14,18 +14,19 @@ void OptPeep(OperationStream &);
 
 void OptDelayPtr(OperationStream &);
 
+enum class OptimizerLevel {
+  O0 = '0',
+  O1 = '1',
+  O2 = '2',
+  O3 = '3',
+};
+
 class Optimizer final {
 public:
-  enum class Level {
-    O0 = '0',
-    O1 = '1',
-    O2 = '2',
-    O3 = '3',
-  };
 
 private:
   struct M {
-    Level level;
+    OptimizerLevel level;
   } m;
 
   explicit Optimizer(M m) : m(std::move(m)) {
@@ -34,7 +35,7 @@ private:
 public:
   void Run(OperationStream &) const noexcept;
 
-  static Optimizer Create(Optimizer::Level level) noexcept {
+  static Optimizer Create(OptimizerLevel level) noexcept {
     return Optimizer(M{
         .level = level,
     });
@@ -44,7 +45,7 @@ public:
 class OptimizerPass {
 private:
   struct M {
-    Optimizer::Level level;
+    OptimizerLevel level;
     const char *name;
     void (*function)(OperationStream &);
   } m;
@@ -53,11 +54,11 @@ private:
   }
 
 public:
-  static OptimizerPass Create(const char *name, void (*function)(OperationStream &), Optimizer::Level level) {
+  static OptimizerPass Create(const char *name, void (*function)(OperationStream &), OptimizerLevel level) {
     return OptimizerPass(M{.level = level, .name = name, .function = function});
   }
 
-  Optimizer::Level Level() const {
+  OptimizerLevel Level() const {
     return m.level;
   }
 

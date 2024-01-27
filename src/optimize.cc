@@ -7,10 +7,10 @@
 
 void Optimizer::Run(OperationStream &stream) const noexcept {
   static OptimizerPass pipeline[] = {
-      OptimizerPass::Create("Remove comment loops", OptCommentLoop, Optimizer::Level::O1),
-      OptimizerPass::Create("Fuse operators", OptFusionOp, Optimizer::Level::O1),
-      OptimizerPass::Create("Peephole", OptPeep, Optimizer::Level::O2),
-      OptimizerPass::Create("Delay Moves", OptDelayPtr, Optimizer::Level::O2),
+      OptimizerPass::Create("Remove comment loops", OptCommentLoop, OptimizerLevel::O1),
+      OptimizerPass::Create("Fuse operators", OptFusionOp, OptimizerLevel::O1),
+      OptimizerPass::Create("Peephole", OptPeep, OptimizerLevel::O2),
+      OptimizerPass::Create("Delay Moves", OptDelayPtr, OptimizerLevel::O2),
   };
 
   for (auto &stage : pipeline) {
