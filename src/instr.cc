@@ -2,7 +2,7 @@
 
 #include <cstdio>
 
-void Operation::Stream::Dump() {
+void OperationStream::Dump() {
   auto iter = Begin();
   const auto end = End();
   while (iter != end) {
@@ -54,8 +54,8 @@ void Operation::Stream::Dump() {
   }
 }
 
-void Operation::Stream::VisitPattern(std::initializer_list<Instruction> pattern,
-                                 void (*fun)(Operation::Stream &, Operation::Stream::Iterator &)) {
+void OperationStream::VisitPattern(std::initializer_list<Instruction> pattern,
+                                     void (*fun)(OperationStream &, OperationStream::Iterator &)) {
   if (0 == pattern.size()) {
     return;
   }
@@ -93,7 +93,7 @@ void Operation::Stream::VisitPattern(std::initializer_list<Instruction> pattern,
   }
 }
 
-bool Operation::Stream::Iterator::LookingAt(const std::initializer_list<Instruction> pattern) {
+bool OperationStream::Iterator::LookingAt(const std::initializer_list<Instruction> pattern) {
   if (0 == pattern.size()) {
     return true;
   }

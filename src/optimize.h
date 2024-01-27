@@ -6,13 +6,13 @@
 
 #include "instr.h"
 
-void OptCommentLoop(Operation::Stream &);
+void OptCommentLoop(OperationStream &);
 
-void OptFusionOp(Operation::Stream &);
+void OptFusionOp(OperationStream &);
 
-void OptPeep(Operation::Stream &);
+void OptPeep(OperationStream &);
 
-void OptDelayPtr(Operation::Stream &);
+void OptDelayPtr(OperationStream &);
 
 class Optimizer final {
 public:
@@ -32,7 +32,7 @@ private:
   }
 
 public:
-  void Run(Operation::Stream &) const noexcept;
+  void Run(OperationStream &) const noexcept;
 
   static Optimizer Create(Optimizer::Level level) noexcept {
     return Optimizer(M{
@@ -46,14 +46,14 @@ private:
   struct M {
     Optimizer::Level level;
     const char *name;
-    void (*function)(Operation::Stream &);
+    void (*function)(OperationStream &);
   } m;
 
   explicit OptimizerPass(M m) : m(std::move(m)) {
   }
 
 public:
-  static OptimizerPass Create(const char *name, void (*function)(Operation::Stream &), Optimizer::Level level) {
+  static OptimizerPass Create(const char *name, void (*function)(OperationStream &), Optimizer::Level level) {
     return OptimizerPass(M{.level = level, .name = name, .function = function});
   }
 
@@ -65,7 +65,7 @@ public:
     return m.name;
   }
 
-  void Run(Operation::Stream &stream) const {
+  void Run(OperationStream &stream) const {
     m.function(stream);
   }
 };

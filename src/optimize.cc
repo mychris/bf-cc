@@ -5,7 +5,7 @@
 
 #include "instr.h"
 
-void Optimizer::Run(Operation::Stream &stream) const noexcept {
+void Optimizer::Run(OperationStream &stream) const noexcept {
   static OptimizerPass pipeline[] = {
       OptimizerPass::Create("Remove comment loops", OptCommentLoop, Optimizer::Level::O1),
       OptimizerPass::Create("Fuse operators", OptFusionOp, Optimizer::Level::O1),

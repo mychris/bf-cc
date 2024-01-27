@@ -7,8 +7,8 @@
 #include <variant>
 
 #include "error.h"
-#include "mem.h"
 #include "instr.h"
+#include "mem.h"
 
 typedef void (*CodeEntry)(uint8_t *);
 
@@ -28,7 +28,7 @@ public:
     return AssemblerX8664(M{.mem = mem});
   }
 
-  std::variant<CodeEntry, Err> Assemble(Operation::Stream &);
+  std::variant<CodeEntry, Err> Assemble(OperationStream &);
 };
 
 #endif /* BF_CC_ASSEMBLER_H */

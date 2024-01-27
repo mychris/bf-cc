@@ -3,8 +3,8 @@
 
 #include <sys/mman.h>
 #include <unistd.h>
-#include <cstring>
 
+#include <cstring>
 #include <utility>
 #include <variant>
 
@@ -103,4 +103,3 @@ Err CodeArea::MakeExecutable() {
   }
   return Err::Ok();
 }
-

@@ -2,8 +2,8 @@
 #ifndef BF_CC_INTERP_H
 #define BF_CC_INTERP_H 1
 
-#include "mem.h"
 #include "instr.h"
+#include "mem.h"
 
 class Interpreter final {
 private:
@@ -11,7 +11,7 @@ private:
   }
 
 public:
-  void Run(Heap &, Operation::Stream &);
+  void Run(Heap &, OperationStream &);
 
   static Interpreter Create() {
     return Interpreter();

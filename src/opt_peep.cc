@@ -4,8 +4,8 @@
 #include "instr.h"
 #include "optimize.h"
 
-static void ReplaceSingleInstructionLoops(Operation::Stream &stream) {
-  auto callback = [](Operation::Stream &stream, Operation::Stream::Iterator &iter) {
+static void ReplaceSingleInstructionLoops(OperationStream &stream) {
+  auto callback = [](OperationStream &stream, OperationStream::Iterator &iter) {
     (void) stream;
     Operation *first = *iter;
     Operation *second = *(iter + 1);
@@ -22,7 +22,7 @@ static void ReplaceSingleInstructionLoops(Operation::Stream &stream) {
   stream.VisitPattern({Instruction::JUMP_ZERO, Instruction::DECR_CELL, Instruction::JUMP_NON_ZERO}, callback);
 }
 
-static void ReplaceFindCellLoops(Operation::Stream &stream) {
+static void ReplaceFindCellLoops(OperationStream &stream) {
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {
@@ -58,7 +58,7 @@ static void ReplaceFindCellLoops(Operation::Stream &stream) {
   }
 }
 
-static void MergeSetIncrDecr(Operation::Stream &stream) {
+static void MergeSetIncrDecr(OperationStream &stream) {
   static const auto incr_pattern = {Instruction::SET_CELL, Instruction::INCR_CELL};
   static const auto decr_pattern = {Instruction::SET_CELL, Instruction::DECR_CELL};
   auto iter = stream.Begin();
@@ -86,7 +86,7 @@ static void MergeSetIncrDecr(Operation::Stream &stream) {
   }
 }
 
-void OptPeep(Operation::Stream &stream) {
+void OptPeep(OperationStream &stream) {
   ReplaceSingleInstructionLoops(stream);
   ReplaceFindCellLoops(stream);
   MergeSetIncrDecr(stream);

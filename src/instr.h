@@ -27,6 +27,8 @@ enum class Instruction {
 };
 
 class Operation final {
+  friend class OperationStream;
+
 public:
   typedef intptr_t operand_type;
 
@@ -64,6 +66,14 @@ private:
       Error(Err::OutOfMemory());
     }
     return instr;
+  }
+
+  inline Operation *Next() {
+    return m.next;
+  }
+
+  inline Operation *Prev() {
+    return m.prev;
   }
 
   inline void SetNext(Operation *next) {
@@ -116,284 +126,276 @@ public:
   inline void SetOperand2(intptr_t val) {
     m.operands[1] = val;
   }
+};
 
-  inline Operation *Next() {
-    return m.next;
+class OperationStream final {
+private:
+  struct M {
+    Operation *head;
+    Operation *tail;
+    std::size_t length;
+  } m;
+
+  OperationStream(const OperationStream &) = delete;
+  OperationStream &operator=(const OperationStream &) = delete;
+
+  explicit OperationStream(M m) : m(std::move(m)) {
   }
 
-  inline Operation *Prev() {
-    return m.prev;
+public:
+  OperationStream(OperationStream &&other) noexcept : m(std::exchange(other.m, {})) {
   }
 
-  class Stream final {
+  OperationStream &operator=(OperationStream &&other) noexcept {
+    std::swap(m, other.m);
+    return *this;
+  }
+
+  static OperationStream Create() noexcept {
+    return OperationStream(M{});
+  }
+
+  ~OperationStream() {
+    Operation *op = m.head;
+    while (op) {
+      Operation *next = op->Next();
+      delete op;
+      op = next;
+    }
+    m.head = nullptr;
+    m.tail = nullptr;
+    m.length = 0;
+  }
+
+  inline Operation *First() {
+    return m.head;
+  }
+
+  inline Operation *Last() {
+    return m.tail;
+  }
+
+  inline void Append(Instruction code, intptr_t op1 = 0, intptr_t op2 = 0) {
+    Operation *instr = Operation::Allocate(code, op1, op2);
+    ++m.length;
+    if (!m.head) {
+      m.head = instr;
+      m.tail = instr;
+      instr->SetNext(nullptr);
+      instr->SetPrev(nullptr);
+    } else {
+      m.tail->SetNext(instr);
+      instr->SetPrev(m.tail);
+      m.tail = instr;
+    }
+  }
+
+  inline void Prepend(Instruction code, intptr_t op1 = 0, intptr_t op2 = 0) {
+    Operation *instr = Operation::Allocate(code, op1, op2);
+    ++m.length;
+    if (!m.head) {
+      m.head = instr;
+      m.tail = instr;
+      instr->SetNext(nullptr);
+      instr->SetPrev(nullptr);
+    } else {
+      instr->SetNext(m.head);
+      m.head->SetPrev(instr);
+      m.head = instr;
+    }
+  }
+
+  inline void InsertBefore(Operation *instr, Instruction code, intptr_t op1 = 0, intptr_t op2 = 0) {
+    if (nullptr == instr) {
+      Append(code, op1, op2);
+    } else if (nullptr == instr->Prev()) {
+      Prepend(code, op1, op2);
+    } else {
+      Operation *prev = instr->Prev();
+      Operation *next = instr;
+      Operation *new_instr = Operation::Allocate(code, op1, op2);
+      prev->SetNext(new_instr);
+      next->SetPrev(new_instr);
+      new_instr->SetPrev(prev);
+      new_instr->SetNext(next);
+    }
+  }
+
+  inline void Unlink(Operation &instr) {
+    --m.length;
+    if (m.head == &instr) {
+      if (m.tail == &instr) {
+        m.head = nullptr;
+        m.tail = nullptr;
+      } else {
+        m.head = instr.Next();
+        m.head->SetPrev(nullptr);
+      }
+    } else if (m.tail == &instr) {
+      m.tail = instr.Prev();
+      m.tail->SetNext(nullptr);
+    } else {
+      instr.Prev()->SetNext(instr.Next());
+      instr.Next()->SetPrev(instr.Prev());
+    }
+    instr.SetNext(nullptr);
+    instr.SetPrev(nullptr);
+  }
+
+  inline void Unlink(Operation *instr) {
+    Unlink(*instr);
+  }
+
+  inline void Delete(Operation *instr) {
+    Unlink(*instr);
+    delete instr;
+  }
+
+  class Iterator final {
   private:
     struct M {
-      Operation *head;
-      Operation *tail;
-      std::size_t length;
+      OperationStream *stream;
+      Operation *current;
     } m;
 
-    Stream(const Stream &) = delete;
-    Stream &operator=(const Stream &) = delete;
-
-    explicit Stream(M m) : m(std::move(m)) {
+    explicit Iterator(M m) noexcept : m(std::move(m)) {
     }
 
   public:
-    Stream(Stream &&other) noexcept : m(std::exchange(other.m, {})) {
+    static Iterator Create(OperationStream *stream, Operation *instr) {
+      return Iterator(M{
+          .stream = stream,
+          .current = instr,
+      });
     }
 
-    Stream &operator=(Stream &&other) noexcept {
-      std::swap(m, other.m);
+    Iterator(const Iterator &other) : m(M{.stream = other.m.stream, .current = other.m.current}) {
+    }
+
+    Iterator &operator=(const Iterator &other) {
+      m.stream = other.m.stream;
+      m.current = other.m.current;
       return *this;
     }
 
-    static Stream Create() noexcept {
-      return Stream(M{});
-    }
-
-    ~Stream() {
-      Operation *op = m.head;
-      while (op) {
-        Operation *next = op->Next();
-        delete op;
-        op = next;
+    inline Iterator &operator++() {
+      if (m.current) {
+        m.current = m.current->Next();
       }
-      m.head = nullptr;
-      m.tail = nullptr;
-      m.length = 0;
+      return *this;
     }
 
-    inline Operation *First() {
-      return m.head;
+    inline Iterator operator++(int) {
+      Iterator iter = *this;
+      ++*this;
+      return iter;
     }
 
-    inline Operation *Last() {
-      return m.tail;
-    }
-
-    inline void Append(Instruction code, intptr_t op1 = 0, intptr_t op2 = 0) {
-      Operation *instr = Operation::Allocate(code, op1, op2);
-      ++m.length;
-      if (!m.head) {
-        m.head = instr;
-        m.tail = instr;
-        instr->SetNext(nullptr);
-        instr->SetPrev(nullptr);
+    inline Iterator &operator--() {
+      if (m.current) {
+        m.current = m.current->Prev();
       } else {
-        m.tail->SetNext(instr);
-        instr->SetPrev(m.tail);
-        m.tail = instr;
+        m.current = m.stream->m.tail;
       }
+      return *this;
     }
 
-    inline void Prepend(Instruction code, intptr_t op1 = 0, intptr_t op2 = 0) {
-      Operation *instr = Operation::Allocate(code, op1, op2);
-      ++m.length;
-      if (!m.head) {
-        m.head = instr;
-        m.tail = instr;
-        instr->SetNext(nullptr);
-        instr->SetPrev(nullptr);
-      } else {
-        instr->SetNext(m.head);
-        m.head->SetPrev(instr);
-        m.head = instr;
-      }
+    inline Iterator operator--(int) {
+      Iterator iter = *this;
+      --*this;
+      return iter;
     }
 
-    inline void InsertBefore(Operation *instr, Instruction code, intptr_t op1 = 0, intptr_t op2 = 0) {
-      if (nullptr == instr) {
-        Append(code, op1, op2);
-      } else if (nullptr == instr->Prev()) {
-        Prepend(code, op1, op2);
-      } else {
-        Operation *prev = instr->Prev();
-        Operation *next = instr;
-        Operation *new_instr = Operation::Allocate(code, op1, op2);
-        prev->SetNext(new_instr);
-        next->SetPrev(new_instr);
-        new_instr->SetPrev(prev);
-        new_instr->SetNext(next);
+    inline Iterator &operator+=(intptr_t amount) {
+      if (amount < 0) {
+        return *this -= (-amount);
       }
+      while (m.current && amount > 0) {
+        m.current = m.current->Next();
+        --amount;
+      }
+      return *this;
     }
 
-    inline void Unlink(Operation &instr) {
-      --m.length;
-      if (m.head == &instr) {
-        if (m.tail == &instr) {
-          m.head = nullptr;
-          m.tail = nullptr;
-        } else {
-          m.head = instr.Next();
-          m.head->SetPrev(nullptr);
-        }
-      } else if (m.tail == &instr) {
-        m.tail = instr.Prev();
-        m.tail->SetNext(nullptr);
-      } else {
-        instr.Prev()->SetNext(instr.Next());
-        instr.Next()->SetPrev(instr.Prev());
+    inline Iterator &operator-=(intptr_t amount) {
+      if (amount < 0) {
+        return *this += (-amount);
       }
-      instr.SetNext(nullptr);
-      instr.SetPrev(nullptr);
+      while (m.current && amount > 0) {
+        m.current = m.current->Prev();
+        --amount;
+      }
+      return *this;
     }
 
-    inline void Unlink(Operation *instr) {
-      Unlink(*instr);
+    inline Iterator operator+(intptr_t amount) const {
+      Iterator iter = *this;
+      iter += amount;
+      return iter;
     }
 
-    inline void Delete(Operation *instr) {
-      Unlink(*instr);
-      delete instr;
+    inline Iterator operator-(intptr_t amount) const {
+      Iterator iter = *this;
+      iter -= amount;
+      return iter;
     }
 
-    class Iterator final {
-    private:
-      struct M {
-        Stream *stream;
-        Operation *current;
-      } m;
-
-      explicit Iterator(M m) noexcept : m(std::move(m)) {
-      }
-
-    public:
-      static Iterator Create(Stream *stream, Operation *instr) {
-        return Iterator(M{
-            .stream = stream,
-            .current = instr,
-        });
-      }
-
-      Iterator(const Iterator &other) : m(M{.stream = other.m.stream, .current = other.m.current}) {
-      }
-
-      Iterator &operator=(const Iterator &other) {
-        m.stream = other.m.stream;
-        m.current = other.m.current;
-        return *this;
-      }
-
-      inline Iterator &operator++() {
-        if (m.current) {
-          m.current = m.current->Next();
-        }
-        return *this;
-      }
-
-      inline Iterator operator++(int) {
-        Iterator iter = *this;
-        ++*this;
-        return iter;
-      }
-
-      inline Iterator &operator--() {
-        if (m.current) {
-          m.current = m.current->Prev();
-        } else {
-          m.current = m.stream->m.tail;
-        }
-        return *this;
-      }
-
-      inline Iterator operator--(int) {
-        Iterator iter = *this;
-        --*this;
-        return iter;
-      }
-
-      inline Iterator &operator+=(intptr_t amount) {
-        if (amount < 0) {
-          return *this -= (-amount);
-        }
-        while (m.current && amount > 0) {
-          m.current = m.current->Next();
-          --amount;
-        }
-        return *this;
-      }
-
-      inline Iterator &operator-=(intptr_t amount) {
-        if (amount < 0) {
-          return *this += (-amount);
-        }
-        while (m.current && amount > 0) {
-          m.current = m.current->Prev();
-          --amount;
-        }
-        return *this;
-      }
-
-      inline Iterator operator+(intptr_t amount) const {
-        Iterator iter = *this;
-        iter += amount;
-        return iter;
-      }
-
-      inline Iterator operator-(intptr_t amount) const {
-        Iterator iter = *this;
-        iter -= amount;
-        return iter;
-      }
-
-      inline bool operator==(const Iterator &iter) const noexcept {
-        return m.current == iter.m.current;
-      }
-
-      inline bool operator!=(const Iterator &iter) const noexcept {
-        return !(*this == iter);
-      }
-
-      inline Operation *operator*() {
-        return m.current;
-      }
-
-      inline Operation *operator->() {
-        return m.current;
-      }
-
-      inline Iterator &JumpTo(Operation *instr) {
-        m.current = instr;
-        return *this;
-      }
-
-      bool LookingAt(const std::initializer_list<Instruction> pattern);
-    };
-
-    Iterator Begin() {
-      return Iterator::Create(this, m.head);
+    inline bool operator==(const Iterator &iter) const noexcept {
+      return m.current == iter.m.current;
     }
 
-    Iterator begin() {
-      return Begin();
+    inline bool operator!=(const Iterator &iter) const noexcept {
+      return !(*this == iter);
     }
 
-    Iterator End() {
-      return Iterator::Create(this, nullptr);
+    inline Operation *operator*() {
+      return m.current;
     }
 
-    Iterator end() {
-      return End();
+    inline Operation *operator->() {
+      return m.current;
     }
 
-    Iterator From(Operation *instr) {
-      return Iterator::Create(this, instr);
+    inline Iterator &JumpTo(Operation *instr) {
+      m.current = instr;
+      return *this;
     }
 
-    inline void Delete(Iterator &iter) {
-      Delete(*iter);
-    }
-
-    inline void Delete(Iterator &&iter) {
-      Delete(*iter);
-    }
-
-    void Dump();
-
-    void VisitPattern(std::initializer_list<Instruction> pattern,
-                      void (*fun)(Operation::Stream &, Operation::Stream::Iterator &));
+    bool LookingAt(const std::initializer_list<Instruction> pattern);
   };
+
+  Iterator Begin() {
+    return Iterator::Create(this, m.head);
+  }
+
+  Iterator begin() {
+    return Begin();
+  }
+
+  Iterator End() {
+    return Iterator::Create(this, nullptr);
+  }
+
+  Iterator end() {
+    return End();
+  }
+
+  Iterator From(Operation *instr) {
+    return Iterator::Create(this, instr);
+  }
+
+  inline void Delete(Iterator &iter) {
+    Delete(*iter);
+  }
+
+  inline void Delete(Iterator &&iter) {
+    Delete(*iter);
+  }
+
+  void Dump();
+
+  void VisitPattern(std::initializer_list<Instruction> pattern,
+                    void (*fun)(OperationStream &, OperationStream::Iterator &));
 };
 
 #endif /* BF_CC_INSTR_H */

@@ -4,10 +4,10 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "mem.h"
 #include "instr.h"
+#include "mem.h"
 
-void Interpreter::Run(Heap &heap, Operation::Stream &stream) {
+void Interpreter::Run(Heap &heap, OperationStream &stream) {
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {

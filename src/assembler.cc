@@ -256,7 +256,7 @@ static Err EmitFindCellLow(CodeArea &mem, uint8_t value, uintptr_t move_size) {
       });
 }
 
-std::variant<CodeEntry, Err> AssemblerX8664::Assemble(Operation::Stream &stream) {
+std::variant<CodeEntry, Err> AssemblerX8664::Assemble(OperationStream &stream) {
   std::vector<std::pair<Operation *, uint8_t *>> jump_list = {};
   Err err = Err::Ok();
   void *entry = m.mem.CurrentWriteAddr();

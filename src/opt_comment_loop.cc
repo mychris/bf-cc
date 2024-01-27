@@ -5,7 +5,7 @@
 #include "instr.h"
 #include "optimize.h"
 
-void OptCommentLoop(Operation::Stream &stream) {
+void OptCommentLoop(OperationStream &stream) {
   auto iter = stream.Begin();
   auto end = stream.End();
   while (iter != end && iter->OpCode() == Instruction::NOP) {

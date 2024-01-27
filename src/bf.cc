@@ -117,8 +117,8 @@ static void parse_opts(int argc, char **argv) {
   }
 }
 
-std::variant<Operation::Stream, Err> parse(const char *input) {
-  Operation::Stream stream = Operation::Stream::Create();
+std::variant<OperationStream, Err> parse(const char *input) {
+  OperationStream stream = OperationStream::Create();
   stream.Prepend(Instruction::NOP);
   std::vector<Operation *> jump_stack = {};
   while (*input) {

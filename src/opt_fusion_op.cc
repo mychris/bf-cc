@@ -2,7 +2,7 @@
 #include "instr.h"
 #include "optimize.h"
 
-void OptFusionOp(Operation::Stream &stream) {
+void OptFusionOp(OperationStream &stream) {
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {

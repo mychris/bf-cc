@@ -2,7 +2,9 @@
 #include "instr.h"
 #include "optimize.h"
 
-static void do_it(Operation::Stream &stream, Operation::Stream::Iterator &iter, const Operation::Stream::Iterator &end) {
+static void do_it(OperationStream &stream,
+                  OperationStream::Iterator &iter,
+                  const OperationStream::Iterator &end) {
   intptr_t offset = 0;
   while (iter != end) {
     switch ((*iter)->OpCode()) {
@@ -45,7 +47,7 @@ static void do_it(Operation::Stream &stream, Operation::Stream::Iterator &iter, 
   }
 }
 
-void OptDelayPtr(Operation::Stream &stream) {
+void OptDelayPtr(OperationStream &stream) {
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {
