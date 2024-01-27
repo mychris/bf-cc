@@ -176,7 +176,8 @@ public:
       return m.tail;
     }
 
-    inline void Append(Instr *instr) {
+    inline void Append(InstrCode code, intptr_t op1 = 0, intptr_t op2 = 0) {
+      Instr *instr = Instr::Allocate(code, op1, op2);
       ++m.length;
       if (!m.head) {
         m.head = instr;
@@ -190,12 +191,8 @@ public:
       }
     }
 
-    inline void Append(InstrCode code, intptr_t op1 = 0, intptr_t op2 = 0) {
+    inline void Prepend(InstrCode code, intptr_t op1 = 0, intptr_t op2 = 0) {
       Instr *instr = Instr::Allocate(code, op1, op2);
-      Append(instr);
-    }
-
-    inline void Prepend(Instr *instr) {
       ++m.length;
       if (!m.head) {
         m.head = instr;
@@ -225,11 +222,6 @@ public:
       }
     }
 
-    inline void Prepend(InstrCode code, intptr_t op1 = 0, intptr_t op2 = 0) {
-      Instr *instr = Instr::Allocate(code, op1, op2);
-      Prepend(instr);
-    }
-
     inline void Unlink(Instr &instr) {
       --m.length;
       if (m.head == &instr) {
@@ -256,7 +248,7 @@ public:
     }
 
     inline void Delete(Instr *instr) {
-      Unlink(instr);
+      Unlink(*instr);
       delete instr;
     }
 
@@ -317,15 +309,53 @@ public:
         return iter;
       }
 
-      inline bool operator!=(const Iterator &iter) const noexcept {
-        return m.current != iter.m.current;
+      inline Iterator &operator+=(intptr_t amount) {
+        if (amount < 0) {
+          return *this -= (-amount);
+        }
+        while (m.current && amount > 0) {
+          m.current = m.current->Next();
+          --amount;
+        }
+        return *this;
+      }
+
+      inline Iterator &operator-=(intptr_t amount) {
+        if (amount < 0) {
+          return *this += (-amount);
+        }
+        while (m.current && amount > 0) {
+          m.current = m.current->Prev();
+          --amount;
+        }
+        return *this;
+      }
+
+      inline Iterator operator+(intptr_t amount) const {
+        Iterator iter = *this;
+        iter += amount;
+        return iter;
+      }
+
+      inline Iterator operator-(intptr_t amount) const {
+        Iterator iter = *this;
+        iter -= amount;
+        return iter;
       }
 
       inline bool operator==(const Iterator &iter) const noexcept {
         return m.current == iter.m.current;
       }
 
+      inline bool operator!=(const Iterator &iter) const noexcept {
+        return !(*this == iter);
+      }
+
       inline Instr *operator*() {
+        return m.current;
+      }
+
+      inline Instr *operator->() {
         return m.current;
       }
 
@@ -357,14 +387,6 @@ public:
       return Iterator::Create(this, instr);
     }
 
-    inline void Unlink(Iterator &iter) {
-      Unlink(*iter);
-    }
-
-    inline void Unlink(Iterator &&iter) {
-      Unlink(*iter);
-    }
-
     inline void Delete(Iterator &iter) {
       Delete(*iter);
     }
@@ -375,7 +397,7 @@ public:
 
     void Dump();
 
-    void VisitPattern(std::initializer_list<InstrCode> pattern, void (*fun)(Instr*));
+    void VisitPattern(std::initializer_list<InstrCode> pattern, void (*fun)(Instr::Stream &, Instr::Stream::Iterator &));
 
   };
 };

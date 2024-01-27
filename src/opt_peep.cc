@@ -5,10 +5,11 @@
 #include "optimize.h"
 
 static void ReplaceSingleInstructionLoops(Instr::Stream &stream) {
-  auto callback = [](Instr *instr) {
-    Instr *first = instr;
-    Instr *second = first->Next();
-    Instr *third = second->Next();
+  auto callback = [](Instr::Stream &stream, Instr::Stream::Iterator &iter) {
+    (void) stream;
+    Instr *first = *iter;
+    Instr *second = *(iter + 1);
+    Instr *third = *(iter + 2);
     if (first->Operand1() == (Instr::operand_type) third && third->Operand1() == (Instr::operand_type) first &&
         second->Operand1() % 2 == 1) {
           first->SetOpCode(InstrCode::SET_CELL);
@@ -27,8 +28,8 @@ static void ReplaceFindCellLoops(Instr::Stream &stream) {
   while (iter != end) {
     if ((*iter)->IsJump()) {
       Instr *first = (*iter++);
-      Instr *second = first->Next();
-      Instr *third = (second) ? second->Next() : nullptr;
+      Instr *second = *iter;
+      Instr *third = (second) ? *(iter + 1) : nullptr;
       if (first && second && third && first->OpCode() == InstrCode::JUMP_ZERO
           && third->OpCode() == InstrCode::JUMP_NON_ZERO && first->Operand1() == (Instr::operand_type) third
           && third->Operand1() == (Instr::operand_type) first) {

@@ -9,17 +9,17 @@
 void OptCommentLoop(Instr::Stream &stream) {
   auto iter = stream.Begin();
   auto end = stream.End();
-  while (iter != end && (*iter)->OpCode() == InstrCode::NOP) {
+  while (iter != end && iter->OpCode() == InstrCode::NOP) {
     ++iter;
   }
-  if (iter == end || !(*iter)->IsJump()) {
+  if (iter == end || !iter->IsJump()) {
     return;
   }
   bool last = false;
   auto comment_loop = *iter;
   ++iter;
   while (iter != end) {
-    last = (*iter)->IsJump() && (*iter)->Operand1() == (Instr::operand_type) comment_loop;
+    last = iter->IsJump() && iter->Operand1() == (Instr::operand_type) comment_loop;
     stream.Delete(iter++);
     if (last) {
       break;

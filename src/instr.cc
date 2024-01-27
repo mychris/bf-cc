@@ -54,7 +54,7 @@ void Instr::Stream::Dump() {
   }
 }
 
-void Instr::Stream::VisitPattern(std::initializer_list<InstrCode> pattern, void (*fun)(Instr *)) {
+void Instr::Stream::VisitPattern(std::initializer_list<InstrCode> pattern, void (*fun)(Instr::Stream &, Instr::Stream::Iterator &)) {
   if (0 == pattern.size()) {
     return;
   }
@@ -74,8 +74,9 @@ void Instr::Stream::VisitPattern(std::initializer_list<InstrCode> pattern, void 
         ++pattern_iter;
         ++matches;
       }
+      stream_iter = From(*iter);
       if (matches == (long) pattern.size()) {
-        fun(*iter);
+        fun(*this, stream_iter);
       }
       stream_iter = From(*iter);
       while (matches > 0 && stream_iter != stream_end) {
