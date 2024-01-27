@@ -26,6 +26,9 @@ void Error(const Err &error) {
     sprintf(native_err_str, ": %s", strerror(error.NativeErrno()));
   }
   switch (error.Code()) {
+  case Err::Code::UNMATCHED_JUMP:
+    Error("Unmatched jump operation%s", native_err_str);
+    break;
   case Err::Code::OUT_OF_MEMORY:
     Error("Out of memory%s", native_err_str);
     break;

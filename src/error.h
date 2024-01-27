@@ -11,6 +11,7 @@ class Err final {
 public:
   enum class Code {
     OK = 0,
+    UNMATCHED_JUMP,
     OUT_OF_MEMORY,
     HEAP_MMAP,
     HEAP_MPROTECT,
@@ -32,6 +33,9 @@ private:
 public:
   static Err Ok() noexcept {
     return Err(M{.code = Err::Code::OK, .native = 0});
+  }
+  static Err UnmatchedJump() noexcept {
+    return Err(M{.code = Err::Code::UNMATCHED_JUMP, .native = 0});
   }
   static Err OutOfMemory() noexcept {
     return Err(M{.code = Err::Code::OUT_OF_MEMORY, .native = 0});

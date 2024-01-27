@@ -117,7 +117,7 @@ static void parse_opts(int argc, char **argv) {
   }
 }
 
-Instr::Stream parse(const char *input) {
+std::variant<Instr::Stream, Err> parse(const char *input) {
   Instr::Stream stream = Instr::Stream::Create();
   stream.Prepend(InstrCode::NOP);
   std::vector<Instr *> jump_stack = {};
@@ -160,6 +160,9 @@ Instr::Stream parse(const char *input) {
     ++input;
   }
   stream.Append(InstrCode::NOP);
+  if (0 != jump_stack.size()) {
+    return Err::UnmatchedJump();
+  }
   return stream;
 }
 
@@ -196,7 +199,7 @@ static std::variant<char *, Err> read_content(const char *filename) {
 int main(int argc, char **argv) {
   parse_opts(argc, argv);
   char *content = Ensure(read_content(args.input_file_path));
-  auto stream = parse(content);
+  auto stream = Ensure(parse(content));
   free(content);
   Optimizer::Create(args.optimization_level).Run(stream);
   auto heap = Ensure(Heap::Create(args.heap_size));
