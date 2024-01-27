@@ -36,8 +36,7 @@ private:
     InstrCode op_code{InstrCode::NOP};
     Instr *next{nullptr};
     Instr *prev{nullptr};
-    intptr_t operand1{0};
-    intptr_t operand2{0};
+    intptr_t operands[2]{0, 0};
   } m;
 
   Instr(const Instr &) = delete;
@@ -51,8 +50,7 @@ private:
         .op_code = op_code,
         .next = nullptr,
         .prev = nullptr,
-        .operand1 = op1,
-        .operand2 = op2,
+        .operands = { op1, op2 },
     });
   }
 
@@ -61,8 +59,7 @@ private:
         .op_code = op_code,
         .next = nullptr,
         .prev = nullptr,
-        .operand1 = op1,
-        .operand2 = op2,
+        .operands = { op1, op2 },
     });
     if (!instr) {
       Error(Err::OutOfMemory());
@@ -79,7 +76,7 @@ private:
   }
 
 public:
-  Instr(Instr &&other) : m(std::exchange(other.m, {InstrCode::NOP, nullptr, nullptr, 0, 0})) {
+  Instr(Instr &&other) : m(std::exchange(other.m, {InstrCode::NOP, nullptr, nullptr, {0, 0}})) {
   }
 
   Instr &operator=(Instr &&other) noexcept {
@@ -106,19 +103,19 @@ public:
   }
 
   inline intptr_t Operand1() const {
-    return m.operand1;
+    return m.operands[0];
   }
 
   inline void SetOperand1(intptr_t val) {
-    m.operand1 = val;
+    m.operands[0] = val;
   }
 
   inline intptr_t Operand2() const {
-    return m.operand2;
+    return m.operands[1];
   }
 
   inline void SetOperand2(intptr_t val) {
-    m.operand2 = val;
+    m.operands[1] = val;
   }
 
   inline Instr *Next() {
