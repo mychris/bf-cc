@@ -315,6 +315,8 @@ public:
         }
         return *this;
       }
+
+      bool LookingAt(const std::initializer_list<InstrCode> pattern);
     };
 
     Iterator Begin() {

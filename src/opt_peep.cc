@@ -58,18 +58,31 @@ static void ReplaceFindCellLoops(Instr::Stream &stream) {
 }
 
 static void MergeSetIncrDecr(Instr::Stream &stream) {
-  auto callback = [](Instr *instr) {
-    Instr *set = instr;
-    Instr *incr_decr = set->Next();
-    if (incr_decr->OpCode() == InstrCode::INCR_CELL) {
-      set->SetOperand1(set->Operand1() + incr_decr->Operand1());
+  static const auto incr_pattern = { InstrCode::SET_CELL, InstrCode::INCR_CELL };
+  static const auto decr_pattern = { InstrCode::SET_CELL, InstrCode::DECR_CELL };
+  auto iter = stream.Begin();
+  const auto end = stream.End();
+  while (iter != end) {
+    if (iter.LookingAt(incr_pattern)) {
+      Instr *set = *iter;
+      ++iter;
+      Instr *incr = *iter;
+      if (set->Operand2() == incr->Operand2()) {
+        set->SetOperand1(set->Operand1() + incr->Operand1());
+        stream.Delete(iter--);
+      }
+    } else if (iter.LookingAt(decr_pattern)) {
+      Instr *set = *iter;
+      ++iter;
+      Instr *decr = *iter;
+      if (set->Operand2() == decr->Operand2()) {
+        set->SetOperand1(set->Operand1() - decr->Operand1());
+        stream.Delete(iter--);
+      }
     } else {
-      set->SetOperand1(set->Operand1() - incr_decr->Operand1());
+      ++iter;
     }
-    incr_decr->SetOpCode(InstrCode::NOP);
-  };
-  stream.VisitPattern({InstrCode::SET_CELL, InstrCode::INCR_CELL}, callback);
-  stream.VisitPattern({InstrCode::SET_CELL, InstrCode::DECR_CELL}, callback);
+  }
 }
 
 void OptPeep(Instr::Stream &stream) {

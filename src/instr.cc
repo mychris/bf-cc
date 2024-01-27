@@ -90,3 +90,19 @@ void Instr::Stream::VisitPattern(std::initializer_list<InstrCode> pattern, void 
     ++iter;
   }
 }
+
+bool Instr::Stream::Iterator::LookingAt(const std::initializer_list<InstrCode> pattern) {
+  if (0 == pattern.size()) {
+    return true;
+  }
+  auto counter = 0u;
+  Instr *current = m.current;
+  auto pattern_iter = pattern.begin();
+  const auto pattern_end = pattern.end();
+  while (current && pattern_iter != pattern_end && current->OpCode() == *pattern_iter) {
+    current = current->Next();
+    ++pattern_iter;
+    ++counter;
+  }
+  return counter == pattern.size();
+}
