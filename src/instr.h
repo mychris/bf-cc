@@ -3,12 +3,34 @@
 #ifndef BF_CC_INSTR_H
 #define BF_CC_INSTR_H 1
 
-#include <cassert>
 #include <cstdint>
 #include <utility>
 
 #include "error.h"
 
+/**
+ * Instructions.
+ *
+ * See the Operation class for the actual operation, Instruction is
+ * only the OpCode of the Operation.
+ *
+ * Each operation can have up to two operands.  The operands for each
+ * Instruction are (NULL means ignored and should be 0):
+ *
+ *   NOP             [NULL, NULL]          Do nothing
+ *   INCR_CELL       [AMOUNT, PTR OFFSET]  Increment the cell at PTR OFFSET by AMOUNT
+ *   DECR_CELL       [AMOUNT, PTR OFFSET]  Increment the cell at PTR OFFSET by AMOUNT
+ *   SET_CELL        [VALUE, PTR OFFSET]   Set the cell at PTR OFFSET to VALUE
+ *   INCR_PTR        [AMOUNT, NULL]        Increment the cell pointer by AMOUNT
+ *   DECR_PTR        [AMOUNT, NULL]        Decrement the cell pointer by AMOUNT
+ *   READ            [NULL, PTR OFFSET]    Read from STDIN into the cell at PTR OFFSET
+ *   WRITE           [NULL, PTR OFFSET]    Write to STDOUT the value from cell at PTR OFFSET
+ *   JUMP_ZERO       [ADDR, NULL]          Jump to the instruction at ADDR if the cell value is 0
+ *   JUMP_NON_ZERO   [ADDR, NULL]          Jump to the instruction at ADDR if the cell value is not 0
+ *   FIND_CELL_LOW   [VALUE, MOVE AMOUNT]  Find cell with VALUE, move the cell pointer downwards by MOVE AMOUNT
+ *   FIND_CELL_HIGH  [VALUE, MOVE AMOUNT]  Find cell with VALUE, move the cell pointer upwards by MOVE AMOUNT
+ *   ANY             [NULL, NULL]          Not a real instruction, should not be in the stream
+ */
 enum class Instruction {
   NOP = 1 << 0,
   INCR_CELL = 1 << 1,
