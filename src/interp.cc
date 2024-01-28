@@ -7,7 +7,7 @@
 #include "instr.h"
 #include "mem.h"
 
-void Interpreter::Run(Heap &heap, OperationStream &stream, EOFMode eof_mode) {
+void Interpreter::Run(Heap &heap, OperationStream &stream, EOFMode eof_mode) const {
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {
