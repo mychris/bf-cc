@@ -23,6 +23,11 @@ void Interpreter::Run(Heap &heap, OperationStream &stream) {
     case Instruction::DECR_CELL: {
       heap.DecrementCell((uint8_t) iter->Operand1(), iter->Operand2());
     } break;
+    case Instruction::IMUL_CELL: {
+      uint8_t cur = heap.GetCell(0);
+      cur *= iter->Operand1();
+      heap.IncrementCell(cur, iter->Operand2());
+    } break;
     case Instruction::SET_CELL: {
       heap.SetCell((uint8_t) iter->Operand1(), iter->Operand2());
     } break;

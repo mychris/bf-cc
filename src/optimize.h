@@ -14,6 +14,8 @@ void OptPeep(OperationStream &);
 
 void OptDelayPtr(OperationStream &);
 
+void OptMultiplyLoop(OperationStream &);
+
 enum class OptimizerLevel {
   O0 = '0',
   O1 = '1',

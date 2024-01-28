@@ -48,6 +48,9 @@ $(OBJ_TEST): $(HDR)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
 check: $(EXE_TEST)
+	./$(EXE_TEST) --gtest_shuffle --gtest_color=no --gtest_brief=1
+
+checkfull: $(EXE_TEST)
 	./$(EXE_TEST)
 
 clean:
@@ -59,6 +62,6 @@ clean:
 
 format: fmt
 fmt:
-	clang-format -i $(SRC) $(HDR)
+	clang-format -i $(SRC) $(SRC_MAIN) $(SRC_TEST) $(HDR)
 
-.PHONY: all test check clean format fmt
+.PHONY: all test check checkfull clean format fmt

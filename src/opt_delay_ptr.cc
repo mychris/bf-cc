@@ -10,6 +10,7 @@ static void do_it(OperationStream &stream, OperationStream::Iterator &iter, cons
     case Instruction::ANY: {
       ++iter;
     } break;
+    case Instruction::IMUL_CELL:
     case Instruction::FIND_CELL_LOW:
     case Instruction::FIND_CELL_HIGH:
     case Instruction::JUMP_NON_ZERO:

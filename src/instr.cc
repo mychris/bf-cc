@@ -2,55 +2,61 @@
 
 #include <cstdio>
 
+void Operation::Dump() const {
+  printf("%zu ", (uintptr_t) this);
+  switch (m.code) {
+  case Instruction::ANY: {
+    putchar('~');
+  } break;
+  case Instruction::NOP: {
+    putchar(' ');
+  } break;
+  case Instruction::INCR_CELL: {
+    putchar('+');
+  } break;
+  case Instruction::IMUL_CELL: {
+    putchar('*');
+  } break;
+  case Instruction::DECR_CELL: {
+    putchar('-');
+  } break;
+  case Instruction::SET_CELL: {
+    putchar('=');
+  } break;
+  case Instruction::INCR_PTR: {
+    putchar('>');
+  } break;
+  case Instruction::DECR_PTR: {
+    putchar('<');
+  } break;
+  case Instruction::READ: {
+    putchar(',');
+  } break;
+  case Instruction::WRITE: {
+    putchar('.');
+  } break;
+  case Instruction::JUMP_ZERO: {
+    putchar('[');
+  } break;
+  case Instruction::JUMP_NON_ZERO: {
+    putchar(']');
+  } break;
+  case Instruction::FIND_CELL_HIGH: {
+    putchar(')');
+  } break;
+  case Instruction::FIND_CELL_LOW: {
+    putchar('(');
+  } break;
+  default: {
+    putchar('?');
+  } break;
+  }
+  printf(" %zd %zd\n", Operand1(), Operand2());
+}
+
 void OperationStream::Dump() {
-  auto iter = Begin();
-  const auto end = End();
-  while (iter != end) {
-    Operation *code = *iter;
-    printf("%zu ", (uintptr_t) code);
-    switch (code->OpCode()) {
-    case Instruction::ANY: {
-      putchar('~');
-    } break;
-    case Instruction::NOP: {
-      putchar(' ');
-    } break;
-    case Instruction::INCR_CELL: {
-      putchar('+');
-    } break;
-    case Instruction::DECR_CELL: {
-      putchar('-');
-    } break;
-    case Instruction::SET_CELL: {
-      putchar('=');
-    } break;
-    case Instruction::INCR_PTR: {
-      putchar('>');
-    } break;
-    case Instruction::DECR_PTR: {
-      putchar('<');
-    } break;
-    case Instruction::READ: {
-      putchar(',');
-    } break;
-    case Instruction::WRITE: {
-      putchar('.');
-    } break;
-    case Instruction::JUMP_ZERO: {
-      putchar('[');
-    } break;
-    case Instruction::JUMP_NON_ZERO: {
-      putchar(']');
-    } break;
-    case Instruction::FIND_CELL_HIGH: {
-      putchar(')');
-    } break;
-    case Instruction::FIND_CELL_LOW: {
-      putchar('(');
-    } break;
-    }
-    printf(" %zu %zu\n", code->Operand1(), code->Operand2());
-    ++iter;
+  for (auto *instr : *this) {
+    instr->Dump();
   }
 }
 

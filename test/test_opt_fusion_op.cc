@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT License
 #include "gtest/gtest.h"
-
 #include "instr.h"
 #include "optimize.h"
 #include "parse.h"
@@ -90,8 +89,7 @@ TEST(TestOptFusionOp, fuseInLoop) {
   OptFusionOp(stream);
   size_t count = 0;
   for (auto *instr : stream) {
-    if (Instruction::INCR_CELL == instr->OpCode()
-        || Instruction::DECR_CELL == instr->OpCode()
+    if (Instruction::INCR_CELL == instr->OpCode() || Instruction::DECR_CELL == instr->OpCode()
         || Instruction::DECR_PTR == instr->OpCode()) {
       EXPECT_EQ(4, instr->Operand1());
     }

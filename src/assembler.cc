@@ -84,8 +84,47 @@ static Err EmitDecrCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
   }
 }
 
+static Err EmitImullCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
+  if (0 == offset) {
+    // This should never be created
+    assert(0 != offset);
+    return mem.EmitCodeListing({0x90});
+  }
+  // rdx needs to be saved, sinc MUL overwrites it
+  // clang-format off
+  Err e = Err::Ok().and_then([&] {
+    // MOV r8, rdx
+    return mem.EmitCodeListing({0x49, 0x89, 0xD0});
+  }).and_then([&] {
+    // MOV rax, amount
+    return mem.EmitCodeListing({0x48, 0xC7, 0xC0}).and_then([&] { return mem.EmitCode((uint32_t) amount); });
+  }).and_then([&] {
+    // MOV bl, byte[rdx]
+    return mem.EmitCodeListing({0x8A, 0x1A});
+  }).and_then([&] {
+    // MUL rbx
+    return mem.EmitCodeListing({0x48, 0xF7, 0xE3});
+  }).and_then([&] {
+    // MOV rdx, r8
+    return mem.EmitCodeListing({0x4C, 0x89, 0xC2});
+  });
+  if (!e.IsOk()) {
+    return e;
+  }
+  if (128 > offset && -128 < offset) {
+    // ADD byte[rdx], al
+    return mem.EmitCodeListing({0x00, 0x42, (uint8_t) offset});
+  } else {
+    // ADD byte[rdx], al
+    return mem.EmitCodeListing({0x4C, 0x89, 0xC2, 0x00, 0x82}).and_then([&] {
+      return mem.EmitCode((uint32_t) offset);
+    });
+  }
+  // clang-format on
+}
+
 static Err EmitSetCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
-  if (offset == 0) {
+  if (0 == offset) {
     // MOV byte[rdx], amount
     return mem.EmitCodeListing({0xC6, 0x02, amount});
   } else if (128 > offset && -128 < offset) {
@@ -279,6 +318,9 @@ std::variant<CodeEntry, Err> AssemblerX8664::Assemble(OperationStream &stream) {
       break;
     case Instruction::DECR_CELL:
       err = EmitDecrCell(m.mem, (uint8_t) iter->Operand1(), iter->Operand2());
+      break;
+    case Instruction::IMUL_CELL:
+      err = EmitImullCell(m.mem, (uint8_t) iter->Operand1(), iter->Operand2());
       break;
     case Instruction::SET_CELL:
       err = EmitSetCell(m.mem, (uint8_t) iter->Operand1(), iter->Operand2());

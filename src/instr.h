@@ -20,6 +20,7 @@
  *   NOP             [NULL, NULL]          Do nothing
  *   INCR_CELL       [AMOUNT, PTR OFFSET]  Increment the cell at PTR OFFSET by AMOUNT
  *   DECR_CELL       [AMOUNT, PTR OFFSET]  Increment the cell at PTR OFFSET by AMOUNT
+ *   IMUL_CELL       [AMOUNT, PTR OFFSET]  Add the multiple of current cell * AMOUNT to the cell at PTR OFFSET
  *   SET_CELL        [VALUE, PTR OFFSET]   Set the cell at PTR OFFSET to VALUE
  *   INCR_PTR        [AMOUNT, NULL]        Increment the cell pointer by AMOUNT
  *   DECR_PTR        [AMOUNT, NULL]        Decrement the cell pointer by AMOUNT
@@ -35,17 +36,18 @@ enum class Instruction {
   NOP = 1 << 0,
   INCR_CELL = 1 << 1,
   DECR_CELL = 1 << 2,
-  SET_CELL = 1 << 3,
-  INCR_PTR = 1 << 4,
-  DECR_PTR = 1 << 5,
-  // SET_PTR = 1 << 6,
-  READ = 1 << 7,
-  WRITE = 1 << 8,
-  JUMP_ZERO = 1 << 9,
-  JUMP_NON_ZERO = 1 << 10,
-  FIND_CELL_LOW = 1 << 11,
-  FIND_CELL_HIGH = 1 << 12,
-  ANY = 1 << 13,
+  IMUL_CELL = 1 << 3,
+  SET_CELL = 1 << 4,
+  INCR_PTR = 1 << 5,
+  DECR_PTR = 1 << 6,
+  // SET_PTR = 1 << 7,
+  READ = 1 << 8,
+  WRITE = 1 << 9,
+  JUMP_ZERO = 1 << 10,
+  JUMP_NON_ZERO = 1 << 11,
+  FIND_CELL_LOW = 1 << 12,
+  FIND_CELL_HIGH = 1 << 13,
+  ANY = 1 << 14,
 };
 
 class Operation final {
@@ -117,8 +119,21 @@ public:
 
   ~Operation() = default;
 
-  inline Instruction OpCode() const {
+  inline Instruction OpCode() const noexcept {
     return m.code;
+  }
+
+  inline bool Is(Instruction code) const noexcept {
+    return m.code == code;
+  }
+
+  inline bool IsAny(std::initializer_list<Instruction> codes) const noexcept {
+    for (const auto &c : codes) {
+      if (c == m.code) {
+        return true;
+      }
+    }
+    return false;
   }
 
   inline void SetOpCode(enum Instruction cmd) {
@@ -148,6 +163,8 @@ public:
   inline void SetOperand2(intptr_t val) {
     m.operands[1] = val;
   }
+
+  void Dump() const ;
 };
 
 class OperationStream final {

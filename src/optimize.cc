@@ -11,6 +11,7 @@ void Optimizer::Run(OperationStream &stream) const noexcept {
       OptimizerPass::Create("Fuse operators", OptFusionOp, OptimizerLevel::O1),
       OptimizerPass::Create("Peephole", OptPeep, OptimizerLevel::O2),
       OptimizerPass::Create("Delay Moves", OptDelayPtr, OptimizerLevel::O2),
+      OptimizerPass::Create("Multilplcation Loops", OptMultiplyLoop, OptimizerLevel::O3),
   };
 
   for (auto &stage : pipeline) {

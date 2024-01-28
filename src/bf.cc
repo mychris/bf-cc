@@ -5,9 +5,9 @@
 
 #include "assembler.h"
 #include "error.h"
-#include "mem.h"
 #include "instr.h"
 #include "interp.h"
+#include "mem.h"
 #include "optimize.h"
 #include "parse.h"
 

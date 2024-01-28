@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT License
 #include "gtest/gtest.h"
-
 #include "instr.h"
 #include "optimize.h"
 #include "parse.h"
