@@ -15,7 +15,7 @@ void OptFusionOp(OperationStream &stream) {
   // increment delay optimization.
   // Should run afterwards, but just in case.
   while (iter != end) {
-    Instruction seq_cmd = (*iter)->OpCode();
+    Instruction seq_cmd = iter->OpCode();
     if (seq_cmd == Instruction::INCR_CELL || seq_cmd == Instruction::DECR_CELL) {
       Operation *seq_head = *iter;
       Operation::operand_type amount = iter->Operand1();

@@ -2,8 +2,6 @@
 #ifndef BF_CC_OPTIMIZE_H
 #define BF_CC_OPTIMIZE_H 1
 
-#include <cstdio>
-
 #include "instr.h"
 
 void OptCommentLoop(OperationStream &);
@@ -46,9 +44,9 @@ public:
 class OptimizerPass {
 private:
   struct M {
-    OptimizerLevel level;
     const char *name;
     void (*function)(OperationStream &);
+    OptimizerLevel level;
   } m;
 
   explicit OptimizerPass(M m) : m(std::move(m)) {
@@ -56,7 +54,7 @@ private:
 
 public:
   static OptimizerPass Create(const char *name, void (*function)(OperationStream &), OptimizerLevel level) {
-    return OptimizerPass(M{.level = level, .name = name, .function = function});
+    return OptimizerPass(M{.name = name, .function = function, .level = level});
   }
 
   OptimizerLevel Level() const {

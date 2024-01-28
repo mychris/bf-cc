@@ -30,7 +30,6 @@
  *   JUMP_NON_ZERO   [ADDR, NULL]          Jump to the instruction at ADDR if the cell value is not 0
  *   FIND_CELL_LOW   [VALUE, MOVE AMOUNT]  Find cell with VALUE, move the cell pointer downwards by MOVE AMOUNT
  *   FIND_CELL_HIGH  [VALUE, MOVE AMOUNT]  Find cell with VALUE, move the cell pointer upwards by MOVE AMOUNT
- *   ANY             [NULL, NULL]          Not a real instruction, should not be in the stream
  */
 enum class Instruction {
   NOP = 1 << 0,
@@ -47,7 +46,6 @@ enum class Instruction {
   JUMP_NON_ZERO = 1 << 11,
   FIND_CELL_LOW = 1 << 12,
   FIND_CELL_HIGH = 1 << 13,
-  ANY = 1 << 14,
 };
 
 class Operation final {
@@ -164,7 +162,7 @@ public:
     m.operands[1] = val;
   }
 
-  void Dump() const ;
+  void Dump() const;
 };
 
 class OperationStream final {
@@ -440,9 +438,6 @@ public:
   }
 
   void Dump();
-
-  void VisitPattern(std::initializer_list<Instruction> pattern,
-                    void (*fun)(OperationStream &, OperationStream::Iterator &));
 };
 
 #endif /* BF_CC_INSTR_H */

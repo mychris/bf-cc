@@ -5,9 +5,8 @@
 static void do_it(OperationStream &stream, OperationStream::Iterator &iter, const OperationStream::Iterator &end) {
   intptr_t offset = 0;
   while (iter != end) {
-    switch ((*iter)->OpCode()) {
-    case Instruction::NOP:
-    case Instruction::ANY: {
+    switch (iter->OpCode()) {
+    case Instruction::NOP: {
       ++iter;
     } break;
     case Instruction::IMUL_CELL:
@@ -26,20 +25,20 @@ static void do_it(OperationStream &stream, OperationStream::Iterator &iter, cons
     case Instruction::SET_CELL:
     case Instruction::INCR_CELL:
     case Instruction::DECR_CELL: {
-      (*iter)->SetOperand2(offset);
+      iter->SetOperand2(offset);
       ++iter;
     } break;
     case Instruction::INCR_PTR: {
-      offset += (*iter)->Operand1();
+      offset += iter->Operand1();
       stream.Delete(iter++);
     } break;
     case Instruction::DECR_PTR: {
-      offset -= (*iter)->Operand1();
+      offset -= iter->Operand1();
       stream.Delete(iter++);
     } break;
     case Instruction::WRITE:
     case Instruction::READ: {
-      (*iter)->SetOperand2(offset);
+      iter->SetOperand2(offset);
       ++iter;
     } break;
     }

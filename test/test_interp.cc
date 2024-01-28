@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT License
 #include "gtest/gtest.h"
 #include "instr.h"
-#include "parse.h"
-#include "mem.h"
 #include "interp.h"
+#include "mem.h"
+#include "parse.h"
 
 TEST(TestInterpreter, emptyStream) {
   OperationStream stream = OperationStream::Create();
@@ -46,7 +46,7 @@ TEST(TestInterpreter, twoCellOperations) {
   Interpreter::Create().Run(heap, stream);
   EXPECT_EQ(1, heap.DataPointer());
   EXPECT_EQ(1, heap.GetCell(-1));
-  EXPECT_EQ((uint8_t)-1, heap.GetCell(0));
+  EXPECT_EQ((uint8_t) -1, heap.GetCell(0));
   for (int i = 2; i < 128; ++i) {
     EXPECT_EQ(0, heap.GetCell(i));
   }

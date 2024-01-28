@@ -14,7 +14,7 @@ void OptCommentLoop(OperationStream &stream) {
   auto iter = stream.Begin();
   auto end = stream.End();
   for (;;) {
-    while (iter != end && (iter->OpCode() == Instruction::NOP)) {
+    while (iter != end && (iter->Is(Instruction::NOP))) {
       ++iter;
     }
     if (iter == end || !iter->IsJump()) {

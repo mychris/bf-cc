@@ -307,9 +307,6 @@ std::variant<CodeEntry, Err> AssemblerX8664::Assemble(OperationStream &stream) {
   }
   while (iter != end) {
     switch (iter->OpCode()) {
-    case Instruction::ANY:
-      // should not be in the stream!
-      break;
     case Instruction::NOP:
       err = EmitNop(m.mem);
       break;
@@ -371,12 +368,12 @@ std::variant<CodeEntry, Err> AssemblerX8664::Assemble(OperationStream &stream) {
       }
     }
     assert(target_pos > (uint8_t *) 0 && "Jump destination not found");
-    if (jump->OpCode() == Instruction::JUMP_ZERO) {
+    if (jump->Is(Instruction::JUMP_ZERO)) {
       err = PatchJumpZero(m.mem, code_pos, (uintptr_t) (target_pos - code_pos));
       if (!err.IsOk()) {
         return err;
       }
-    } else if (jump->OpCode() == Instruction::JUMP_NON_ZERO) {
+    } else if (jump->Is(Instruction::JUMP_NON_ZERO)) {
       err = PatchJumpNonZero(m.mem, code_pos, (uintptr_t) (target_pos - code_pos));
       if (!err.IsOk()) {
         return err;

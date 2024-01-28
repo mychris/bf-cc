@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT License
 
-#include <cstdio>
+#include <cassert>
 
 #include "instr.h"
 #include "optimize.h"
@@ -19,7 +19,7 @@ void OptMultiplyLoop(OperationStream &stream) {
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {
-    if (Instruction::JUMP_ZERO == iter->OpCode()) {
+    if (iter->Is(Instruction::JUMP_ZERO)) {
       bool loop_ok = false;
       auto loop_start = iter;
       auto loop_end = iter;
@@ -49,6 +49,8 @@ void OptMultiplyLoop(OperationStream &stream) {
 static void try_optimize_loop(OperationStream &stream,
                               OperationStream::Iterator iter,
                               const OperationStream::Iterator end) {
+  assert(iter->Is(Instruction::JUMP_ZERO));
+  assert(end->Is(Instruction::JUMP_NON_ZERO));
   unsigned int decr_count = 0;
   unsigned int incr_count = 0;
   // Check for an appropriate loop
@@ -77,11 +79,12 @@ static void try_optimize_loop(OperationStream &stream,
   }
   // Change the - operation into a set 0
   // and the + operations into a multiply
+  // The set needs to be at the end
   stream.Delete(iter++);
   while (iter != end) {
-    if (Instruction::DECR_CELL == iter->OpCode()) {
+    if (iter->Is(Instruction::DECR_CELL)) {
       stream.Delete(iter++);
-    } else if (Instruction::INCR_CELL == iter->OpCode()) {
+    } else if (iter->Is(Instruction::INCR_CELL)) {
       iter->SetOpCode(Instruction::IMUL_CELL);
       iter++;
     }

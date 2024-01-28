@@ -1,25 +1,28 @@
 // SPDX-License-Identifier: MIT License
-#include <cstdint>
-
 #include "instr.h"
 #include "optimize.h"
 
 static void ReplaceSingleInstructionLoops(OperationStream &stream) {
-  auto callback = [](OperationStream &stream, OperationStream::Iterator &iter) {
-    (void) stream;
-    Operation *first = *iter;
-    Operation *second = *(iter + 1);
-    Operation *third = *(iter + 2);
-    if (first->Operand1() == (Operation::operand_type) third && third->Operand1() == (Operation::operand_type) first
-        && second->Operand1() % 2 == 1) {
-      first->SetOpCode(Instruction::SET_CELL);
-      first->SetOperand1(0);
-      second->SetOpCode(Instruction::NOP);
-      third->SetOpCode(Instruction::NOP);
+  static const auto incr_pattern = {Instruction::JUMP_ZERO, Instruction::INCR_CELL, Instruction::JUMP_NON_ZERO};
+  static const auto decr_pattern = {Instruction::JUMP_ZERO, Instruction::DECR_CELL, Instruction::JUMP_NON_ZERO};
+  auto iter = stream.Begin();
+  const auto end = stream.End();
+  while (iter != end) {
+    if (iter.LookingAt(incr_pattern) || iter.LookingAt(decr_pattern)) {
+      auto first = iter++;
+      auto second = iter++;
+      auto third = iter++;
+      if (first->Operand1() == (Operation::operand_type) *third && third->Operand1() == (Operation::operand_type) *first
+          && second->Operand1() % 2 == 1) {
+        first->SetOpCode(Instruction::SET_CELL);
+        first->SetOperand1(0);
+        stream.Delete(second);
+        stream.Delete(third);
+      }
+    } else {
+      ++iter;
     }
-  };
-  stream.VisitPattern({Instruction::JUMP_ZERO, Instruction::INCR_CELL, Instruction::JUMP_NON_ZERO}, callback);
-  stream.VisitPattern({Instruction::JUMP_ZERO, Instruction::DECR_CELL, Instruction::JUMP_NON_ZERO}, callback);
+  }
 }
 
 static void ReplaceFindCellLoops(OperationStream &stream) {
@@ -30,17 +33,17 @@ static void ReplaceFindCellLoops(OperationStream &stream) {
       Operation *first = (*iter++);
       Operation *second = *iter;
       Operation *third = (second) ? *(iter + 1) : nullptr;
-      if (first && second && third && first->OpCode() == Instruction::JUMP_ZERO
-          && third->OpCode() == Instruction::JUMP_NON_ZERO && first->Operand1() == (Operation::operand_type) third
+      if (first && second && third && first->Is(Instruction::JUMP_ZERO) && third->Is(Instruction::JUMP_NON_ZERO)
+          && first->Operand1() == (Operation::operand_type) third
           && third->Operand1() == (Operation::operand_type) first) {
         bool replaced = false;
-        if (second->OpCode() == Instruction::INCR_PTR) {
+        if (second->Is(Instruction::INCR_PTR)) {
           // [>]
           first->SetOpCode(Instruction::FIND_CELL_HIGH);
           first->SetOperand1(0);
           first->SetOperand2(second->Operand1());
           replaced = true;
-        } else if (second->OpCode() == Instruction::DECR_PTR) {
+        } else if (second->Is(Instruction::DECR_PTR)) {
           // [<]
           first->SetOpCode(Instruction::FIND_CELL_LOW);
           first->SetOperand1(0);

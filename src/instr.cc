@@ -5,9 +5,6 @@
 void Operation::Dump() const {
   printf("%zu ", (uintptr_t) this);
   switch (m.code) {
-  case Instruction::ANY: {
-    putchar('~');
-  } break;
   case Instruction::NOP: {
     putchar(' ');
   } break;
@@ -57,45 +54,6 @@ void Operation::Dump() const {
 void OperationStream::Dump() {
   for (auto *instr : *this) {
     instr->Dump();
-  }
-}
-
-void OperationStream::VisitPattern(std::initializer_list<Instruction> pattern,
-                                   void (*fun)(OperationStream &, OperationStream::Iterator &)) {
-  if (0 == pattern.size()) {
-    return;
-  }
-  Instruction first = *pattern.begin();
-  auto iter = Begin();
-  const auto end = End();
-  while (iter != end) {
-    if ((*iter)->OpCode() == first) {
-      auto stream_iter = From(*iter);
-      auto stream_end = End();
-      auto pattern_iter = pattern.begin();
-      auto pattern_end = pattern.end();
-      long matches = 0;
-      while (stream_iter != stream_end && pattern_iter != pattern_end
-             && (*pattern_iter == Instruction::ANY || *pattern_iter == (*stream_iter)->OpCode())) {
-        ++stream_iter;
-        ++pattern_iter;
-        ++matches;
-      }
-      stream_iter = From(*iter);
-      if (matches == (long) pattern.size()) {
-        fun(*this, stream_iter);
-      }
-      stream_iter = From(*iter);
-      while (matches > 0 && stream_iter != stream_end) {
-        if ((*stream_iter)->OpCode() == Instruction::NOP) {
-          Delete(stream_iter++);
-        } else {
-          ++stream_iter;
-        }
-        --matches;
-      }
-    }
-    ++iter;
   }
 }
 

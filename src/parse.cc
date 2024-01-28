@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT License
-
 #include "parse.h"
 
 #include <fcntl.h>

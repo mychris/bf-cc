@@ -12,9 +12,6 @@ void Interpreter::Run(Heap &heap, OperationStream &stream) {
   const auto end = stream.End();
   while (iter != end) {
     switch (iter->OpCode()) {
-    case Instruction::ANY: {
-      // TODO: should not be in the stream!
-    } break;
     case Instruction::NOP: {
     } break;
     case Instruction::INCR_CELL: {
