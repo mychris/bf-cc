@@ -3,7 +3,7 @@
 A brainfuck interpreter and run-time compiler written in C++ for Linux/x86-64.
 
 The input program is translated into a minimalistic IR, optimized, and then
-either interpreted, or compiled to x86-64 machine code and the executed.  The
+either interpreted, or compiled to x86-64 machine code and then executed.  The
 generated machine code uses the
 [Linux syscall API](https://github.com/torvalds/linux/blob/v4.17/arch/x86/entry/syscalls/syscall_64.tbl)
 to perform the required I/O operations and is therefore not portable in any
@@ -25,6 +25,44 @@ Usage: `bf-cc` [`-h`] [`-O(0|1|2|3)`] [`-mMEMORY_SIZE`] [`-e(keep|0|1)`] [`(-i|-
 | -c           | --compiler  |            | Use the compiler    |
 | -e           | --eof=      | keep|0|-1  | EOF mode            |
 | -h           | --help      |            | Display help        |
+
+## Optimizations
+
+The optimizer has several passes, which can be controlled using the `-O` flag.
+`-O0` disables all optimizations.
+
+The optimization level `-O1` enables optimizations, which do not create any 
+operations which are not already present in Brainfuck.  Operations might get 
+an additional parameter, but no new operations are introduced.  With `-O2` 
+some new operations, like setting the current cell to a specific value, are 
+introduced and operations get more operands. The highest optimization level
+`-O3` adds more loop optimizations.
+
+If something goes wrong, first try to disable optimizations.
+
+## Interpreter
+
+The interpreter is not optimized at all. It simply runs over the instruction 
+stream and switches over the opcode of the instruction to perform it.
+
+## Runtime compiler
+
+The runtime compiler uses hardcoded templates for each instruction.  It does not
+create any reusable procedures.  There are many assumptions for the type of the
+operands of each instruction, which should generally hold for brainfuck programs.
+
+If something goes wrong, first try the interpreter.
+
+## EOF for read operations
+
+The `-e` flag can be used to change the behavior on EOF.  I have seen many 
+programs which rely on `-e0`, but I think `-ekeep` is a more sane default, since
+the program can simply set the cell to `0` before the read, if desired.  Using a
+hardcoded value for EOF might make it harder for certain applications.
+
+## TODOs
+
+Like always, too many.
 
 ## License
 
