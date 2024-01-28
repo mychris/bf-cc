@@ -82,7 +82,7 @@ Like always, too many.
 
 ## License
 
-Copyright (c) 2024 Christoph Göttschkes
+Copyright (c) 2023-2024 Christoph Göttschkes
 
 Licensed under the [MIT](https://opensource.org/licenses/MIT) License.
 See the `LICENSE` file for more info.
