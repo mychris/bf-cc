@@ -29,9 +29,9 @@ Usage: `bf-cc` [`-h`] [`-O(0|1|2|3)`] [`-mMEMORY_SIZE`] [`-e(keep|0|1)`] [`(-i|-
 ## IR
 
 The IR consists of a doubly linked list of instructions.  Each instruction has
-up to two operands.  Jump instruction use the destination as its operand and
-it is a pointer to the corresponding jump instruction the jump should go to.
-Therefore jumps act as both, jump instructions and labels, which is not ideal.
+up to two operands.  Jump instructions use the destination as their operand, which
+is a pointer to the corresponding jump instruction the jump should go to. 
+Therefore jumps act as both, instructions and labels, which is not ideal.
 
 I started with this assumption and didn't want to change it later on.  It works,
 but is far from perfect.
