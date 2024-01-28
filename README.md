@@ -17,14 +17,14 @@ OpCode of the IR.
 
 Usage: `bf-cc` [`-h`] [`-O(0|1|2|3)`] [`-mMEMORY_SIZE`] [`-e(keep|0|1)`] [`(-i|-c)`] PROGRAM
 
-| Short option | Long option | Argument   | Description         |
-|--------------|-------------|------------|---------------------|
-| -O           | --optimize= | 0\|1\|2\|3 | Optimization level  |
-| -m           | --memory=   | bytes      | Size of the heap    |
-| -i           | --interp    |            | Use the interpreter |
-| -c           | --compiler  |            | Use the compiler    |
-| -e           | --eof=      | keep|0|-1  | EOF mode            |
-| -h           | --help      |            | Display help        |
+| Short option | Long option | Argument    | Description         |
+|--------------|-------------|-------------|---------------------|
+| -O           | --optimize= | 0\|1\|2\|3  | Optimization level  |
+| -m           | --memory=   | bytes       | Size of the heap    |
+| -i           | --interp    |             | Use the interpreter |
+| -c           | --compiler  |             | Use the compiler    |
+| -e           | --eof=      | keep\|0\|-1 | EOF mode            |
+| -h           | --help      |             | Display help        |
 
 ## IR
 
