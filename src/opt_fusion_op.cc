@@ -22,7 +22,7 @@ void OptFusionOp(OperationStream &stream) {
       ++iter;
       while (iter != end && iter->OpCode() == seq_cmd && iter->Operand2() == seq_head->Operand2()) {
         Operation *cur = *iter;
-        amount += cur->Operand1();
+        amount += cur->Operand1() % 256;
         stream.Delete(iter++);
         seq_head->SetOperand1(amount);
       }

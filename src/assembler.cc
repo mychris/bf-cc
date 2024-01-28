@@ -179,7 +179,8 @@ static Err EmitIncrPtr(CodeArea &mem, intptr_t amount) {
   if (128 > amount && -128 < amount) {
     return mem.EmitCodeListing({0x48, 0x83, 0xC2, (uint8_t) amount});
   } else {
-    return mem.EmitCodeListing({0x48, 0x81, 0xC2}).and_then([&] { return mem.EmitCode((uint32_t) amount); });
+    uint32_t a = (uint32_t) amount;
+    return mem.EmitCodeListing({0x48, 0x81, 0xC2}).and_then([&] { return mem.EmitCode(a); });
   }
 }
 
@@ -188,8 +189,8 @@ static Err EmitDecrPtr(CodeArea &mem, intptr_t amount) {
   if (128 > amount && -128 < amount) {
     return mem.EmitCodeListing({0x48, 0x83, 0xEA, (uint8_t) amount});
   } else {
-    assert(amount < UINT32_MAX);
-    return mem.EmitCodeListing({0x48, 0x81, 0xEA}).and_then([&] { return mem.EmitCode((uint32_t) amount); });
+    uint32_t a = (uint32_t) amount;
+    return mem.EmitCodeListing({0x48, 0x81, 0xEA}).and_then([&] { return mem.EmitCode(a); });
   }
 }
 
@@ -309,46 +310,42 @@ static Err EmitFindCellHigh(CodeArea &mem, uint8_t value, uintptr_t move_size) {
   if (move_size >= (uintptr_t) UINT32_MAX) {
     return Err::CodeInvalidOffset();
   }
-  return mem
-      .EmitCodeListing({// CMP byte[rdx], value
-                        0x80,
-                        0x3A,
-                        value,
-                        // JE "to the end"
-                        0x74,
-                        0x09,
-                        // ADD rdx, move_size
-                        0x48,
-                        0x81,
-                        0xC2})
-      .and_then([&] { return mem.EmitCode((uint32_t) move_size); })
-      .and_then([&] {
-        // JMP "back to SUB"
-        return mem.EmitCodeListing({0xEB, 0xF2});
-      });
+  // clang-format off
+  return mem.EmitCodeListing({
+      // CMP byte[rdx], value
+      0x80, 0x3A, value,
+      // JE "to the end"
+      0x74, 0x09,
+      // ADD rdx, move_size
+      0x48, 0x81, 0xC2
+    }).and_then([&] {
+      return mem.EmitCode((uint32_t) move_size);
+    }).and_then([&] {
+      // JMP "back to SUB"
+      return mem.EmitCodeListing({0xEB, 0xF2});
+    });
+  // clang-format on
 }
 
 static Err EmitFindCellLow(CodeArea &mem, uint8_t value, uintptr_t move_size) {
   if (move_size >= (uintptr_t) UINT32_MAX) {
     return Err::CodeInvalidOffset();
   }
-  return mem
-      .EmitCodeListing({// CMP byte[rdx], value
-                        0x80,
-                        0x3A,
-                        value,
-                        // JE "to the end"
-                        0x74,
-                        0x09,
-                        // SUB rdx, move_size
-                        0x48,
-                        0x81,
-                        0xEA})
-      .and_then([&] { return mem.EmitCode((uint32_t) move_size); })
-      .and_then([&] {
-        // JMP "back to SUB"
-        return mem.EmitCodeListing({0xEB, 0xF2});
-      });
+  // clang-format off
+  return mem .EmitCodeListing({
+      // CMP byte[rdx], value
+      0x80, 0x3A, value,
+      // JE "to the end"
+      0x74, 0x09,
+      // SUB rdx, move_size
+      0x48, 0x81, 0xEA
+    }).and_then([&] {
+      return mem.EmitCode((uint32_t) move_size);
+    }).and_then([&] {
+      // JMP "back to SUB"
+      return mem.EmitCodeListing({0xEB, 0xF2});
+    });
+  // clang-format on
 }
 
 std::variant<CodeEntry, Err> AssemblerX8664::Assemble(OperationStream &stream, EOFMode eof_mode) {
