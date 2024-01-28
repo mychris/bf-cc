@@ -49,9 +49,11 @@ $(OBJ_TEST): $(HDR)
 
 check: $(EXE_TEST)
 	./$(EXE_TEST) --gtest_shuffle --gtest_color=no --gtest_brief=1
+	VERBOSE=0 ./t/test.bash
 
 checkfull: $(EXE_TEST)
 	./$(EXE_TEST)
+	VERBOSE=1 ./t/test.bash
 
 clean:
 	$(RM) $(OBJ)

@@ -7,3 +7,4 @@ bf_cc_test
 bfcc_test
 *.o
 *.b
+!t/*.b
