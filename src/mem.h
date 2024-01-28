@@ -73,6 +73,10 @@ public:
   inline uint8_t *BaseAddress() noexcept {
     return m.data;
   }
+
+  inline int64_t DataPointer() const noexcept {
+    return m.data_pointer;
+  }
 };
 
 class CodeArea final {

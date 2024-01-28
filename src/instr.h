@@ -391,7 +391,15 @@ public:
       return m.current;
     }
 
+    inline const Operation *operator*() const {
+      return m.current;
+    }
+
     inline Operation *operator->() {
+      return m.current;
+    }
+
+    inline const Operation *operator->() const {
       return m.current;
     }
 
