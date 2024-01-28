@@ -70,7 +70,7 @@ static void try_optimize_loop(OperationStream &stream,
       return;
     }
     // The + operation is not allowed for cell 0 or with a non positive increment
-    if (cur->Is(Instruction::INCR_CELL) && (0 >= cur->Operand1() || 0 >= cur->Operand2())) {
+    if (cur->Is(Instruction::INCR_CELL) && (0 >= cur->Operand1() || 0 == cur->Operand2())) {
       return;
     }
   }
@@ -80,7 +80,9 @@ static void try_optimize_loop(OperationStream &stream,
   // Change the - operation into a set 0
   // and the + operations into a multiply
   // The set needs to be at the end
-  stream.Delete(iter++);
+  // The loop (guard) needs to stay, otherwise the memory access
+  // might get out of bounds, if the program exploits that.
+  iter++;
   while (iter != end) {
     if (iter->Is(Instruction::DECR_CELL)) {
       stream.Delete(iter++);
@@ -90,5 +92,4 @@ static void try_optimize_loop(OperationStream &stream,
     }
   }
   stream.InsertBefore(*iter, Instruction::SET_CELL, 0);
-  stream.Delete(iter);
 }

@@ -16,20 +16,16 @@ TEST(TestOptMultiplyLoop, multByOneSingle) {
   OptFusionOp(stream);
   OptDelayPtr(stream);
   OptMultiplyLoop(stream);
-  size_t count = 0;
-  for (auto *instr : stream) {
-    EXPECT_TRUE(instr->IsAny({Instruction::SET_CELL, Instruction::IMUL_CELL}));
-    if (instr->Is(Instruction::SET_CELL)) {
-      EXPECT_EQ(0, instr->Operand1());
-      EXPECT_EQ(0, instr->Operand2());
-    }
-    if (instr->Is(Instruction::IMUL_CELL)) {
-      EXPECT_EQ(1, instr->Operand1());
-      EXPECT_EQ(1, instr->Operand2());
-    }
-    ++count;
-  }
-  EXPECT_EQ(2, count);
+  EXPECT_TRUE(stream.Begin().LookingAt({
+        Instruction::JUMP_ZERO,
+        Instruction::IMUL_CELL,
+        Instruction::SET_CELL,
+        Instruction::JUMP_NON_ZERO
+      }));
+  EXPECT_EQ(1, (stream.Begin() + 1)->Operand1());
+  EXPECT_EQ(1, (stream.Begin() + 1)->Operand2());
+  EXPECT_EQ(0, (stream.Begin() + 2)->Operand1());
+  EXPECT_EQ(0, (stream.Begin() + 2)->Operand2());
 }
 
 TEST(TestOptMultiplyLoop, multByThreeSingle) {
@@ -37,20 +33,16 @@ TEST(TestOptMultiplyLoop, multByThreeSingle) {
   OptFusionOp(stream);
   OptDelayPtr(stream);
   OptMultiplyLoop(stream);
-  size_t count = 0;
-  for (auto *instr : stream) {
-    EXPECT_TRUE(instr->IsAny({Instruction::SET_CELL, Instruction::IMUL_CELL}));
-    if (instr->Is(Instruction::SET_CELL)) {
-      EXPECT_EQ(0, instr->Operand1());
-      EXPECT_EQ(0, instr->Operand2());
-    }
-    if (instr->Is(Instruction::IMUL_CELL)) {
-      EXPECT_EQ(3, instr->Operand1());
-      EXPECT_EQ(1, instr->Operand2());
-    }
-    ++count;
-  }
-  EXPECT_EQ(2, count);
+  EXPECT_TRUE(stream.Begin().LookingAt({
+        Instruction::JUMP_ZERO,
+        Instruction::IMUL_CELL,
+        Instruction::SET_CELL,
+        Instruction::JUMP_NON_ZERO
+      }));
+  EXPECT_EQ(3, (stream.Begin() + 1)->Operand1());
+  EXPECT_EQ(1, (stream.Begin() + 1)->Operand2());
+  EXPECT_EQ(0, (stream.Begin() + 2)->Operand1());
+  EXPECT_EQ(0, (stream.Begin() + 2)->Operand2());
 }
 
 TEST(TestOptMultiplyLoop, multByThreeAndFive) {
@@ -58,20 +50,19 @@ TEST(TestOptMultiplyLoop, multByThreeAndFive) {
   OptFusionOp(stream);
   OptDelayPtr(stream);
   OptMultiplyLoop(stream);
-  size_t count = 0;
-  for (auto *instr : stream) {
-    EXPECT_TRUE(instr->IsAny({Instruction::SET_CELL, Instruction::IMUL_CELL}));
-    if (instr->Is(Instruction::SET_CELL)) {
-      EXPECT_EQ(0, instr->Operand1());
-      EXPECT_EQ(0, instr->Operand2());
-    }
-    if (instr->Is(Instruction::IMUL_CELL)) {
-      EXPECT_TRUE(3 == instr->Operand1() || 5 == instr->Operand1());
-      EXPECT_TRUE(1 == instr->Operand2() || 2 == instr->Operand2());
-    }
-    ++count;
-  }
-  EXPECT_EQ(3, count);
+  EXPECT_TRUE(stream.Begin().LookingAt({
+        Instruction::JUMP_ZERO,
+        Instruction::IMUL_CELL,
+        Instruction::IMUL_CELL,
+        Instruction::SET_CELL,
+        Instruction::JUMP_NON_ZERO
+      }));
+  EXPECT_EQ(3, (stream.Begin() + 1)->Operand1());
+  EXPECT_EQ(1, (stream.Begin() + 1)->Operand2());
+  EXPECT_EQ(5, (stream.Begin() + 2)->Operand1());
+  EXPECT_EQ(2, (stream.Begin() + 2)->Operand2());
+  EXPECT_EQ(0, (stream.Begin() + 3)->Operand1());
+  EXPECT_EQ(0, (stream.Begin() + 3)->Operand2());
 }
 
 TEST(TestOptMultiplyLoop, multBetweenOther) {
@@ -79,23 +70,21 @@ TEST(TestOptMultiplyLoop, multBetweenOther) {
   OptFusionOp(stream);
   OptDelayPtr(stream);
   OptMultiplyLoop(stream);
-  size_t count = 0;
-  for (auto *instr : stream) {
-    EXPECT_TRUE(instr->IsAny({Instruction::SET_CELL, Instruction::IMUL_CELL, Instruction::INCR_CELL}));
-    if (instr->Is(Instruction::SET_CELL)) {
-      EXPECT_EQ(0, instr->Operand1());
-      EXPECT_EQ(0, instr->Operand2());
-    }
-    if (instr->Is(Instruction::IMUL_CELL)) {
-      EXPECT_TRUE(3 == instr->Operand1() || 5 == instr->Operand1());
-      EXPECT_TRUE(1 == instr->Operand2() || 2 == instr->Operand2());
-    }
-    if (instr->Is(Instruction::INCR_CELL)) {
-      EXPECT_TRUE(1 == instr->Operand1());
-    }
-    ++count;
-  }
-  EXPECT_EQ(5, count);
+  EXPECT_TRUE(stream.Begin().LookingAt({
+        Instruction::INCR_CELL,
+        Instruction::JUMP_ZERO,
+        Instruction::IMUL_CELL,
+        Instruction::IMUL_CELL,
+        Instruction::SET_CELL,
+        Instruction::JUMP_NON_ZERO,
+        Instruction::INCR_CELL
+      }));
+  EXPECT_EQ(3, (stream.Begin() + 2)->Operand1());
+  EXPECT_EQ(1, (stream.Begin() + 2)->Operand2());
+  EXPECT_EQ(5, (stream.Begin() + 3)->Operand1());
+  EXPECT_EQ(2, (stream.Begin() + 3)->Operand2());
+  EXPECT_EQ(0, (stream.Begin() + 4)->Operand1());
+  EXPECT_EQ(0, (stream.Begin() + 4)->Operand2());
 }
 
 TEST(TestOptMultiplyLoop, twoMultiplications) {
@@ -105,28 +94,23 @@ TEST(TestOptMultiplyLoop, twoMultiplications) {
   OptMultiplyLoop(stream);
   ASSERT_TRUE(stream.Begin().LookingAt({
       Instruction::INCR_CELL,
+      Instruction::JUMP_ZERO,
       Instruction::IMUL_CELL,
       Instruction::SET_CELL,
+      Instruction::JUMP_NON_ZERO,
+      Instruction::JUMP_ZERO,
       Instruction::IMUL_CELL,
       Instruction::SET_CELL,
+      Instruction::JUMP_NON_ZERO,
   }));
-  size_t count = 0;
-  for (auto *instr : stream) {
-    EXPECT_TRUE(instr->IsAny({Instruction::SET_CELL, Instruction::IMUL_CELL, Instruction::INCR_CELL}));
-    if (instr->Is(Instruction::SET_CELL)) {
-      EXPECT_EQ(0, instr->Operand1());
-      EXPECT_EQ(0, instr->Operand2());
-    }
-    if (instr->Is(Instruction::IMUL_CELL)) {
-      EXPECT_TRUE(3 == instr->Operand1());
-      EXPECT_EQ(1, instr->Operand2());
-    }
-    if (instr->Is(Instruction::INCR_CELL)) {
-      EXPECT_TRUE(1 == instr->Operand1());
-    }
-    ++count;
-  }
-  EXPECT_EQ(5, count);
+  EXPECT_EQ(3, (stream.Begin() + 2)->Operand1());
+  EXPECT_EQ(1, (stream.Begin() + 2)->Operand2());
+  EXPECT_EQ(0, (stream.Begin() + 3)->Operand1());
+  EXPECT_EQ(0, (stream.Begin() + 3)->Operand2());
+  EXPECT_EQ(3, (stream.Begin() + 6)->Operand1());
+  EXPECT_EQ(1, (stream.Begin() + 6)->Operand2());
+  EXPECT_EQ(0, (stream.Begin() + 7)->Operand1());
+  EXPECT_EQ(0, (stream.Begin() + 7)->Operand2());
 }
 
 TEST(TestOptMultiplyLoop, multWithWrite) {
