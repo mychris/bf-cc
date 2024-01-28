@@ -19,8 +19,9 @@
  *
  *   NOP             [NULL, NULL]          Do nothing
  *   INCR_CELL       [AMOUNT, PTR OFFSET]  Increment the cell at PTR OFFSET by AMOUNT
- *   DECR_CELL       [AMOUNT, PTR OFFSET]  Increment the cell at PTR OFFSET by AMOUNT
- *   IMUL_CELL       [AMOUNT, PTR OFFSET]  Add the multiple of current cell * AMOUNT to the cell at PTR OFFSET
+ *   DECR_CELL       [AMOUNT, PTR OFFSET]  Decrement the cell at PTR OFFSET by AMOUNT
+ *   IMUL_CELL       [AMOUNT, PTR OFFSET]  Increment cell at PTR OFFSET by a multiple of the current cell
+ *   DMUL_CELL       [AMOUNT, PTR OFFSET]  Decrement cell at PTR OFFSET by a multiple of the current cell
  *   SET_CELL        [VALUE, PTR OFFSET]   Set the cell at PTR OFFSET to VALUE
  *   INCR_PTR        [AMOUNT, NULL]        Increment the cell pointer by AMOUNT
  *   DECR_PTR        [AMOUNT, NULL]        Decrement the cell pointer by AMOUNT
@@ -36,16 +37,17 @@ enum class Instruction {
   INCR_CELL = 1 << 1,
   DECR_CELL = 1 << 2,
   IMUL_CELL = 1 << 3,
-  SET_CELL = 1 << 4,
-  INCR_PTR = 1 << 5,
-  DECR_PTR = 1 << 6,
-  // SET_PTR = 1 << 7,
-  READ = 1 << 8,
-  WRITE = 1 << 9,
-  JUMP_ZERO = 1 << 10,
-  JUMP_NON_ZERO = 1 << 11,
-  FIND_CELL_LOW = 1 << 12,
-  FIND_CELL_HIGH = 1 << 13,
+  DMUL_CELL = 1 << 4,
+  SET_CELL = 1 << 5,
+  INCR_PTR = 1 << 6,
+  DECR_PTR = 1 << 7,
+  // SET_PTR = 1 << 8,
+  READ = 1 << 9,
+  WRITE = 1 << 10,
+  JUMP_ZERO = 1 << 11,
+  JUMP_NON_ZERO = 1 << 12,
+  FIND_CELL_LOW = 1 << 13,
+  FIND_CELL_HIGH = 1 << 14,
 };
 
 enum class EOFMode {

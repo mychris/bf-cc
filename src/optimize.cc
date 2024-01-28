@@ -9,7 +9,7 @@ void Optimizer::Run(OperationStream &stream) const noexcept {
       OptimizerPass::Create("Fuse operators", OptFusionOp, OptimizerLevel::O1),
       OptimizerPass::Create("Peephole", OptPeep, OptimizerLevel::O2),
       OptimizerPass::Create("Delay Moves", OptDelayPtr, OptimizerLevel::O2),
-      OptimizerPass::Create("Multiplication Loops", OptMultiplyLoop, OptimizerLevel::O3),
+      OptimizerPass::Create("Multiplicative Loops", OptMultiplyLoop, OptimizerLevel::O3),
   };
 
   for (const auto &stage : pipeline) {
