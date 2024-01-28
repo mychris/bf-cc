@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT License
-#include <initializer_list>
 #ifndef BF_CC_INSTR_H
 #define BF_CC_INSTR_H 1
 
 #include <cstdint>
+#include <initializer_list>
 #include <utility>
 
 #include "error.h"
@@ -96,22 +96,6 @@ private:
     return instr;
   }
 
-  inline Operation *Next() {
-    return m.next;
-  }
-
-  inline Operation *Prev() {
-    return m.prev;
-  }
-
-  inline void SetNext(Operation *next) {
-    m.next = next;
-  }
-
-  inline void SetPrev(Operation *prev) {
-    m.prev = prev;
-  }
-
 public:
   Operation(Operation &&other) : m(std::exchange(other.m, {Instruction::NOP, nullptr, nullptr, {0, 0}})) {
   }
@@ -146,10 +130,6 @@ public:
 
   inline bool IsJump() const {
     return m.code == Instruction::JUMP_ZERO || m.code == Instruction::JUMP_NON_ZERO;
-  }
-
-  inline bool IsIO() const {
-    return m.code == Instruction::READ || m.code == Instruction::WRITE;
   }
 
   inline intptr_t Operand1() const {
@@ -201,7 +181,7 @@ public:
   ~OperationStream() {
     Operation *op = m.head;
     while (op) {
-      Operation *next = op->Next();
+      Operation *next = op->m.next;
       delete op;
       op = next;
     }
@@ -224,11 +204,11 @@ public:
     if (!m.head) {
       m.head = instr;
       m.tail = instr;
-      instr->SetNext(nullptr);
-      instr->SetPrev(nullptr);
+      instr->m.next = nullptr;
+      instr->m.prev = nullptr;
     } else {
-      m.tail->SetNext(instr);
-      instr->SetPrev(m.tail);
+      m.tail->m.next = instr;
+      instr->m.prev = m.tail;
       m.tail = instr;
     }
   }
@@ -239,11 +219,11 @@ public:
     if (!m.head) {
       m.head = instr;
       m.tail = instr;
-      instr->SetNext(nullptr);
-      instr->SetPrev(nullptr);
+      instr->m.next = nullptr;
+      instr->m.prev = nullptr;
     } else {
-      instr->SetNext(m.head);
-      m.head->SetPrev(instr);
+      instr->m.next = m.head;
+      m.head->m.prev = instr;
       m.head = instr;
     }
   }
@@ -251,16 +231,16 @@ public:
   inline void InsertBefore(Operation *instr, Instruction code, intptr_t op1 = 0, intptr_t op2 = 0) {
     if (nullptr == instr) {
       Append(code, op1, op2);
-    } else if (nullptr == instr->Prev()) {
+    } else if (nullptr == instr->m.prev) {
       Prepend(code, op1, op2);
     } else {
-      Operation *prev = instr->Prev();
+      Operation *prev = instr->m.prev;
       Operation *next = instr;
       Operation *new_instr = Operation::Allocate(code, op1, op2);
-      prev->SetNext(new_instr);
-      next->SetPrev(new_instr);
-      new_instr->SetPrev(prev);
-      new_instr->SetNext(next);
+      prev->m.next = new_instr;
+      next->m.prev = new_instr;
+      new_instr->m.next = next;
+      new_instr->m.prev = prev;
     }
   }
 
@@ -271,18 +251,18 @@ public:
         m.head = nullptr;
         m.tail = nullptr;
       } else {
-        m.head = instr.Next();
-        m.head->SetPrev(nullptr);
+        m.head = instr.m.next;
+        m.head->m.prev = nullptr;
       }
     } else if (m.tail == &instr) {
-      m.tail = instr.Prev();
-      m.tail->SetNext(nullptr);
+      m.tail = instr.m.prev;
+      m.tail->m.next = nullptr;
     } else {
-      instr.Prev()->SetNext(instr.Next());
-      instr.Next()->SetPrev(instr.Prev());
+      instr.m.prev->m.next = instr.m.next;
+      instr.m.next->m.prev = instr.m.prev;
     }
-    instr.SetNext(nullptr);
-    instr.SetPrev(nullptr);
+    instr.m.next = nullptr;
+    instr.m.prev = nullptr;
   }
 
   inline void Unlink(Operation *instr) {
@@ -323,7 +303,7 @@ public:
 
     inline Iterator &operator++() {
       if (m.current) {
-        m.current = m.current->Next();
+        m.current = m.current->m.next;
       }
       return *this;
     }
@@ -336,7 +316,7 @@ public:
 
     inline Iterator &operator--() {
       if (m.current) {
-        m.current = m.current->Prev();
+        m.current = m.current->m.prev;
       } else {
         m.current = m.stream->m.tail;
       }
@@ -354,7 +334,7 @@ public:
         return *this -= (-amount);
       }
       while (m.current && amount > 0) {
-        m.current = m.current->Next();
+        m.current = m.current->m.next;
         --amount;
       }
       return *this;
@@ -365,7 +345,7 @@ public:
         return *this += (-amount);
       }
       while (m.current && amount > 0) {
-        m.current = m.current->Prev();
+        m.current = m.current->m.prev;
         --amount;
       }
       return *this;

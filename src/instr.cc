@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT License
 #include "instr.h"
 
 #include <cstdio>
@@ -66,7 +67,7 @@ bool OperationStream::Iterator::LookingAt(const std::initializer_list<Instructio
   auto pattern_iter = pattern.begin();
   const auto pattern_end = pattern.end();
   while (current && pattern_iter != pattern_end && current->OpCode() == *pattern_iter) {
-    current = current->Next();
+    current = current->m.next;
     ++pattern_iter;
     ++counter;
   }

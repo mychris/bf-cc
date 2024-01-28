@@ -11,11 +11,11 @@ private:
   }
 
 public:
-  void Run(Heap &, OperationStream &, EOFMode);
-
-  static Interpreter Create() {
+  static Interpreter Create() noexcept {
     return Interpreter();
   }
+
+  void Run(Heap &, OperationStream &, EOFMode) const;
 };
 
 #endif /* BF_CC_INTERP_H */

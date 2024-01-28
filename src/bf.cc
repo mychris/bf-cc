@@ -42,7 +42,7 @@ static void parse_opts(int argc, char **argv) {
   argv++;
   char opt_level = '2';
   const char *mem_size_string = NULL;
-  const char* eof_mode_string = NULL;
+  const char *eof_mode_string = NULL;
   while (argc--) {
     if (0 == strcmp("-h", argv[0]) || 0 == strcmp("--help", argv[0])) {
       usage();
@@ -125,8 +125,6 @@ int main(int argc, char **argv) {
   parse_opts(argc, argv);
   char *content = Ensure(read_content(args.input_file_path));
   auto stream = Ensure(parse(content));
-  stream.Prepend(Instruction::NOP);
-  stream.Append(Instruction::NOP);
   free(content);
   Optimizer::Create(args.optimization_level).Run(stream);
   auto heap = Ensure(Heap::Create(args.heap_size));

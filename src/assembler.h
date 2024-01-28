@@ -12,8 +12,6 @@
 
 typedef void (*CodeEntry)(uint8_t *);
 
-class Assembler {};
-
 class AssemblerX8664 {
 private:
   struct M {

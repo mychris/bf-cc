@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT License
 #include "assembler.h"
 
-#include <sys/mman.h>
-#include <unistd.h>
-
 #include <cassert>
 #include <cstring>
 #include <iterator>
@@ -26,7 +23,8 @@ static Err EmitEntry(CodeArea &mem) {
       0x54,        // PUSH rsp
       0x55,        // PUSH rbp
       // rdx is used to hold the pointer to the current
-      // cell MOV rdx, rdi
+      // cell
+      // MOV rdx, rdi
       0x48, 0x89, 0xFA
     });
   // clang-format on
@@ -42,8 +40,7 @@ static Err EmitExit(CodeArea &mem) {
       0x41, 0x5E,  // POP r14
       0x41, 0x5D,  // POP r13
       0x41, 0x5C,  // POP r12
-      // ret
-      0xC3
+      0xC3         // ret
     });
   // clang-format on
 }
