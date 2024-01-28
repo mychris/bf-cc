@@ -26,6 +26,22 @@ Usage: `bf-cc` [`-h`] [`-O(0|1|2|3)`] [`-mMEMORY_SIZE`] [`-e(keep|0|1)`] [`(-i|-
 | -e           | --eof=      | keep|0|-1  | EOF mode            |
 | -h           | --help      |            | Display help        |
 
+## IR
+
+The IR consists of a doubly linked list of instructions.  Each instruction has
+up to two operands.  Jump instruction use the destination as its operand and
+it is a pointer to the corresponding jump instruction the jump should go to.
+Therefore jumps act as both, jump instructions and labels, which is not ideal.
+
+I started with this assumption and didn't want to change it later on.  It works,
+but is far from perfect.
+
+Optimizations use an iterator over the instruction stream to inspect it, match
+patterns, and manipulate the stream.  Because of the C++ iterator API, care must
+be taken if the stream is manipulated while an iterator is alive.  The underlying
+structure is a linked list, so removing something from the list might make the
+iterator invalid.
+
 ## Optimizations
 
 The optimizer has several passes, which can be controlled using the `-O` flag.
