@@ -11,7 +11,7 @@ private:
   }
 
 public:
-  void Run(Heap &, OperationStream &);
+  void Run(Heap &, OperationStream &, EOFMode);
 
   static Interpreter Create() {
     return Interpreter();

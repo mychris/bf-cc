@@ -21,16 +21,18 @@ static struct {
   size_t heap_size = DEFAULT_HEAP_SIZE;
   ExecMode execution_mode = ExecMode::COMPILER;
   OptimizerLevel optimization_level = OptimizerLevel::O2;
+  EOFMode eof_mode = EOFMode::KEEP;
 } args;
 
 static void usage(void) {
-  fprintf(stderr, "Usage: %s [-h] [-O(0|1|2|3)] [-mMEMORY_SIZE] [(-i|-c)] PROGRAM\n", program_name);
+  fprintf(stderr, "Usage: %s [-h] [-O(0|1|2|3)] [-mMEMORY_SIZE] [(-i|-c)] [-e(keep|0|-1)]PROGRAM\n", program_name);
   fprintf(stderr, "\n");
   fprintf(stderr, "Options:\n");
   fprintf(stderr, "  -O, --optimize=  Set the optimization level to 0, 1, 2, or 3\n");
   fprintf(stderr, "  -m, --memory=    Set the heap memory size\n");
   fprintf(stderr, "  -i, --interp     Set the execution mode to: interpreter\n");
   fprintf(stderr, "  -c, --compiler   Set the execution mode to: compiler\n");
+  fprintf(stderr, "  -e, --eof=       Set EOF to 'keep', '0', or '-1'\n");
   fprintf(stderr, "  -h, --help       Display this help message\n");
 }
 
@@ -40,6 +42,7 @@ static void parse_opts(int argc, char **argv) {
   argv++;
   char opt_level = '2';
   const char *mem_size_string = NULL;
+  const char* eof_mode_string = NULL;
   while (argc--) {
     if (0 == strcmp("-h", argv[0]) || 0 == strcmp("--help", argv[0])) {
       usage();
@@ -62,6 +65,10 @@ static void parse_opts(int argc, char **argv) {
       args.execution_mode = ExecMode::INTERPRETER;
     } else if (0 == strcmp("--comp", argv[0]) || 0 == strcmp("-c", argv[0])) {
       args.execution_mode = ExecMode::COMPILER;
+    } else if (0 == strncmp("-e", argv[0], 2)) {
+      eof_mode_string = &argv[0][2];
+    } else if (0 == strncmp("--eof=", argv[0], 6)) {
+      eof_mode_string = &argv[0][6];
     } else if (argv[0][0] != '-') {
       args.input_file_path = argv[0];
     } else if (0 == strcmp("-", argv[0])) {
@@ -78,6 +85,17 @@ static void parse_opts(int argc, char **argv) {
         Error("Invalid heap memory size: %s", mem_size_string);
       }
       args.heap_size = (size_t) result;
+    }
+    if (eof_mode_string) {
+      if (0 == strcmp("keep", eof_mode_string)) {
+        args.eof_mode = EOFMode::KEEP;
+      } else if (0 == strcmp("0", eof_mode_string)) {
+        args.eof_mode = EOFMode::ZERO;
+      } else if (0 == strcmp("-1", eof_mode_string)) {
+        args.eof_mode = EOFMode::NEG_ONE;
+      } else {
+        Error("Invalid EOF mode: %s", eof_mode_string);
+      }
     }
     argv++;
   }
@@ -115,12 +133,12 @@ int main(int argc, char **argv) {
   switch (args.execution_mode) {
   case ExecMode::INTERPRETER: {
     auto interpreter = Interpreter::Create();
-    interpreter.Run(heap, stream);
+    interpreter.Run(heap, stream, args.eof_mode);
   } break;
   case ExecMode::COMPILER: {
     auto code_area = Ensure(CodeArea::Create());
     auto assembler = AssemblerX8664::Create(code_area);
-    auto entry = Ensure(assembler.Assemble(stream));
+    auto entry = Ensure(assembler.Assemble(stream, args.eof_mode));
     Ensure(code_area.MakeExecutable());
     entry(heap.BaseAddress());
   } break;

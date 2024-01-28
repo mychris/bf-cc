@@ -7,7 +7,7 @@
 #include "instr.h"
 #include "mem.h"
 
-void Interpreter::Run(Heap &heap, OperationStream &stream) {
+void Interpreter::Run(Heap &heap, OperationStream &stream, EOFMode eof_mode) {
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {
@@ -37,7 +37,16 @@ void Interpreter::Run(Heap &heap, OperationStream &stream) {
     case Instruction::READ: {
       const int input = std::getchar();
       if (EOF == input) {
-        heap.SetCell(0, iter->Operand2());
+        switch (eof_mode) {
+        case EOFMode::KEEP: {
+        } break;
+        case EOFMode::ZERO: {
+          heap.SetCell(0, iter->Operand2());
+        } break;
+        case EOFMode::NEG_ONE: {
+          heap.SetCell((uint8_t) -1, iter->Operand2());
+        } break;
+        }
       } else {
         heap.SetCell((uint8_t) input, iter->Operand2());
       }

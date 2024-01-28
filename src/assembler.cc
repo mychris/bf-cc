@@ -157,9 +157,9 @@ static Err EmitDecrPtr(CodeArea &mem, intptr_t amount) {
   }
 }
 
-static Err EmitRead(CodeArea &mem) {
+static Err EmitRead(CodeArea &mem, EOFMode eof_mode) {
   // clang-format off
-  return mem.EmitCodeListing({
+  Err err = mem.EmitCodeListing({
       // PUSH rdx
       0x52,
       // MOV rax, 0 (SYS_read)
@@ -173,15 +173,35 @@ static Err EmitRead(CodeArea &mem) {
       // syscall
       0x0F, 0x05,
       // POP rdx
-      0x5A,
-      // CMP rax, 0x0
-      0x48, 0x83, 0xF8, 0x00,
-      // JNZ "next instruction"
-      0x75, 0x03,
-      // MOV byte[rdx], 0x0
-      0xC6, 0x02, 0x00
-    });
+      0x5A});
   // clang-format on
+  if (!err.IsOk()) {
+    return err;
+  }
+  switch (eof_mode) {
+  case EOFMode::KEEP: {
+    return err.Ok();
+  } break;
+  case EOFMode::ZERO: {
+    // clang-format off
+    return mem.EmitCodeListing({
+        // CMP rax, 0x0
+        0x48, 0x83, 0xF8, 0x00,
+        // JNZ "next instruction"
+        0x75, 0x03,
+        // MOV byte[rdx], 0x0
+        0xC6, 0x02, 0x00});
+  } break;
+  case EOFMode::NEG_ONE: {
+    return mem.EmitCodeListing({
+        // CMP rax, 0x0
+        0x48, 0x83, 0xF8, 0x00,
+        // JNZ "next instruction"
+        0x75, 0x03,
+        // MOV byte[rdx], -1
+        0xC6, 0x02, 0xFF});
+  } break;
+  }
 }
 
 static Err EmitWrite(CodeArea &mem) {
@@ -295,7 +315,7 @@ static Err EmitFindCellLow(CodeArea &mem, uint8_t value, uintptr_t move_size) {
       });
 }
 
-std::variant<CodeEntry, Err> AssemblerX8664::Assemble(OperationStream &stream) {
+std::variant<CodeEntry, Err> AssemblerX8664::Assemble(OperationStream &stream, EOFMode eof_mode) {
   std::vector<std::pair<Operation *, uint8_t *>> jump_list = {};
   Err err = Err::Ok();
   void *entry = m.mem.CurrentWriteAddr();
@@ -329,7 +349,7 @@ std::variant<CodeEntry, Err> AssemblerX8664::Assemble(OperationStream &stream) {
       err = EmitDecrPtr(m.mem, iter->Operand1());
       break;
     case Instruction::READ:
-      err = EmitIncrPtr(m.mem, iter->Operand2()).and_then([&]() { return EmitRead(m.mem); }).and_then([&]() {
+      err = EmitIncrPtr(m.mem, iter->Operand2()).and_then([&]() { return EmitRead(m.mem, eof_mode); }).and_then([&]() {
         return EmitDecrPtr(m.mem, iter->Operand2());
       });
       break;

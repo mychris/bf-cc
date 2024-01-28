@@ -48,6 +48,12 @@ enum class Instruction {
   FIND_CELL_HIGH = 1 << 13,
 };
 
+enum class EOFMode {
+  KEEP,
+  ZERO,
+  NEG_ONE,
+};
+
 class Operation final {
   friend class OperationStream;
 

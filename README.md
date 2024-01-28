@@ -15,7 +15,7 @@ OpCode of the IR.
 
 ## Command line interface
 
-Usage: `bf-cc` [`-h`] [`-O(0|1|2|3)`] [`-mMEMORY_SIZE`] [`(-i|-c)`] PROGRAM
+Usage: `bf-cc` [`-h`] [`-O(0|1|2|3)`] [`-mMEMORY_SIZE`] [`-e(keep|0|1)`] [`(-i|-c)`] PROGRAM
 
 | Short option | Long option | Argument   | Description         |
 |--------------|-------------|------------|---------------------|
@@ -23,6 +23,7 @@ Usage: `bf-cc` [`-h`] [`-O(0|1|2|3)`] [`-mMEMORY_SIZE`] [`(-i|-c)`] PROGRAM
 | -m           | --memory=   | bytes      | Size of the heap    |
 | -i           | --interp    |            | Use the interpreter |
 | -c           | --compiler  |            | Use the compiler    |
+| -e           | --eof=      | keep|0|-1  | EOF mode            |
 | -h           | --help      |            | Display help        |
 
 ## License
