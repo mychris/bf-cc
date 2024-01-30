@@ -95,7 +95,7 @@ TEST(TestOptFusionOp, fuseInLoop) {
     }
     ++count;
   }
-  EXPECT_EQ(8, count);
+  EXPECT_EQ(10, count);
 }
 
 TEST(TestOptFusionOp, doNotFuseReads) {
@@ -132,5 +132,5 @@ TEST(TestOptFusionOp, doNotFuseAfterDelayIncrement) {
     }
     ++count;
   }
-  EXPECT_EQ(5, count);
+  EXPECT_EQ(7, count);
 }

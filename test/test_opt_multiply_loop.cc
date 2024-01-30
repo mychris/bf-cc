@@ -16,11 +16,10 @@ TEST(TestOptMultiplyLoop, multByOneSingle) {
   OptFusionOp(stream);
   OptDelayPtr(stream);
   OptMultiplyLoop(stream);
-  EXPECT_TRUE(stream.Begin().LookingAt({
-        Instruction::JUMP_ZERO,
+  ASSERT_TRUE(stream.Begin().LookingAt({Instruction::JZ,
         Instruction::IMUL_CELL,
         Instruction::SET_CELL,
-        Instruction::JUMP_NON_ZERO
+        Instruction::LABEL,
       }));
   EXPECT_EQ(1, (stream.Begin() + 1)->Operand1());
   EXPECT_EQ(1, (stream.Begin() + 1)->Operand2());
@@ -33,11 +32,10 @@ TEST(TestOptMultiplyLoop, multByThreeSingle) {
   OptFusionOp(stream);
   OptDelayPtr(stream);
   OptMultiplyLoop(stream);
-  EXPECT_TRUE(stream.Begin().LookingAt({
-        Instruction::JUMP_ZERO,
+  ASSERT_TRUE(stream.Begin().LookingAt({Instruction::JZ,
         Instruction::IMUL_CELL,
         Instruction::SET_CELL,
-        Instruction::JUMP_NON_ZERO
+        Instruction::LABEL,
       }));
   EXPECT_EQ(3, (stream.Begin() + 1)->Operand1());
   EXPECT_EQ(1, (stream.Begin() + 1)->Operand2());
@@ -50,13 +48,11 @@ TEST(TestOptMultiplyLoop, multByThreeAndFive) {
   OptFusionOp(stream);
   OptDelayPtr(stream);
   OptMultiplyLoop(stream);
-  EXPECT_TRUE(stream.Begin().LookingAt({
-        Instruction::JUMP_ZERO,
-        Instruction::IMUL_CELL,
-        Instruction::IMUL_CELL,
-        Instruction::SET_CELL,
-        Instruction::JUMP_NON_ZERO
-      }));
+  ASSERT_TRUE(stream.Begin().LookingAt({Instruction::JZ,
+                                        Instruction::IMUL_CELL,
+                                        Instruction::IMUL_CELL,
+                                        Instruction::SET_CELL,
+                                        Instruction::LABEL}));
   EXPECT_EQ(3, (stream.Begin() + 1)->Operand1());
   EXPECT_EQ(1, (stream.Begin() + 1)->Operand2());
   EXPECT_EQ(5, (stream.Begin() + 2)->Operand1());
@@ -70,15 +66,13 @@ TEST(TestOptMultiplyLoop, multBetweenOther) {
   OptFusionOp(stream);
   OptDelayPtr(stream);
   OptMultiplyLoop(stream);
-  EXPECT_TRUE(stream.Begin().LookingAt({
-        Instruction::INCR_CELL,
-        Instruction::JUMP_ZERO,
-        Instruction::IMUL_CELL,
-        Instruction::IMUL_CELL,
-        Instruction::SET_CELL,
-        Instruction::JUMP_NON_ZERO,
-        Instruction::INCR_CELL
-      }));
+  ASSERT_TRUE(stream.Begin().LookingAt({Instruction::INCR_CELL,
+                                        Instruction::JZ,
+                                        Instruction::IMUL_CELL,
+                                        Instruction::IMUL_CELL,
+                                        Instruction::SET_CELL,
+                                        Instruction::LABEL,
+                                        Instruction::INCR_CELL}));
   EXPECT_EQ(3, (stream.Begin() + 2)->Operand1());
   EXPECT_EQ(1, (stream.Begin() + 2)->Operand2());
   EXPECT_EQ(5, (stream.Begin() + 3)->Operand1());
@@ -94,14 +88,14 @@ TEST(TestOptMultiplyLoop, twoMultiplications) {
   OptMultiplyLoop(stream);
   ASSERT_TRUE(stream.Begin().LookingAt({
       Instruction::INCR_CELL,
-      Instruction::JUMP_ZERO,
+      Instruction::JZ,
       Instruction::IMUL_CELL,
       Instruction::SET_CELL,
-      Instruction::JUMP_NON_ZERO,
-      Instruction::JUMP_ZERO,
+      Instruction::LABEL,
+      Instruction::JZ,
       Instruction::IMUL_CELL,
       Instruction::SET_CELL,
-      Instruction::JUMP_NON_ZERO,
+      Instruction::LABEL,
   }));
   EXPECT_EQ(3, (stream.Begin() + 2)->Operand1());
   EXPECT_EQ(1, (stream.Begin() + 2)->Operand2());

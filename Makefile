@@ -47,11 +47,11 @@ $(OBJ_TEST): $(HDR)
 .cc.o:
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
-check: $(EXE_TEST)
+check: $(EXE) $(EXE_TEST)
 	./$(EXE_TEST) --gtest_shuffle --gtest_color=no --gtest_brief=1
 	VERBOSE=0 ./t/test.bash
 
-checkfull: $(EXE_TEST)
+checkfull: $(EXE) $(EXE_TEST)
 	./$(EXE_TEST)
 	VERBOSE=1 ./t/test.bash
 

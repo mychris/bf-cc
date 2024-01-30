@@ -13,12 +13,14 @@ static void do_it(OperationStream &stream, OperationStream::Iterator &iter, cons
     case Instruction::IMUL_CELL:
     case Instruction::FIND_CELL_LOW:
     case Instruction::FIND_CELL_HIGH:
-    case Instruction::JUMP_NON_ZERO:
-    case Instruction::JUMP_ZERO: {
+    case Instruction::JZ:
+    case Instruction::JNZ:
+    case Instruction::LABEL: {
       if (offset != 0) {
         Instruction code = (offset > 0) ? Instruction::INCR_PTR : Instruction::DECR_PTR;
         offset = (offset > 0) ? offset : -offset;
         stream.InsertBefore(*iter, code, offset, 0);
+        offset = 0;
       }
       ++iter;
       return;

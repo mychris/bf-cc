@@ -350,6 +350,7 @@ static Err EmitFindCellLow(CodeArea &mem, uint8_t value, uintptr_t move_size) {
 
 std::variant<CodeEntry, Err> AssemblerX8664::Assemble(OperationStream &stream, EOFMode eof_mode) {
   std::vector<std::pair<Operation *, uint8_t *>> jump_list = {};
+  std::vector<std::pair<Operation *, uint8_t *>> label_list = {};
   Err err = Err::Ok();
   void *entry = m.mem.CurrentWriteAddr();
   auto iter = stream.Begin();
@@ -394,13 +395,16 @@ std::variant<CodeEntry, Err> AssemblerX8664::Assemble(OperationStream &stream, E
         return EmitDecrPtr(m.mem, iter->Operand2());
       });
       break;
-    case Instruction::JUMP_ZERO:
+    case Instruction::JZ:
       err = EmitJumpZero(m.mem);
       jump_list.push_back({*iter, m.mem.CurrentWriteAddr()});
       break;
-    case Instruction::JUMP_NON_ZERO:
+    case Instruction::JNZ:
       err = EmitJumpNonZero(m.mem);
       jump_list.push_back({*iter, m.mem.CurrentWriteAddr()});
+      break;
+    case Instruction::LABEL:
+      label_list.push_back({*iter, m.mem.CurrentWriteAddr()});
       break;
     case Instruction::FIND_CELL_HIGH:
       err = EmitFindCellHigh(m.mem, (uint8_t) iter->Operand1(), (uintptr_t) iter->Operand2());
@@ -417,25 +421,21 @@ std::variant<CodeEntry, Err> AssemblerX8664::Assemble(OperationStream &stream, E
   // Patch the jumps
   for (const auto &[jump, code_pos] : jump_list) {
     uint8_t *target_pos = 0;
-    for (const auto &[target_jump, pos2] : jump_list) {
-      if (jump->Operand1() == (Operation::operand_type) target_jump) {
-        target_pos = pos2;
+    for (const auto &[label, label_pos] : label_list) {
+      if (jump->Operand1() == (Operation::operand_type) label) {
+        target_pos = label_pos;
         break;
       }
     }
-    assert(target_pos > (uint8_t *) 0 && "Jump destination not found");
-    if (jump->Is(Instruction::JUMP_ZERO)) {
+    assert(target_pos > (uint8_t *) 0 && "Label not found");
+    assert(jump->IsAny({Instruction::JZ, Instruction::JNZ}) && "Invalid op code in jump list");
+    if (jump->Is(Instruction::JZ)) {
       err = PatchJumpZero(m.mem, code_pos, (uintptr_t) (target_pos - code_pos));
-      if (!err.IsOk()) {
-        return err;
-      }
-    } else if (jump->Is(Instruction::JUMP_NON_ZERO)) {
+    } else if (jump->Is(Instruction::JNZ)) {
       err = PatchJumpNonZero(m.mem, code_pos, (uintptr_t) (target_pos - code_pos));
-      if (!err.IsOk()) {
-        return err;
-      }
-    } else {
-      assert(0 && "Invalid op code in jump list");
+    }
+    if (!err.IsOk()) {
+      return err;
     }
   }
   err = EmitExit(m.mem);

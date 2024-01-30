@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MIT License
+#include <cassert>
+
 #include "instr.h"
 #include "optimize.h"
 
@@ -17,17 +19,16 @@ void OptCommentLoop(OperationStream &stream) {
     while (iter != end && (iter->Is(Instruction::NOP))) {
       ++iter;
     }
-    if (iter == end || !iter->IsJump()) {
+    if (iter == end || !iter->Is(Instruction::JZ)) {
       return;
     }
-    auto comment_loop = iter++;
-    while (iter != end) {
-      bool last = iter->IsJump() && iter->Operand1() == (Operation::operand_type) *comment_loop;
+    auto loop_end = iter;
+    loop_end.JumpTo((Operation*) iter->Operand1());
+    assert(loop_end->Is(Instruction::LABEL));
+    assert((loop_end - 1)->Is(Instruction::JNZ));
+    while (iter != loop_end) {
       stream.Delete(iter++);
-      if (last) {
-        stream.Delete(comment_loop);
-        break;
-      }
     }
+    stream.Delete(iter++);
   }
 }

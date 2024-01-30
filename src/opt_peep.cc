@@ -1,23 +1,31 @@
 // SPDX-License-Identifier: MIT License
+#include <cassert>
+
 #include "instr.h"
 #include "optimize.h"
 
 static void ReplaceSingleInstructionLoops(OperationStream &stream) {
-  static const auto incr_pattern = {Instruction::JUMP_ZERO, Instruction::INCR_CELL, Instruction::JUMP_NON_ZERO};
-  static const auto decr_pattern = {Instruction::JUMP_ZERO, Instruction::DECR_CELL, Instruction::JUMP_NON_ZERO};
+  static const auto incr_pattern = {Instruction::JZ, Instruction::LABEL, Instruction::INCR_CELL, Instruction::JNZ, Instruction::LABEL};
+  static const auto decr_pattern = {Instruction::JZ, Instruction::LABEL, Instruction::DECR_CELL, Instruction::JNZ, Instruction::LABEL};
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {
     if (iter.LookingAt(incr_pattern) || iter.LookingAt(decr_pattern)) {
-      auto first = iter++;
-      auto second = iter++;
-      auto third = iter++;
-      if (first->Operand1() == (Operation::operand_type) *third && third->Operand1() == (Operation::operand_type) *first
-          && second->Operand1() % 2 == 1) {
-        first->SetOpCode(Instruction::SET_CELL);
-        first->SetOperand1(0);
-        stream.Delete(second);
-        stream.Delete(third);
+      auto jz = iter++;
+      auto label1 = iter++;
+      auto incr_decr = iter++;
+      auto jnz = iter++;
+      auto label2 = iter++;
+      if (jz->Operand1() == (Operation::operand_type) *label2 && jnz->Operand1() == (Operation::operand_type) *label1
+          && incr_decr->Operand1() % 2 == 1) {
+        assert(label2->Operand1() == (Operation::operand_type) *jz);
+        assert(label1->Operand1() == (Operation::operand_type) *jnz);
+        jz->SetOpCode(Instruction::SET_CELL);
+        jz->SetOperand1(0);
+        stream.Delete(label1);
+        stream.Delete(incr_decr);
+        stream.Delete(jnz);
+        stream.Delete(label2);
       }
     } else {
       ++iter;
@@ -26,34 +34,29 @@ static void ReplaceSingleInstructionLoops(OperationStream &stream) {
 }
 
 static void ReplaceFindCellLoops(OperationStream &stream) {
+  static const auto high_pattern = {Instruction::JZ, Instruction::LABEL, Instruction::INCR_PTR, Instruction::JNZ, Instruction::LABEL};
+  static const auto low_pattern = {Instruction::JZ, Instruction::LABEL, Instruction::DECR_PTR, Instruction::JNZ, Instruction::LABEL};
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {
-    if (iter->IsJump()) {
-      Operation *first = (*iter++);
-      Operation *second = *iter;
-      Operation *third = (second) ? *(iter + 1) : nullptr;
-      if (first && second && third && first->Is(Instruction::JUMP_ZERO) && third->Is(Instruction::JUMP_NON_ZERO)
-          && first->Operand1() == (Operation::operand_type) third
-          && third->Operand1() == (Operation::operand_type) first) {
-        bool replaced = false;
-        if (second->Is(Instruction::INCR_PTR)) {
-          // [>]
-          first->SetOpCode(Instruction::FIND_CELL_HIGH);
-          first->SetOperand1(0);
-          first->SetOperand2(second->Operand1());
-          replaced = true;
-        } else if (second->Is(Instruction::DECR_PTR)) {
-          // [<]
-          first->SetOpCode(Instruction::FIND_CELL_LOW);
-          first->SetOperand1(0);
-          first->SetOperand2(second->Operand1());
-          replaced = true;
+    if (iter.LookingAt(high_pattern) || iter.LookingAt(low_pattern)) {
+      auto jz = iter++;
+      auto label1 = iter++;
+      auto incr_decr = iter++;
+      auto jnz = iter++;
+      auto label2 = iter++;
+      if (jz->Operand1() == (Operation::operand_type) *label2 && jnz->Operand1() == (Operation::operand_type) *label1) {
+        if (incr_decr->Is(Instruction(Instruction::INCR_PTR))) {
+          jz->SetOpCode(Instruction::FIND_CELL_HIGH);
+        } else {
+          jz->SetOpCode(Instruction::FIND_CELL_LOW);
         }
-        if (replaced) {
-          stream.Delete(iter++);
-          stream.Delete(iter++);
-        }
+        jz->SetOperand1(0);
+        jz->SetOperand2(incr_decr->Operand1());
+        stream.Delete(label1);
+        stream.Delete(incr_decr);
+        stream.Delete(jnz);
+        stream.Delete(label2);
       }
     } else {
       ++iter;

@@ -29,12 +29,10 @@ Usage: `bf-cc` [`-h`] [`-O(0|1|2|3)`] [`-mMEMORY_SIZE`] [`-e(keep|0|1)`] [`(-i|-
 ## IR
 
 The IR consists of a doubly linked list of instructions.  Each instruction has
-up to two operands.  Jump instructions use the destination as their operand, which
-is a pointer to the corresponding jump instruction the jump should go to. 
-Therefore jumps act as both, instructions and labels, which is not ideal.
-
-I started with this assumption and didn't want to change it later on.  It works,
-but is far from perfect.
+up to two operands.  Jump instruction jump to their corresponding labels.  Each
+label can only jumped to from a single position.  JNZ are always backward jumps
+and JZ are always forward jumps.  Each jump instruction contains a pointer to
+its corresponding label, and the label contains a pointer to its jump.
 
 Optimizations use an iterator over the instruction stream to inspect it, match
 patterns, and manipulate the stream.  Because of the C++ iterator API, care must

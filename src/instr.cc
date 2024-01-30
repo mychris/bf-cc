@@ -33,11 +33,14 @@ void Operation::Dump() const {
   case Instruction::WRITE: {
     putchar('.');
   } break;
-  case Instruction::JUMP_ZERO: {
+  case Instruction::JZ: {
     putchar('[');
   } break;
-  case Instruction::JUMP_NON_ZERO: {
+  case Instruction::JNZ: {
     putchar(']');
+  } break;
+  case Instruction::LABEL: {
+    putchar('#');
   } break;
   case Instruction::FIND_CELL_HIGH: {
     putchar(')');
@@ -50,6 +53,31 @@ void Operation::Dump() const {
   } break;
   }
   printf(" %zd %zd\n", Operand1(), Operand2());
+}
+
+void OperationStream::Swap(Operation *left, Operation *right) {
+  if (left == m.head) {
+    m.head = right;
+  } else if (right == m.head) {
+    m.head = left;
+  }
+  if (left == m.tail) {
+    m.tail = right;
+  } else if (right == m.tail) {
+    m.tail = left;
+  }
+  // Swapping Node1 and Node2
+  Operation *temp;
+  temp = left->m.next;
+  left->m.next = right->m.next;
+  right->m.next = temp;
+  if (left->m.next != NULL) left->m.next->m.prev = left;
+  if (right->m.next != NULL) right->m.next->m.prev = right;
+  temp = left->m.prev;
+  left->m.prev = right->m.prev;
+  right->m.prev = temp;
+  if (left->m.prev != NULL) left->m.prev->m.next = left;
+  if (right->m.prev != NULL) right->m.prev->m.next = right;
 }
 
 void OperationStream::Dump() {

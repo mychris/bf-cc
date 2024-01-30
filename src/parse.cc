@@ -45,16 +45,20 @@ std::variant<OperationStream, Err> parse(const char *input) {
       stream.Append(Instruction::WRITE, 0);
     } break;
     case OP_JMPF: {
-      stream.Append(Instruction::JUMP_ZERO, 0);
-      Operation *this_op = stream.Last();
-      jump_stack.push_back(this_op);
+      stream.Append(Instruction::JZ, 0);
+      jump_stack.push_back(stream.Last());
+      stream.Append(Instruction::LABEL, 0);
+      jump_stack.push_back(stream.Last());
     } break;
     case OP_JMPB: {
+      Operation *label = jump_stack.back();
+      jump_stack.pop_back();
       Operation *other = jump_stack.back();
       jump_stack.pop_back();
-      stream.Append(Instruction::JUMP_NON_ZERO, (Operation::operand_type) other);
-      Operation *this_op = stream.Last();
-      other->SetOperand1((Operation::operand_type) this_op);
+      stream.Append(Instruction::JNZ, (Operation::operand_type) label);
+      label->SetOperand1((Operation::operand_type) stream.Last());
+      stream.Append(Instruction::LABEL, (Operation::operand_type) other);
+      other->SetOperand1((Operation::operand_type) stream.Last());
     } break;
     default:
       break;

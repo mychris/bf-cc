@@ -27,12 +27,13 @@
  *   DECR_PTR        [AMOUNT, NULL]        Decrement the cell pointer by AMOUNT
  *   READ            [NULL, PTR OFFSET]    Read from STDIN into the cell at PTR OFFSET
  *   WRITE           [NULL, PTR OFFSET]    Write to STDOUT the value from cell at PTR OFFSET
- *   JUMP_ZERO       [ADDR, NULL]          Jump to the instruction at ADDR if the cell value is 0
- *   JUMP_NON_ZERO   [ADDR, NULL]          Jump to the instruction at ADDR if the cell value is not 0
+ *   JZ              [ADDR, NULL]          Jump to the label at ADDR if the cell value is 0
+ *   JNZ             [ADDR, NULL]          Jump to the label at ADDR if the cell value is not 0
+ *   LABEL           [ADDR, NULL]          Destination for jumps, ADDR is the jump which jumps to this label
  *   FIND_CELL_LOW   [VALUE, MOVE AMOUNT]  Find cell with VALUE, move the cell pointer downwards by MOVE AMOUNT
  *   FIND_CELL_HIGH  [VALUE, MOVE AMOUNT]  Find cell with VALUE, move the cell pointer upwards by MOVE AMOUNT
  */
-enum class Instruction {
+enum class Instruction : uint32_t {
   NOP = 1 << 0,
   INCR_CELL = 1 << 1,
   DECR_CELL = 1 << 2,
@@ -44,10 +45,11 @@ enum class Instruction {
   // SET_PTR = 1 << 8,
   READ = 1 << 9,
   WRITE = 1 << 10,
-  JUMP_ZERO = 1 << 11,
-  JUMP_NON_ZERO = 1 << 12,
-  FIND_CELL_LOW = 1 << 13,
-  FIND_CELL_HIGH = 1 << 14,
+  JZ = 1 << 11,
+  JNZ = 1 << 12,
+  LABEL = 1 << 13,
+  FIND_CELL_LOW = 1 << 14,
+  FIND_CELL_HIGH = 1 << 15,
 };
 
 enum class EOFMode {
@@ -131,7 +133,7 @@ public:
   }
 
   inline bool IsJump() const {
-    return m.code == Instruction::JUMP_ZERO || m.code == Instruction::JUMP_NON_ZERO;
+    return m.code == Instruction::JZ || m.code == Instruction::JNZ;
   }
 
   inline intptr_t Operand1() const {
@@ -275,6 +277,8 @@ public:
     Unlink(*instr);
     delete instr;
   }
+
+  void Swap(Operation *left, Operation *right);
 
   class Iterator final {
   private:

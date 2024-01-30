@@ -60,15 +60,17 @@ void Interpreter::Run(Heap &heap, OperationStream &stream, EOFMode eof_mode) con
       const uint8_t output = heap.GetCell(iter->Operand2());
       std::putchar((int) output);
     } break;
-    case Instruction::JUMP_ZERO: {
+    case Instruction::JZ: {
       if (heap.GetCell(0) == 0) {
         iter.JumpTo((Operation *) iter->Operand1());
       }
     } break;
-    case Instruction::JUMP_NON_ZERO: {
+    case Instruction::JNZ: {
       if (heap.GetCell(0) != 0) {
         iter.JumpTo((Operation *) iter->Operand1());
       }
+    } break;
+    case Instruction::LABEL: {
     } break;
     case Instruction::FIND_CELL_HIGH: {
       const uint8_t val = (uint8_t) iter->Operand1();
