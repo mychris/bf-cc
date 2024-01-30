@@ -2,7 +2,9 @@
 #include "instr.h"
 #include "optimize.h"
 
-static void do_it(OperationStream &stream, OperationStream::Iterator &iter, const OperationStream::Iterator &end) {
+void OptDelayPtr(OperationStream &stream) {
+  auto iter = stream.Begin();
+  const auto end = stream.End();
   intptr_t offset = 0;
   while (iter != end) {
     switch (iter->OpCode()) {
@@ -23,7 +25,6 @@ static void do_it(OperationStream &stream, OperationStream::Iterator &iter, cons
         offset = 0;
       }
       ++iter;
-      return;
     } break;
     case Instruction::SET_CELL:
     case Instruction::INCR_CELL:
@@ -45,13 +46,5 @@ static void do_it(OperationStream &stream, OperationStream::Iterator &iter, cons
       ++iter;
     } break;
     }
-  }
-}
-
-void OptDelayPtr(OperationStream &stream) {
-  auto iter = stream.Begin();
-  const auto end = stream.End();
-  while (iter != end) {
-    do_it(stream, iter, end);
   }
 }

@@ -430,6 +430,8 @@ public:
   }
 
   void Dump();
+
+  void Verify();
 };
 
 #endif /* BF_CC_INSTR_H */

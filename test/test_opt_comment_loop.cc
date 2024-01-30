@@ -47,6 +47,19 @@ TEST(TestOptCommentLoop, commentLoopOnly) {
   EXPECT_EQ(0, count);
 }
 
+TEST(TestOptCommentLoop, commentLoopWithNopsOnly) {
+  OperationStream stream = std::get<OperationStream>(parse("[here is a comment with, some. operations++]"));
+  OptCommentLoop(stream);
+  stream.Prepend(Instruction::NOP);
+  stream.Prepend(Instruction::NOP);
+  size_t count = 0;
+  for (auto *instr : stream) {
+    EXPECT_EQ(instr->OpCode(), Instruction::NOP);
+    ++count;
+  }
+  EXPECT_EQ(2, count);
+}
+
 TEST(TestOptCommentLoop, commentLoop) {
   OperationStream stream = std::get<OperationStream>(parse("[here is a comment with, some. operations++]++++++++++."));
   OptCommentLoop(stream);

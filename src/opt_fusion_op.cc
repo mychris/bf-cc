@@ -17,22 +17,23 @@ void OptFusionOp(OperationStream &stream) {
   while (iter != end) {
     Instruction seq_cmd = iter->OpCode();
     if (seq_cmd == Instruction::INCR_CELL || seq_cmd == Instruction::DECR_CELL) {
-      Operation *seq_head = *iter;
-      Operation::operand_type amount = iter->Operand1();
-      ++iter;
+      auto seq_head = iter++;
+      Operation::operand_type amount = seq_head->Operand1();
       while (iter != end && iter->OpCode() == seq_cmd && iter->Operand2() == seq_head->Operand2()) {
-        Operation *cur = *iter;
-        amount += cur->Operand1() % 256;
+        amount += iter->Operand1();
         stream.Delete(iter++);
-        seq_head->SetOperand1(amount);
+      }
+      amount = amount % 256;
+      if (amount == 0) {
+        stream.Delete(seq_head);
+      } else {
+        seq_head->SetOperand1(amount % 256);
       }
     } else if (seq_cmd == Instruction::INCR_PTR || seq_cmd == Instruction::DECR_PTR) {
-      Operation *seq_head = *iter;
-      Operation::operand_type amount = iter->Operand1();
-      ++iter;
+      auto seq_head = iter++;
+      Operation::operand_type amount = seq_head->Operand1();
       while (iter != end && iter->OpCode() == seq_cmd) {
-        Operation *cur = *iter;
-        amount += cur->Operand1();
+        amount += iter->Operand1();
         stream.Delete(iter++);
         seq_head->SetOperand1(amount);
       }

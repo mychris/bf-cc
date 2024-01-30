@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT License
 #include "instr.h"
 
+#include <cassert>
 #include <cstdio>
 
 void Operation::Dump() const {
@@ -14,6 +15,9 @@ void Operation::Dump() const {
   } break;
   case Instruction::IMUL_CELL: {
     putchar('*');
+  } break;
+  case Instruction::DMUL_CELL: {
+    putchar('/');
   } break;
   case Instruction::DECR_CELL: {
     putchar('-');
@@ -83,6 +87,56 @@ void OperationStream::Swap(Operation *left, Operation *right) {
 void OperationStream::Dump() {
   for (auto *instr : *this) {
     instr->Dump();
+  }
+}
+
+void OperationStream::Verify() {
+  auto iter = Begin();
+  const auto end = End();
+  while (iter != end) {
+    switch (iter->OpCode()) {
+    case Instruction::NOP: {
+    } break;
+    case Instruction::INCR_CELL: {
+      assert(iter->Operand1() > 0);
+    } break;
+    case Instruction::DECR_CELL: {
+      assert(iter->Operand1() > 0);
+    } break;
+    case Instruction::IMUL_CELL: {
+      assert(iter->Operand1() > 0);
+    } break;
+    case Instruction::DMUL_CELL: {
+      assert(iter->Operand1() > 0);
+    } break;
+    case Instruction::SET_CELL: {
+      assert(iter->Operand1() >= 0 && iter->Operand1() <= 255);
+    } break;
+    case Instruction::INCR_PTR: {
+      assert(iter->Operand1() > 0);
+    } break;
+    case Instruction::DECR_PTR: {
+      assert(iter->Operand1() > 0);
+    } break;
+    case Instruction::READ: {
+    } break;
+    case Instruction::WRITE: {
+    } break;
+    case Instruction::JZ: {
+    } break;
+    case Instruction::JNZ: {
+    } break;
+    case Instruction::LABEL: {
+    } break;
+    case Instruction::FIND_CELL_LOW: {
+    } break;
+    case Instruction::FIND_CELL_HIGH: {
+    } break;
+    default: {
+      assert(0 && "Invalid instruction");
+    } break;
+    }
+    ++iter;
   }
 }
 
