@@ -27,10 +27,10 @@ std::variant<OperationStream, Err> parse(const char *input) {
   while (*input) {
     switch (*input) {
     case OP_INCR: {
-      stream.Append(Instruction::INCR_CELL, 1);
+      stream.Append(Instruction::INCR_CELL, 1, 0);
     } break;
     case OP_DECR: {
-      stream.Append(Instruction::DECR_CELL, 1);
+      stream.Append(Instruction::DECR_CELL, 1, 0);
     } break;
     case OP_NEXT: {
       stream.Append(Instruction::INCR_PTR, 1);
@@ -39,10 +39,10 @@ std::variant<OperationStream, Err> parse(const char *input) {
       stream.Append(Instruction::DECR_PTR, 1);
     } break;
     case OP_READ: {
-      stream.Append(Instruction::READ, 0);
+      stream.Append(Instruction::READ, 0, 0);
     } break;
     case OP_WRIT: {
-      stream.Append(Instruction::WRITE, 0);
+      stream.Append(Instruction::WRITE, 0, 0);
     } break;
     case OP_JMPF: {
       stream.Append(Instruction::JZ, 0);

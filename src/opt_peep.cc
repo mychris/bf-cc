@@ -5,8 +5,10 @@
 #include "optimize.h"
 
 static void ReplaceSingleInstructionLoops(OperationStream &stream) {
-  static const auto incr_pattern = {Instruction::JZ, Instruction::LABEL, Instruction::INCR_CELL, Instruction::JNZ, Instruction::LABEL};
-  static const auto decr_pattern = {Instruction::JZ, Instruction::LABEL, Instruction::DECR_CELL, Instruction::JNZ, Instruction::LABEL};
+  static const auto incr_pattern = {
+      Instruction::JZ, Instruction::LABEL, Instruction::INCR_CELL, Instruction::JNZ, Instruction::LABEL};
+  static const auto decr_pattern = {
+      Instruction::JZ, Instruction::LABEL, Instruction::DECR_CELL, Instruction::JNZ, Instruction::LABEL};
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {
@@ -34,8 +36,10 @@ static void ReplaceSingleInstructionLoops(OperationStream &stream) {
 }
 
 static void ReplaceFindCellLoops(OperationStream &stream) {
-  static const auto high_pattern = {Instruction::JZ, Instruction::LABEL, Instruction::INCR_PTR, Instruction::JNZ, Instruction::LABEL};
-  static const auto low_pattern = {Instruction::JZ, Instruction::LABEL, Instruction::DECR_PTR, Instruction::JNZ, Instruction::LABEL};
+  static const auto high_pattern = {
+      Instruction::JZ, Instruction::LABEL, Instruction::INCR_PTR, Instruction::JNZ, Instruction::LABEL};
+  static const auto low_pattern = {
+      Instruction::JZ, Instruction::LABEL, Instruction::DECR_PTR, Instruction::JNZ, Instruction::LABEL};
   auto iter = stream.Begin();
   const auto end = stream.End();
   while (iter != end) {

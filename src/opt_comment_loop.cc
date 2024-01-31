@@ -23,7 +23,7 @@ void OptCommentLoop(OperationStream &stream) {
       return;
     }
     auto loop_end = iter;
-    loop_end.JumpTo((Operation*) iter->Operand1());
+    loop_end.JumpTo((Operation *) iter->Operand1());
     assert(loop_end->Is(Instruction::LABEL));
     assert((loop_end - 1)->Is(Instruction::JNZ));
     while (iter != loop_end) {
