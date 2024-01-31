@@ -87,32 +87,38 @@ static Err EmitImullCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
     assert(0 != offset);
     return mem.EmitCodeListing({0x90});
   }
-  // rdx needs to be saved, sinc MUL overwrites it
+  Err e = Err::Ok();
   // clang-format off
-  Err e = Err::Ok().and_then([&] {
-    // MOV r8, rdx
-    return mem.EmitCodeListing({0x49, 0x89, 0xD0});
-  }).and_then([&] {
-    // MOV rax, amount
-    return mem.EmitCodeListing({0x48, 0xC7, 0xC0}).and_then([&] { return mem.EmitCode((uint32_t) amount); });
-  }).and_then([&] {
-    // MOV bl, byte[rdx]
-    return mem.EmitCodeListing({0x8A, 0x1A});
-  }).and_then([&] {
-    // MUL rbx
-    return mem.EmitCodeListing({0x48, 0xF7, 0xE3});
-  }).and_then([&] {
-    // MOV rdx, r8
-    return mem.EmitCodeListing({0x4C, 0x89, 0xC2});
-  });
+  if (1 == amount) {
+    // MOV al, byte[rdx]
+    e = mem.EmitCodeListing({0x8A, 0x02});
+  } else {
+    // rdx needs to be saved, sinc MUL overwrites it
+    e = Err::Ok().and_then([&] {
+      // MOV r8, rdx
+      return mem.EmitCodeListing({0x49, 0x89, 0xD0});
+    }).and_then([&] {
+      // MOV rax, amount
+      return mem.EmitCodeListing({0x48, 0xC7, 0xC0}).and_then([&] { return mem.EmitCode((uint32_t) amount); });
+    }).and_then([&] {
+      // MOV bl, byte[rdx]
+      return mem.EmitCodeListing({0x8A, 0x1A});
+    }).and_then([&] {
+      // MUL rbx
+      return mem.EmitCodeListing({0x48, 0xF7, 0xE3});
+    }).and_then([&] {
+      // MOV rdx, r8
+      return mem.EmitCodeListing({0x4C, 0x89, 0xC2});
+    });
+  }
   if (!e.IsOk()) {
     return e;
   }
   if (128 > offset && -128 < offset) {
-    // ADD byte[rdx], al
+    // ADD byte[rdx+offset], al
     return mem.EmitCodeListing({0x00, 0x42, (uint8_t) offset});
   } else {
-    // ADD byte[rdx], al
+    // ADD byte[rdx+offset], al
     return mem.EmitCodeListing({0x00, 0x82}).and_then([&] {
       return mem.EmitCode((uint32_t) offset);
     });
@@ -126,32 +132,38 @@ static Err EmitDmullCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
     assert(0 != offset);
     return mem.EmitCodeListing({0x90});
   }
-  // rdx needs to be saved, sinc MUL overwrites it
+  Err e = Err::Ok();
   // clang-format off
-  Err e = Err::Ok().and_then([&] {
-    // MOV r8, rdx
-    return mem.EmitCodeListing({0x49, 0x89, 0xD0});
-  }).and_then([&] {
-    // MOV rax, amount
-    return mem.EmitCodeListing({0x48, 0xC7, 0xC0}).and_then([&] { return mem.EmitCode((uint32_t) amount); });
-  }).and_then([&] {
-    // MOV bl, byte[rdx]
-    return mem.EmitCodeListing({0x8A, 0x1A});
-  }).and_then([&] {
-    // MUL rbx
-    return mem.EmitCodeListing({0x48, 0xF7, 0xE3});
-  }).and_then([&] {
-    // MOV rdx, r8
-    return mem.EmitCodeListing({0x4C, 0x89, 0xC2});
-  });
+  if (1 == amount) {
+    // MOV al, byte[rdx]
+    e = mem.EmitCodeListing({0x8A, 0x02});
+  } else {
+    // rdx needs to be saved, sinc MUL overwrites it
+    e = Err::Ok().and_then([&] {
+      // MOV r8, rdx
+      return mem.EmitCodeListing({0x49, 0x89, 0xD0});
+    }).and_then([&] {
+      // MOV rax, amount
+      return mem.EmitCodeListing({0x48, 0xC7, 0xC0}).and_then([&] { return mem.EmitCode((uint32_t) amount); });
+    }).and_then([&] {
+      // MOV bl, byte[rdx]
+      return mem.EmitCodeListing({0x8A, 0x1A});
+    }).and_then([&] {
+      // MUL rbx
+      return mem.EmitCodeListing({0x48, 0xF7, 0xE3});
+    }).and_then([&] {
+      // MOV rdx, r8
+      return mem.EmitCodeListing({0x4C, 0x89, 0xC2});
+    });
+  }
   if (!e.IsOk()) {
     return e;
   }
   if (128 > offset && -128 < offset) {
-    // SUB byte[rdx], al
+    // SUB byte[rdx+offset], al
     return mem.EmitCodeListing({0x28, 0x42, (uint8_t) offset});
   } else {
-    // SUB byte[rdx], al
+    // SUB byte[rdx+offset], al
     return mem.EmitCodeListing({0x28, 0x82}).and_then([&] {
       return mem.EmitCode((uint32_t) offset);
     });
@@ -349,8 +361,8 @@ static Err EmitFindCellLow(CodeArea &mem, uint8_t value, uintptr_t move_size) {
 }
 
 std::variant<CodeEntry, Err> AssemblerX8664::Assemble(OperationStream &stream, EOFMode eof_mode) {
-  std::vector<std::pair<Operation *, uint8_t *>> jump_list = {};
-  std::vector<std::pair<Operation *, uint8_t *>> label_list = {};
+  std::vector<std::pair<Operation *, uint8_t *>> jump_list{};
+  std::vector<std::pair<Operation *, uint8_t *>> label_list{};
   Err err = Err::Ok();
   void *entry = m.mem.CurrentWriteAddr();
   auto iter = stream.Begin();
@@ -420,7 +432,7 @@ std::variant<CodeEntry, Err> AssemblerX8664::Assemble(OperationStream &stream, E
   }
   // Patch the jumps
   for (const auto &[jump, code_pos] : jump_list) {
-    uint8_t *target_pos = 0;
+    uint8_t *target_pos{nullptr};
     for (const auto &[label, label_pos] : label_list) {
       if (jump->Operand1() == (Operation::operand_type) label) {
         target_pos = label_pos;
