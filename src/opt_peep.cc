@@ -4,6 +4,12 @@
 #include "instr.h"
 #include "optimize.h"
 
+/**
+ * Replace loops with a single increment or decrement operation with
+ * a set to zero.
+ *
+ * [+] [-]
+ */
 static void ReplaceSingleInstructionLoops(OperationStream &stream) {
   static const auto incr_pattern = {
       Instruction::JZ, Instruction::LABEL, Instruction::INCR_CELL, Instruction::JNZ, Instruction::LABEL};
@@ -35,6 +41,12 @@ static void ReplaceSingleInstructionLoops(OperationStream &stream) {
   }
 }
 
+/**
+ * Replaces loops with a single increment/decrement pointer operation
+ * into a find cell operation.
+ *
+ * [<] [>]
+ */
 static void ReplaceFindCellLoops(OperationStream &stream) {
   static const auto high_pattern = {
       Instruction::JZ, Instruction::LABEL, Instruction::INCR_PTR, Instruction::JNZ, Instruction::LABEL};
@@ -68,6 +80,9 @@ static void ReplaceFindCellLoops(OperationStream &stream) {
   }
 }
 
+/**
+ * Merges set cell with following incr/decr cell operations.
+ */
 static void MergeSetIncrDecr(OperationStream &stream) {
   static const auto incr_pattern = {Instruction::SET_CELL, Instruction::INCR_CELL};
   static const auto decr_pattern = {Instruction::SET_CELL, Instruction::DECR_CELL};
@@ -75,20 +90,18 @@ static void MergeSetIncrDecr(OperationStream &stream) {
   const auto end = stream.End();
   while (iter != end) {
     if (iter.LookingAt(incr_pattern)) {
-      Operation *set = *iter;
-      ++iter;
-      Operation *incr = *iter;
+      auto set = iter;
+      auto incr = iter + 1;
       if (set->Operand2() == incr->Operand2()) {
         set->SetOperand1(set->Operand1() + incr->Operand1());
-        stream.Delete(iter--);
+        stream.Delete(incr);
       }
     } else if (iter.LookingAt(decr_pattern)) {
-      Operation *set = *iter;
-      ++iter;
-      Operation *decr = *iter;
+      auto set = iter;
+      auto decr = iter + 1;
       if (set->Operand2() == decr->Operand2()) {
         set->SetOperand1(set->Operand1() - decr->Operand1());
-        stream.Delete(iter--);
+        stream.Delete(decr);
       }
     } else {
       ++iter;
