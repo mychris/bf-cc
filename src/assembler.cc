@@ -2,8 +2,6 @@
 #include "assembler.h"
 
 #include <cassert>
-#include <cstring>
-#include <iterator>
 #include <variant>
 #include <vector>
 
@@ -59,10 +57,15 @@ static Err EmitIncrCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
     // ADD byte[rdx+offset], amount
     return mem.EmitCodeListing({0x80, 0x42, (uint8_t) offset, (uint8_t) amount});
   } else {
+    // clang-format off
     // ADD byte[rdx+offset], amount
-    return mem.EmitCodeListing({0x80, 0x82}).and_then([&] { return mem.EmitCode((uint32_t) offset); }).and_then([&] {
-      return mem.EmitCodeListing({amount});
-    });
+    return mem.EmitCodeListing({0x80, 0x82})
+      .and_then([&] {
+        return mem.EmitCode((uint32_t) offset);
+      }).and_then([&] {
+        return mem.EmitCodeListing({amount});
+      });
+    // clang-format on
   }
 }
 
@@ -74,10 +77,16 @@ static Err EmitDecrCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
     // SUB byte[rdx+offset], amount
     return mem.EmitCodeListing({0x80, 0x6A, (uint8_t) offset, (uint8_t) amount});
   } else {
+    // clang-format off
     // SUB byte[rdx+offset], amount
-    return mem.EmitCodeListing({0x80, 0xAA}).and_then([&] { return mem.EmitCode((uint32_t) offset); }).and_then([&] {
-      return mem.EmitCodeListing({amount});
-    });
+    return mem.EmitCodeListing({0x80, 0xAA})
+      .and_then([&] {
+        return mem.EmitCode((uint32_t) offset);
+      })
+      .and_then([&] {
+        return mem.EmitCodeListing({amount});
+      });
+    // clang-format on
   }
 }
 
@@ -179,10 +188,15 @@ static Err EmitSetCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
     // MOV byte[rdx+offset], amount
     return mem.EmitCodeListing({0xC6, 0x42, (uint8_t) offset, (uint8_t) amount});
   } else {
+    // clang-format off
     // MOV byte[rdx+offset], amount
-    return mem.EmitCodeListing({0xC6, 0x82}).and_then([&] { return mem.EmitCode((uint32_t) offset); }).and_then([&] {
-      return mem.EmitCodeListing({amount});
-    });
+    return mem.EmitCodeListing({0xC6, 0x82})
+      .and_then([&] {
+        return mem.EmitCode((uint32_t) offset); })
+      .and_then([&] {
+        return mem.EmitCodeListing({amount});
+      });
+    // clang-format on
   }
 }
 
@@ -361,74 +375,83 @@ static Err EmitFindCellLow(CodeArea &mem, uint8_t value, uintptr_t move_size) {
 }
 
 std::variant<CodeEntry, Err> AssemblerX8664::Assemble(OperationStream &stream, EOFMode eof_mode) {
-  std::vector<std::pair<Operation *, uint8_t *>> jump_list{};
-  std::vector<std::pair<Operation *, uint8_t *>> label_list{};
+  std::vector<std::pair<const Operation *, uint8_t *>> jump_list{};
+  std::vector<std::pair<const Operation *, uint8_t *>> label_list{};
   Err err = Err::Ok();
   void *entry = m.mem.CurrentWriteAddr();
-  auto iter = stream.Begin();
-  auto end = stream.End();
   err = EmitEntry(m.mem);
   if (!err.IsOk()) {
     return err;
   }
-  while (iter != end) {
-    switch (iter->OpCode()) {
+  for (const Operation *op : stream) {
+    switch (op->OpCode()) {
     case Instruction::NOP:
       err = EmitNop(m.mem);
       break;
     case Instruction::INCR_CELL:
-      err = EmitIncrCell(m.mem, (uint8_t) iter->Operand1(), iter->Operand2());
+      err = EmitIncrCell(m.mem, (uint8_t) op->Operand1(), op->Operand2());
       break;
     case Instruction::DECR_CELL:
-      err = EmitDecrCell(m.mem, (uint8_t) iter->Operand1(), iter->Operand2());
+      err = EmitDecrCell(m.mem, (uint8_t) op->Operand1(), op->Operand2());
       break;
     case Instruction::IMUL_CELL:
-      err = EmitImullCell(m.mem, (uint8_t) iter->Operand1(), iter->Operand2());
+      err = EmitImullCell(m.mem, (uint8_t) op->Operand1(), op->Operand2());
       break;
     case Instruction::DMUL_CELL:
-      err = EmitDmullCell(m.mem, (uint8_t) iter->Operand1(), iter->Operand2());
+      err = EmitDmullCell(m.mem, (uint8_t) op->Operand1(), op->Operand2());
       break;
     case Instruction::SET_CELL:
-      err = EmitSetCell(m.mem, (uint8_t) iter->Operand1(), iter->Operand2());
+      err = EmitSetCell(m.mem, (uint8_t) op->Operand1(), op->Operand2());
       break;
     case Instruction::INCR_PTR:
-      err = EmitIncrPtr(m.mem, iter->Operand1());
+      err = EmitIncrPtr(m.mem, op->Operand1());
       break;
     case Instruction::DECR_PTR:
-      err = EmitDecrPtr(m.mem, iter->Operand1());
+      err = EmitDecrPtr(m.mem, op->Operand1());
       break;
     case Instruction::READ:
-      err = EmitIncrPtr(m.mem, iter->Operand2()).and_then([&]() { return EmitRead(m.mem, eof_mode); }).and_then([&]() {
-        return EmitDecrPtr(m.mem, iter->Operand2());
-      });
+      // clang-format off
+      err = EmitIncrPtr(m.mem, op->Operand2())
+        .and_then([&]() {
+          return EmitRead(m.mem, eof_mode);
+        })
+        .and_then([&]() {
+          return EmitDecrPtr(m.mem, op->Operand2());
+        });
+      // clang-format on
       break;
     case Instruction::WRITE:
-      err = EmitIncrPtr(m.mem, iter->Operand2()).and_then([&]() { return EmitWrite(m.mem); }).and_then([&]() {
-        return EmitDecrPtr(m.mem, iter->Operand2());
-      });
+      // clang-format off
+      err = EmitIncrPtr(m.mem, op->Operand2())
+        .and_then([&]() {
+          return EmitWrite(m.mem);
+        })
+        .and_then([&]() {
+          return EmitDecrPtr(m.mem, op->Operand2());
+        });
+      // clang-format on
       break;
     case Instruction::JZ:
       err = EmitJumpZero(m.mem);
-      jump_list.push_back({*iter, m.mem.CurrentWriteAddr()});
+      jump_list.push_back({op, m.mem.CurrentWriteAddr()});
       break;
     case Instruction::JNZ:
       err = EmitJumpNonZero(m.mem);
-      jump_list.push_back({*iter, m.mem.CurrentWriteAddr()});
+      jump_list.push_back({op, m.mem.CurrentWriteAddr()});
       break;
     case Instruction::LABEL:
-      label_list.push_back({*iter, m.mem.CurrentWriteAddr()});
+      label_list.push_back({op, m.mem.CurrentWriteAddr()});
       break;
     case Instruction::FIND_CELL_HIGH:
-      err = EmitFindCellHigh(m.mem, (uint8_t) iter->Operand1(), (uintptr_t) iter->Operand2());
+      err = EmitFindCellHigh(m.mem, (uint8_t) op->Operand1(), (uintptr_t) op->Operand2());
       break;
     case Instruction::FIND_CELL_LOW:
-      err = EmitFindCellLow(m.mem, (uint8_t) iter->Operand1(), (uintptr_t) iter->Operand2());
+      err = EmitFindCellLow(m.mem, (uint8_t) op->Operand1(), (uintptr_t) op->Operand2());
       break;
     }
     if (!err.IsOk()) {
       return err;
     }
-    ++iter;
   }
   // Patch the jumps
   for (const auto &[jump, code_pos] : jump_list) {

@@ -7,53 +7,45 @@
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 #include <vector>
 
 #include "error.h"
 #include "instr.h"
 
-#define OP_INCR '+'
-#define OP_DECR '-'
-#define OP_NEXT '>'
-#define OP_PREV '<'
-#define OP_READ ','
-#define OP_WRIT '.'
-#define OP_JMPF '['
-#define OP_JMPB ']'
-
-std::variant<OperationStream, Err> parse(const char *input) {
+std::variant<OperationStream, Err> parse(const std::string_view input) {
   OperationStream stream = OperationStream::Create();
-  std::vector<Operation *> jump_stack = {};
-  while (*input) {
-    switch (*input) {
-    case OP_INCR: {
+  std::vector<Operation *> jump_stack{};
+  for (const char c : input) {
+    switch (c) {
+    case '+': {
       stream.Append(Instruction::INCR_CELL, 1, 0);
     } break;
-    case OP_DECR: {
+    case '-': {
       stream.Append(Instruction::DECR_CELL, 1, 0);
     } break;
-    case OP_NEXT: {
+    case '>': {
       stream.Append(Instruction::INCR_PTR, 1);
     } break;
-    case OP_PREV: {
+    case '<': {
       stream.Append(Instruction::DECR_PTR, 1);
     } break;
-    case OP_READ: {
+    case ',': {
       stream.Append(Instruction::READ, 0, 0);
     } break;
-    case OP_WRIT: {
+    case '.': {
       stream.Append(Instruction::WRITE, 0, 0);
     } break;
-    case OP_JMPF: {
+    case '[': {
       stream.Append(Instruction::JZ, 0);
       jump_stack.push_back(stream.Last());
       stream.Append(Instruction::LABEL, 0);
       jump_stack.push_back(stream.Last());
     } break;
-    case OP_JMPB: {
-      Operation *label = jump_stack.back();
+    case ']': {
+      Operation *label{jump_stack.back()};
       jump_stack.pop_back();
-      Operation *other = jump_stack.back();
+      Operation *other{jump_stack.back()};
       jump_stack.pop_back();
       stream.Append(Instruction::JNZ, (Operation::operand_type) label);
       label->SetOperand1((Operation::operand_type) stream.Last());
@@ -63,7 +55,6 @@ std::variant<OperationStream, Err> parse(const char *input) {
     default:
       break;
     }
-    ++input;
   }
   if (0 != jump_stack.size()) {
     return Err::UnmatchedJump();
@@ -71,32 +62,30 @@ std::variant<OperationStream, Err> parse(const char *input) {
   return stream;
 }
 
-std::variant<char *, Err> read_content(const char *filename) {
-  char *content = NULL;
-  off_t bytes_read = 0;
-  const int fp = open(filename, O_RDONLY);
-  if (0 > fp) {
+static void close_file(int *fp) {
+  close(*fp);
+}
+
+std::variant<std::string, Err> read_content(const std::string_view filename) {
+  const std::unique_ptr<int, void (*)(int *)> fp{new int(open(filename.data(), O_RDONLY)), close_file};
+  if (0 > *fp) {
     return Err::IO(errno);
   }
-  const off_t fsize = lseek(fp, 0, SEEK_END);
+  const off_t fsize{lseek(*fp, 0, SEEK_END)};
   if (0 > fsize) {
-    close(fp);
     return Err::IO(errno);
   }
-  if (0 > lseek(fp, 0, SEEK_SET)) {
-    close(fp);
+  if (0 > lseek(*fp, 0, SEEK_SET)) {
     return Err::IO(errno);
   }
-  content = (char *) calloc((size_t) fsize + 1, sizeof(char));
-  while (bytes_read < fsize) {
-    const ssize_t r = read(fp, content + bytes_read, (size_t) (fsize - bytes_read));
+  std::string content(static_cast<std::string::size_type>(fsize + 1), '\0');
+  off_t bytes_read{0};
+  while (fsize > bytes_read) {
+    const ssize_t r = read(*fp, content.data() + bytes_read, (size_t) (fsize - bytes_read));
     if (0 > r && errno != EAGAIN) {
-      free(content);
-      close(fp);
       return Err::IO(errno);
     }
     bytes_read += r;
   }
-  close(fp);
   return content;
 }
