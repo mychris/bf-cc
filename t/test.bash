@@ -10,6 +10,7 @@ VERBOSE="${VERBOSE:-1}"
 THIS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 COUNTER=0
 ERR_COUNTER=0
+EXE="${1:-${THIS_DIR}/../bf-cc}"
 
 for test_case in "${THIS_DIR}"/*.b; do
     test_case_name="${test_case%.*}"
@@ -25,7 +26,7 @@ for test_case in "${THIS_DIR}"/*.b; do
             printf '%s\n' "$(basename "${test_case_name}")"
         fi
         set +e
-        actual_output="$("${THIS_DIR}"/../bf-cc -O2 "${test_case}" < "${input_file}" 2>/dev/null)"
+        actual_output="$("${EXE}" -O2 "${test_case}" < "${input_file}" 2>/dev/null)"
         actual_exit=$?
         set -e
         if [[ $actual_exit -ne 0 ]]; then

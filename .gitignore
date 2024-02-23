@@ -5,6 +5,8 @@ bf-cc-test
 bfcc-test
 bf_cc_test
 bfcc_test
+zig-cache
+zig-out
 *.o
 *.b
 !t/*.b
