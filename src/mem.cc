@@ -4,9 +4,31 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include <cstdint>
 #include <cstring>
+#include <cstdio>
 #include <utility>
 #include <variant>
+
+static void* allocate(size_t size) {
+  uint8_t *mem = (uint8_t *) mmap(nullptr, size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if (mem == MAP_FAILED) {
+    return nullptr;
+  }
+  return mem;
+}
+
+static void deallocate(uint8_t *ptr, size_t size) {
+  munmap(ptr, size);
+}
+
+static int commit(uint8_t *ptr, size_t size) {
+  return mprotect(ptr, size, PROT_READ | PROT_WRITE);
+}
+
+static int executable(uint8_t *ptr, size_t size) {
+  return mprotect(ptr, size, PROT_READ | PROT_EXEC);
+}
 
 std::variant<Heap, Err> Heap::Create(size_t size) noexcept {
   const size_t page_size = (size_t) sysconf(_SC_PAGESIZE);
@@ -17,14 +39,11 @@ std::variant<Heap, Err> Heap::Create(size_t size) noexcept {
   size = ((size + page_size - 1) / page_size) * page_size;
   // Add guard pages in the front and the back
   size += page_size * (GUARD_PAGES * 2);
-  uint8_t *mem = (uint8_t *) mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  if (mem == MAP_FAILED) {
+  uint8_t *mem = (uint8_t *) allocate(size);
+  if (mem == nullptr) {
     return Err::HeapMmap(errno);
   }
-  if (0 != mprotect(mem, page_size * GUARD_PAGES, PROT_NONE)) {
-    return Err::HeapMprotect(errno);
-  }
-  if (0 != mprotect(mem + (size - (page_size * GUARD_PAGES)), page_size * GUARD_PAGES, PROT_NONE)) {
+  if (0 != commit(mem + GUARD_PAGES, size - (GUARD_PAGES * 2))) {
     return Err::HeapMprotect(errno);
   }
   return Heap(M{.page_size = page_size, .allocated = size, .data_pointer = 0, .data = mem + (page_size * GUARD_PAGES)});
@@ -32,7 +51,7 @@ std::variant<Heap, Err> Heap::Create(size_t size) noexcept {
 
 Heap::~Heap() {
   if (m.data) {
-    munmap(m.data - (m.page_size * GUARD_PAGES), m.allocated);
+    deallocate(m.data - (m.page_size * GUARD_PAGES), m.allocated);
     m.data = nullptr;
   }
 }
@@ -42,9 +61,8 @@ std::variant<CodeArea, Err> CodeArea::Create() noexcept {
   size_t reserved = 512 * 1024 * 1024;
   // Round reserved up to page_size
   reserved = ((reserved + page_size - 1) / page_size) * page_size;
-  const int flags = MAP_PRIVATE | MAP_ANONYMOUS;
-  void *mem = mmap(nullptr, reserved, PROT_NONE, flags, -1, 0);
-  if (mem == MAP_FAILED) {
+  void *mem = allocate(reserved);
+  if (mem == nullptr) {
     return Err::CodeMmap(errno);
   }
   return CodeArea(M{
@@ -80,8 +98,7 @@ Err CodeArea::EmitData(const uint8_t *data, const size_t length) {
     if (m.allocated == m.reserved) {
       return Err::CodeMmap(0);
     }
-    const int prot = PROT_READ | PROT_WRITE;
-    const int success = mprotect(m.mem + m.allocated, m.page_size, prot);
+    const int success = commit(m.mem + m.allocated, m.page_size);
     if (success != 0) {
       return Err::CodeMprotect(errno);
     }
@@ -98,7 +115,7 @@ Err CodeArea::PatchData(uint8_t *p, const uint8_t *data, const size_t length) {
 }
 
 Err CodeArea::MakeExecutable() {
-  if (0 != mprotect(m.mem, m.allocated, PROT_READ | PROT_EXEC)) {
+  if (0 != executable(m.mem, m.allocated)) {
     return Err::CodeMprotect(errno);
   }
   return Err::Ok();
