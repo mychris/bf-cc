@@ -2,11 +2,34 @@
 #include "assembler.h"
 
 #include <cassert>
+#include <cstdio>
 #include <variant>
 #include <vector>
 
 #include "error.h"
 #include "instr.h"
+
+static void do_write(uint8_t *c) {
+  std::putchar((int) *c);
+}
+
+static void do_read(uint8_t *c, uint32_t mode) {
+  int input = std::getchar();
+  if (EOF == input) {
+    switch (static_cast<EOFMode>(mode)) {
+    case EOFMode::KEEP: {
+      input = (int) *c;
+    } break;
+    case EOFMode::ZERO: {
+      input = 0;
+    } break;
+    case EOFMode::NEG_ONE: {
+      input = -1;
+    } break;
+    }
+  }
+  *c = (uint8_t) input;
+}
 
 static Err EmitEntry(CodeArea &mem) {
   // clang-format off
@@ -222,6 +245,31 @@ static Err EmitDecrPtr(CodeArea &mem, intptr_t amount) {
 
 static Err EmitRead(CodeArea &mem, EOFMode eof_mode) {
   // clang-format off
+  uintptr_t addr = (uintptr_t) do_read;
+  return mem.EmitCodeListing({
+      // PUSH rdx
+      0x52,
+      // MOV rax, addr
+      0x48, 0xB8,
+    }).and_then([&] { return mem.EmitCode64(addr);
+    }).and_then([&] {
+      return mem.EmitCodeListing({
+          // MOV rdi, rdx
+          0x48, 0x89, 0xD7,
+          // MOV esi, eof_mode
+          0xBE,
+        });
+    }).and_then([&] { return mem.EmitCode((uint32_t) eof_mode);
+    }).and_then([&] {
+      return mem.EmitCodeListing({
+          // CALL rax
+          0xFF, 0xD0,
+          // POP rdx
+          0x5A
+        });
+    });
+#if 0
+  // Linux syscall version
   Err err = mem.EmitCodeListing({
       // PUSH rdx
       0x52,
@@ -265,10 +313,30 @@ static Err EmitRead(CodeArea &mem, EOFMode eof_mode) {
         0xC6, 0x02, 0xFF});
   } break;
   }
+#endif
 }
 
 static Err EmitWrite(CodeArea &mem) {
   // clang-format off
+  uintptr_t addr = (uintptr_t) do_write;
+  return mem.EmitCodeListing({
+      // PUSH rdx
+      0x52,
+      // MOV rax, addr
+      0x48, 0xB8,
+    }).and_then([&] { return mem.EmitCode64(addr);
+    }).and_then([&] {
+      return mem.EmitCodeListing({
+          // MOV rdi, rdx
+          0x48, 0x89, 0xD7,
+          // CALL rax
+          0xFF, 0xD0,
+          // POP rdx
+          0x5A
+        });
+    });
+#if 0
+  // Linux syscall version
   return mem.EmitCodeListing({
       // PUSH rdx
       0x52,
@@ -285,6 +353,7 @@ static Err EmitWrite(CodeArea &mem) {
       // POP rdx
       0x5A
     });
+#endif
   // clang-format on
 }
 

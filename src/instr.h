@@ -52,7 +52,7 @@ enum class Instruction : uint32_t {
   FIND_CELL_HIGH = 1 << 15,
 };
 
-enum class EOFMode {
+enum class EOFMode : uint32_t {
   KEEP,
   ZERO,
   NEG_ONE,

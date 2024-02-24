@@ -116,6 +116,10 @@ public:
     return EmitData((const uint8_t *) &c, sizeof(uint32_t));
   }
 
+  inline Err EmitCode64(const uint64_t c) {
+    return EmitData((const uint8_t *) &c, sizeof(uint64_t));
+  }
+
   inline Err EmitCodeListing(std::initializer_list<uint8_t> l) {
     return EmitData((const uint8_t *) std::data(l), l.size());
   }
