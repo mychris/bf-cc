@@ -6,9 +6,9 @@
 #include <variant>
 #include <vector>
 
-#include "platform.h"
 #include "error.h"
 #include "instr.h"
+#include "platform.h"
 
 static void do_write(uint8_t *c) {
   std::putchar((int) *c);

@@ -10,10 +10,10 @@
 #error Unsupported plattform
 #endif
 
-#include "error.h"
-
-#include <string>
 #include <cstdint>
+#include <string>
+
+#include "error.h"
 
 #if defined(IS_WINDOWS)
 #include <windows.h>
@@ -35,7 +35,7 @@ extern std::variant<uint8_t *, Err> Allocate(size_t);
 
 extern void Deallocate(uint8_t *, size_t);
 
-extern Err Protect(uint8_t*, size_t, unsigned int);
+extern Err Protect(uint8_t *, size_t, unsigned int);
 
 extern size_t Pagesize();
 

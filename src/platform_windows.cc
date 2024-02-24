@@ -60,7 +60,7 @@ static void close_handle(HANDLE *handle) {
 std::variant<std::string, Err> ReadWholeFile(const std::string_view filename) {
   const std::unique_ptr<HANDLE, void (*)(HANDLE *)> fp{
       new HANDLE(
-                 CreateFile(filename.data(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)),
+          CreateFile(filename.data(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)),
       close_handle};
   if (INVALID_HANDLE_VALUE == *fp) {
     return Err::IO(GetLastError());

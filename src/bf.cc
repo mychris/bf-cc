@@ -4,7 +4,6 @@
 #include <cstring>
 #include <string>
 
-#include "platform.h"
 #include "assembler.h"
 #include "error.h"
 #include "instr.h"
@@ -12,6 +11,7 @@
 #include "mem.h"
 #include "optimize.h"
 #include "parse.h"
+#include "platform.h"
 
 enum class ExecMode {
   INTERPRETER = 'i',
