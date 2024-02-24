@@ -4,7 +4,7 @@
 #include <cstring>
 #include <string>
 
-#include "assembler.h"
+#include "compiler.h"
 #include "error.h"
 #include "instr.h"
 #include "interp.h"
@@ -137,11 +137,9 @@ int main(int argc, char **argv) {
     interpreter.Run(heap, stream, args.eof_mode);
   } break;
   case ExecMode::COMPILER: {
-    CodeArea code_area = Ensure(CodeArea::Create());
-    AssemblerX8664 assembler = AssemblerX8664::Create(code_area);
-    CodeEntry entry = Ensure(assembler.Assemble(stream, args.eof_mode));
-    Ensure(code_area.MakeExecutable());
-    entry(heap.BaseAddress());
+    Compiler compiler = Ensure(Compiler::Create());
+    Ensure(compiler.Compile(stream, args.eof_mode));
+    compiler.RunCode(heap.BaseAddress());
   } break;
   }
   fflush(stdout);

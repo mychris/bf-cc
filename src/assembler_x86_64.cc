@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT License
-#include "assembler.h"
-
 #include <cassert>
 #include <cstdio>
 #include <variant>
 #include <vector>
 
+#include "assembler.h"
 #include "error.h"
 #include "instr.h"
 #include "platform.h"
@@ -32,7 +31,7 @@ static void do_read(uint8_t *c, uint32_t mode) {
   *c = static_cast<uint8_t>(input);
 }
 
-static Err EmitEntry(CodeArea &mem) {
+Err EmitEntry(CodeArea &mem) {
   // clang-format off
   // Just to be save, push ALL registers
   return mem.EmitCodeListing({
@@ -65,7 +64,7 @@ static Err EmitEntry(CodeArea &mem) {
   // clang-format on
 }
 
-static Err EmitExit(CodeArea &mem) {
+Err EmitExit(CodeArea &mem) {
   // clang-format off
   return mem.EmitCodeListing({
       0x58,        // POP rax
@@ -89,12 +88,12 @@ static Err EmitExit(CodeArea &mem) {
   // clang-format on
 }
 
-static Err EmitNop(CodeArea &mem) {
+Err EmitNop(CodeArea &mem) {
   // Only used for debugging, so emit a bit more NOPs
   return mem.EmitCodeListing({0x90, 0x90, 0x90, 0x90});
 }
 
-static Err EmitIncrCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
+Err EmitIncrCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
   if (0 == offset) {
     // ADD byte[rdx], amount
     return mem.EmitCodeListing({0x80, 0x02, amount});
@@ -114,7 +113,7 @@ static Err EmitIncrCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
   }
 }
 
-static Err EmitDecrCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
+Err EmitDecrCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
   if (offset == 0) {
     // SUB byte[rdx], amount
     return mem.EmitCodeListing({0x80, 0x2A, amount});
@@ -135,7 +134,7 @@ static Err EmitDecrCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
   }
 }
 
-static Err EmitImullCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
+Err EmitImullCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
   if (0 == offset) {
     // This should never be created
     assert(0 != offset);
@@ -180,7 +179,7 @@ static Err EmitImullCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
   // clang-format on
 }
 
-static Err EmitDmullCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
+Err EmitDmullCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
   if (0 == offset) {
     // This should never be created
     assert(0 != offset);
@@ -225,7 +224,7 @@ static Err EmitDmullCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
   // clang-format on
 }
 
-static Err EmitSetCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
+Err EmitSetCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
   if (0 == offset) {
     // MOV byte[rdx], amount
     return mem.EmitCodeListing({0xC6, 0x02, amount});
@@ -245,7 +244,7 @@ static Err EmitSetCell(CodeArea &mem, uint8_t amount, intptr_t offset) {
   }
 }
 
-static Err EmitIncrPtr(CodeArea &mem, intptr_t amount) {
+Err EmitIncrPtr(CodeArea &mem, intptr_t amount) {
   // ADD rdx, amount
   if (128 > amount && -128 < amount) {
     return mem.EmitCodeListing({0x48, 0x83, 0xC2, (uint8_t) amount});
@@ -255,7 +254,7 @@ static Err EmitIncrPtr(CodeArea &mem, intptr_t amount) {
   }
 }
 
-static Err EmitDecrPtr(CodeArea &mem, intptr_t amount) {
+Err EmitDecrPtr(CodeArea &mem, intptr_t amount) {
   // SUB rdx, amount
   if (128 > amount && -128 < amount) {
     return mem.EmitCodeListing({0x48, 0x83, 0xEA, (uint8_t) amount});
@@ -265,7 +264,7 @@ static Err EmitDecrPtr(CodeArea &mem, intptr_t amount) {
   }
 }
 
-static Err EmitRead(CodeArea &mem, EOFMode eof_mode) {
+Err EmitRead(CodeArea &mem, EOFMode eof_mode) {
   // clang-format off
   uintptr_t addr = (uintptr_t) do_read;
   return mem.EmitCodeListing({
@@ -346,7 +345,7 @@ static Err EmitRead(CodeArea &mem, EOFMode eof_mode) {
 #endif
 }
 
-static Err EmitWrite(CodeArea &mem) {
+Err EmitWrite(CodeArea &mem) {
   // clang-format off
   uintptr_t addr = (uintptr_t) do_write;
   return mem.EmitCodeListing({
@@ -393,7 +392,7 @@ static Err EmitWrite(CodeArea &mem) {
   // clang-format on
 }
 
-static Err EmitJumpZero(CodeArea &mem) {
+Err EmitJumpZero(CodeArea &mem) {
   // clang-format off
   return mem.EmitCodeListing({
       // CMP byte[rdx], 0
@@ -406,7 +405,7 @@ static Err EmitJumpZero(CodeArea &mem) {
   // clang-format on
 }
 
-static Err PatchJumpZero(CodeArea &mem, uint8_t *position, uintptr_t offset) {
+Err PatchJumpZero(CodeArea &mem, uint8_t *position, uintptr_t offset) {
   intptr_t signed_offset = (intptr_t) offset;
   if (signed_offset > (intptr_t) INT32_MAX || signed_offset < (intptr_t) INT32_MIN) {
     return Err::CodeInvalidOffset();
@@ -415,7 +414,7 @@ static Err PatchJumpZero(CodeArea &mem, uint8_t *position, uintptr_t offset) {
   return mem.PatchCode(position - 4, offset32);
 }
 
-static Err EmitJumpNonZero(CodeArea &mem) {
+Err EmitJumpNonZero(CodeArea &mem) {
   // clang-format off
   return mem.EmitCodeListing({
       // CMP byte[rdx], 0
@@ -428,7 +427,7 @@ static Err EmitJumpNonZero(CodeArea &mem) {
   // clang-format on
 }
 
-static Err PatchJumpNonZero(CodeArea &mem, uint8_t *position, uintptr_t offset) {
+Err PatchJumpNonZero(CodeArea &mem, uint8_t *position, uintptr_t offset) {
   intptr_t signed_offset = (intptr_t) offset;
   if (signed_offset > (intptr_t) INT32_MAX || signed_offset < (intptr_t) INT32_MIN) {
     return Err::CodeInvalidOffset();
@@ -437,7 +436,7 @@ static Err PatchJumpNonZero(CodeArea &mem, uint8_t *position, uintptr_t offset) 
   return mem.PatchCode(position - 4, offset32);
 }
 
-static Err EmitFindCellHigh(CodeArea &mem, uint8_t value, uintptr_t move_size) {
+Err EmitFindCellHigh(CodeArea &mem, uint8_t value, uintptr_t move_size) {
   if (move_size >= (uintptr_t) UINT32_MAX) {
     return Err::CodeInvalidOffset();
   }
@@ -458,7 +457,7 @@ static Err EmitFindCellHigh(CodeArea &mem, uint8_t value, uintptr_t move_size) {
   // clang-format on
 }
 
-static Err EmitFindCellLow(CodeArea &mem, uint8_t value, uintptr_t move_size) {
+Err EmitFindCellLow(CodeArea &mem, uint8_t value, uintptr_t move_size) {
   if (move_size >= (uintptr_t) UINT32_MAX) {
     return Err::CodeInvalidOffset();
   }
@@ -477,110 +476,4 @@ static Err EmitFindCellLow(CodeArea &mem, uint8_t value, uintptr_t move_size) {
       return mem.EmitCodeListing({0xEB, 0xF2});
     });
   // clang-format on
-}
-
-std::variant<CodeEntry, Err> AssemblerX8664::Assemble(OperationStream &stream, EOFMode eof_mode) {
-  std::vector<std::pair<const Operation *, uint8_t *>> jump_list{};
-  std::vector<std::pair<const Operation *, uint8_t *>> label_list{};
-  Err err = Err::Ok();
-  void *entry = m.mem.CurrentWriteAddr();
-  err = EmitEntry(m.mem);
-  if (!err.IsOk()) {
-    return err;
-  }
-  for (const Operation *op : stream) {
-    switch (op->OpCode()) {
-    case Instruction::NOP:
-      err = EmitNop(m.mem);
-      break;
-    case Instruction::INCR_CELL:
-      err = EmitIncrCell(m.mem, (uint8_t) op->Operand1(), op->Operand2());
-      break;
-    case Instruction::DECR_CELL:
-      err = EmitDecrCell(m.mem, (uint8_t) op->Operand1(), op->Operand2());
-      break;
-    case Instruction::IMUL_CELL:
-      err = EmitImullCell(m.mem, (uint8_t) op->Operand1(), op->Operand2());
-      break;
-    case Instruction::DMUL_CELL:
-      err = EmitDmullCell(m.mem, (uint8_t) op->Operand1(), op->Operand2());
-      break;
-    case Instruction::SET_CELL:
-      err = EmitSetCell(m.mem, (uint8_t) op->Operand1(), op->Operand2());
-      break;
-    case Instruction::INCR_PTR:
-      err = EmitIncrPtr(m.mem, op->Operand1());
-      break;
-    case Instruction::DECR_PTR:
-      err = EmitDecrPtr(m.mem, op->Operand1());
-      break;
-    case Instruction::READ:
-      // clang-format off
-      err = EmitIncrPtr(m.mem, op->Operand2())
-        .and_then([&]() {
-          return EmitRead(m.mem, eof_mode);
-        })
-        .and_then([&]() {
-          return EmitDecrPtr(m.mem, op->Operand2());
-        });
-      // clang-format on
-      break;
-    case Instruction::WRITE:
-      // clang-format off
-      err = EmitIncrPtr(m.mem, op->Operand2())
-        .and_then([&]() {
-          return EmitWrite(m.mem);
-        })
-        .and_then([&]() {
-          return EmitDecrPtr(m.mem, op->Operand2());
-        });
-      // clang-format on
-      break;
-    case Instruction::JZ:
-      err = EmitJumpZero(m.mem);
-      jump_list.push_back({op, m.mem.CurrentWriteAddr()});
-      break;
-    case Instruction::JNZ:
-      err = EmitJumpNonZero(m.mem);
-      jump_list.push_back({op, m.mem.CurrentWriteAddr()});
-      break;
-    case Instruction::LABEL:
-      label_list.push_back({op, m.mem.CurrentWriteAddr()});
-      break;
-    case Instruction::FIND_CELL_HIGH:
-      err = EmitFindCellHigh(m.mem, (uint8_t) op->Operand1(), (uintptr_t) op->Operand2());
-      break;
-    case Instruction::FIND_CELL_LOW:
-      err = EmitFindCellLow(m.mem, (uint8_t) op->Operand1(), (uintptr_t) op->Operand2());
-      break;
-    }
-    if (!err.IsOk()) {
-      return err;
-    }
-  }
-  // Patch the jumps
-  for (const auto &[jump, code_pos] : jump_list) {
-    uint8_t *target_pos{nullptr};
-    for (const auto &[label, label_pos] : label_list) {
-      if (jump->Operand1() == (Operation::operand_type) label) {
-        target_pos = label_pos;
-        break;
-      }
-    }
-    assert(target_pos > (uint8_t *) 0 && "Label not found");
-    assert(jump->IsAny({Instruction::JZ, Instruction::JNZ}) && "Invalid op code in jump list");
-    if (jump->Is(Instruction::JZ)) {
-      err = PatchJumpZero(m.mem, code_pos, (uintptr_t) (target_pos - code_pos));
-    } else if (jump->Is(Instruction::JNZ)) {
-      err = PatchJumpNonZero(m.mem, code_pos, (uintptr_t) (target_pos - code_pos));
-    }
-    if (!err.IsOk()) {
-      return err;
-    }
-  }
-  err = EmitExit(m.mem);
-  if (!err.IsOk()) {
-    return err;
-  }
-  return (CodeEntry) entry;
 }
