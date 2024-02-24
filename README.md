@@ -1,6 +1,10 @@
 # bf-cc
 
-A brainfuck interpreter and run-time compiler written in C++ for Linux/x86-64.
+A brainfuck interpreter and run-time compiler written in C++. Currently, the
+following platforms are supported:
+
+- Linux on x86-64
+- Windows 10 on x86-64
 
 The input program is translated into a minimalistic IR, optimized, and then
 either interpreted, or compiled to machine code and then executed.
@@ -22,6 +26,12 @@ Usage: `bf-cc [-h] [-O(0|1|2|3)] [-mMEMORY_SIZE] [-e(keep|0|1)] [(-i|-c)] PROGRA
 | -c           | --compiler  |             | Use the compiler    |
 | -e           | --eof=      | keep\|0\|-1 | EOF mode            |
 | -h           | --help      |             | Display help        |
+
+## Build instructions
+
+The `Makefile` can be used for native builds and tests on Linux.  To cross compile
+for Windows, use the [ziglang](https://ziglang.org/) toolchain
+(see the `build.zig` file).
 
 ## IR
 
