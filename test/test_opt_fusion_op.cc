@@ -26,7 +26,7 @@ TEST(TestOptFusionOp, nopStream) {
 }
 
 TEST(TestOptFusionOp, onlyIncrement) {
-  OperationStream stream = std::get<OperationStream>(parse("++++"));
+  OperationStream stream = std::get<OperationStream>(Parse("++++"));
   OptFusionOp(stream);
   size_t count = 0;
   for (auto *instr : stream) {
@@ -38,7 +38,7 @@ TEST(TestOptFusionOp, onlyIncrement) {
 }
 
 TEST(TestOptFusionOp, onlyDecrement) {
-  OperationStream stream = std::get<OperationStream>(parse("----"));
+  OperationStream stream = std::get<OperationStream>(Parse("----"));
   OptFusionOp(stream);
   size_t count = 0;
   for (auto *instr : stream) {
@@ -50,7 +50,7 @@ TEST(TestOptFusionOp, onlyDecrement) {
 }
 
 TEST(TestOptFusionOp, onlyLeftPointer) {
-  OperationStream stream = std::get<OperationStream>(parse("<<<<"));
+  OperationStream stream = std::get<OperationStream>(Parse("<<<<"));
   OptFusionOp(stream);
   size_t count = 0;
   for (auto *instr : stream) {
@@ -62,7 +62,7 @@ TEST(TestOptFusionOp, onlyLeftPointer) {
 }
 
 TEST(TestOptFusionOp, onlyRightPointer) {
-  OperationStream stream = std::get<OperationStream>(parse(">>>>"));
+  OperationStream stream = std::get<OperationStream>(Parse(">>>>"));
   OptFusionOp(stream);
   size_t count = 0;
   for (auto *instr : stream) {
@@ -74,7 +74,7 @@ TEST(TestOptFusionOp, onlyRightPointer) {
 }
 
 TEST(TestOptFusionOp, onlyIncrementDecrement) {
-  OperationStream stream = std::get<OperationStream>(parse("++++----++++----"));
+  OperationStream stream = std::get<OperationStream>(Parse("++++----++++----"));
   OptFusionOp(stream);
   size_t count = 0;
   for (auto *instr : stream) {
@@ -85,7 +85,7 @@ TEST(TestOptFusionOp, onlyIncrementDecrement) {
 }
 
 TEST(TestOptFusionOp, fuseInLoop) {
-  OperationStream stream = std::get<OperationStream>(parse("[>++++>++++<<<<----]"));
+  OperationStream stream = std::get<OperationStream>(Parse("[>++++>++++<<<<----]"));
   OptFusionOp(stream);
   size_t count = 0;
   for (auto *instr : stream) {
@@ -99,7 +99,7 @@ TEST(TestOptFusionOp, fuseInLoop) {
 }
 
 TEST(TestOptFusionOp, doNotFuseReads) {
-  OperationStream stream = std::get<OperationStream>(parse(",,"));
+  OperationStream stream = std::get<OperationStream>(Parse(",,"));
   OptFusionOp(stream);
   size_t count = 0;
   for (auto *instr : stream) {
@@ -110,7 +110,7 @@ TEST(TestOptFusionOp, doNotFuseReads) {
 }
 
 TEST(TestOptFusionOp, doNotFuseWrites) {
-  OperationStream stream = std::get<OperationStream>(parse(".."));
+  OperationStream stream = std::get<OperationStream>(Parse(".."));
   OptFusionOp(stream);
   size_t count = 0;
   for (auto *instr : stream) {
@@ -121,7 +121,7 @@ TEST(TestOptFusionOp, doNotFuseWrites) {
 }
 
 TEST(TestOptFusionOp, doNotFuseAfterDelayIncrement) {
-  OperationStream stream = std::get<OperationStream>(parse("[++++>++++]"));
+  OperationStream stream = std::get<OperationStream>(Parse("[++++>++++]"));
   OptFusionOp(stream);
   OptDelayPtr(stream);
   OptFusionOp(stream);

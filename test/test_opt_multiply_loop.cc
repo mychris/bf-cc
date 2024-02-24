@@ -12,7 +12,7 @@ TEST(TestOptMultiplyLoop, emptyStream) {
 }
 
 TEST(TestOptMultiplyLoop, multByOneSingle) {
-  OperationStream stream = std::get<OperationStream>(parse("[- > + <]"));
+  OperationStream stream = std::get<OperationStream>(Parse("[- > + <]"));
   OptFusionOp(stream);
   OptDelayPtr(stream);
   OptMultiplyLoop(stream);
@@ -29,7 +29,7 @@ TEST(TestOptMultiplyLoop, multByOneSingle) {
 }
 
 TEST(TestOptMultiplyLoop, multByThreeSingle) {
-  OperationStream stream = std::get<OperationStream>(parse("[- > +++ <]"));
+  OperationStream stream = std::get<OperationStream>(Parse("[- > +++ <]"));
   OptFusionOp(stream);
   OptDelayPtr(stream);
   OptMultiplyLoop(stream);
@@ -46,7 +46,7 @@ TEST(TestOptMultiplyLoop, multByThreeSingle) {
 }
 
 TEST(TestOptMultiplyLoop, multByThreeAndFive) {
-  OperationStream stream = std::get<OperationStream>(parse("[- > +++ > +++++ < <]"));
+  OperationStream stream = std::get<OperationStream>(Parse("[- > +++ > +++++ < <]"));
   OptFusionOp(stream);
   OptDelayPtr(stream);
   OptMultiplyLoop(stream);
@@ -61,7 +61,7 @@ TEST(TestOptMultiplyLoop, multByThreeAndFive) {
 }
 
 TEST(TestOptMultiplyLoop, multBetweenOther) {
-  OperationStream stream = std::get<OperationStream>(parse("+[- > +++ > +++++ < <]+"));
+  OperationStream stream = std::get<OperationStream>(Parse("+[- > +++ > +++++ < <]+"));
   OptFusionOp(stream);
   OptDelayPtr(stream);
   OptMultiplyLoop(stream);
@@ -81,7 +81,7 @@ TEST(TestOptMultiplyLoop, multBetweenOther) {
 }
 
 TEST(TestOptMultiplyLoop, twoMultiplications) {
-  OperationStream stream = std::get<OperationStream>(parse("+[- > +++ <][- > +++ <]"));
+  OperationStream stream = std::get<OperationStream>(Parse("+[- > +++ <][- > +++ <]"));
   OptFusionOp(stream);
   OptDelayPtr(stream);
   OptMultiplyLoop(stream);
@@ -107,7 +107,7 @@ TEST(TestOptMultiplyLoop, twoMultiplications) {
 }
 
 TEST(TestOptMultiplyLoop, multWithWrite) {
-  OperationStream stream = std::get<OperationStream>(parse("[- > +++ < .]"));
+  OperationStream stream = std::get<OperationStream>(Parse("[- > +++ < .]"));
   OptFusionOp(stream);
   OptDelayPtr(stream);
   OptMultiplyLoop(stream);
@@ -117,7 +117,7 @@ TEST(TestOptMultiplyLoop, multWithWrite) {
 }
 
 TEST(TestOptMultiplyLoop, multWithNestedLoop) {
-  OperationStream stream = std::get<OperationStream>(parse("[- > +++ < [,]]"));
+  OperationStream stream = std::get<OperationStream>(Parse("[- > +++ < [,]]"));
   OptFusionOp(stream);
   OptDelayPtr(stream);
   OptMultiplyLoop(stream);

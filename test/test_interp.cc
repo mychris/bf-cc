@@ -30,7 +30,7 @@ TEST(TestInterpreter, nopStream) {
 }
 
 TEST(TestInterpreter, singleCellOperations) {
-  OperationStream stream = std::get<OperationStream>(parse("++--+++---+"));
+  OperationStream stream = std::get<OperationStream>(Parse("++--+++---+"));
   Heap heap = std::get<Heap>(Heap::Create(128));
   Interpreter::Create().Run(heap, stream, EOFMode::KEEP);
   EXPECT_EQ(0, heap.DataPointer());
@@ -41,7 +41,7 @@ TEST(TestInterpreter, singleCellOperations) {
 }
 
 TEST(TestInterpreter, twoCellOperations) {
-  OperationStream stream = std::get<OperationStream>(parse("++--+>++----+"));
+  OperationStream stream = std::get<OperationStream>(Parse("++--+>++----+"));
   Heap heap = std::get<Heap>(Heap::Create(128));
   Interpreter::Create().Run(heap, stream, EOFMode::KEEP);
   EXPECT_EQ(1, heap.DataPointer());

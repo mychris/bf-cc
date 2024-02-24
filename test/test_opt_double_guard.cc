@@ -26,14 +26,14 @@ TEST(TestDoubleGuard, nopStream) {
 }
 
 TEST(TestDoubleGuard, nestedLoop) {
-  OperationStream stream = std::get<OperationStream>(parse("[[+]]"));
+  OperationStream stream = std::get<OperationStream>(Parse("[[+]]"));
   OptDoubleGuard(stream);
   ASSERT_TRUE(stream.Begin().LookingAt(
       {Instruction::JZ, Instruction::LABEL, Instruction::INCR_CELL, Instruction::JNZ, Instruction::LABEL}));
 }
 
 TEST(TestDoubleGuard, doubleEntry) {
-  OperationStream stream = std::get<OperationStream>(parse("[[+]+]"));
+  OperationStream stream = std::get<OperationStream>(Parse("[[+]+]"));
   OptDoubleGuard(stream);
   ASSERT_TRUE(stream.Begin().LookingAt({Instruction::JZ,
                                         Instruction::LABEL,
@@ -46,7 +46,7 @@ TEST(TestDoubleGuard, doubleEntry) {
 }
 
 TEST(TestDoubleGuard, doubleExit) {
-  OperationStream stream = std::get<OperationStream>(parse("[+[+]]"));
+  OperationStream stream = std::get<OperationStream>(Parse("[+[+]]"));
   OptDoubleGuard(stream);
   ASSERT_TRUE(stream.Begin().LookingAt({Instruction::JZ,
                                         Instruction::INCR_CELL,

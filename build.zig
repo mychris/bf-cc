@@ -38,6 +38,8 @@ pub fn build(b: *std.build.Builder) void {
     exe.linkLibCpp();
     exe.addCSourceFiles(&.{
         "src/bf.cc",
+        "src/platform_linux.cc",
+        "src/platform_windows.cc",
         "src/assembler.cc",
         "src/error.cc",
         "src/instr.cc",
@@ -85,6 +87,8 @@ pub fn build(b: *std.build.Builder) void {
         "test/test_opt_double_guard.cc",
         "test/test_opt_fusion_op.cc",
         "test/test_opt_multiply_loop.cc",
+        "src/platform_linux.cc",
+        "src/platform_windows.cc",
         "src/assembler.cc",
         "src/error.cc",
         "src/instr.cc",

@@ -26,7 +26,7 @@
 #include "error.h"
 #include "instr.h"
 
-std::variant<OperationStream, Err> parse(const std::string_view input) {
+std::variant<OperationStream, Err> Parse(const std::string_view input) {
   OperationStream stream = OperationStream::Create();
   std::vector<Operation *> jump_stack{};
   for (const char c : input) {
@@ -74,60 +74,3 @@ std::variant<OperationStream, Err> parse(const std::string_view input) {
   }
   return stream;
 }
-
-#if defined(IS_WINDOWS)
-static void close_handle(HANDLE *handle) {
-  CloseHandle(*handle);
-}
-
-std::variant<std::string, Err> read_content(const std::string_view filename) {
-  const std::unique_ptr<HANDLE, void (*)(HANDLE *)> fp{
-      new HANDLE(
-          CreateFile(filename.data(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)),
-      close_handle};
-  if (INVALID_HANDLE_VALUE == *fp) {
-    return Err::IO(GetLastError());
-  }
-  const DWORD fsize{GetFileSize(*fp, NULL)};
-  if (0 > fsize) {
-    return Err::IO(GetLastError());
-  }
-  std::string content(static_cast<std::string::size_type>(fsize + 1), '\0');
-  DWORD bytes_read{0};
-  if (!ReadFile(*fp, content.data(), fsize, &bytes_read, NULL)) {
-    return Err::IO(GetLastError());
-  }
-  content.data()[bytes_read] = '\0';
-  return content;
-}
-#endif
-
-#if defined(IS_LINUX)
-static void close_file(int *fp) {
-  close(*fp);
-}
-
-std::variant<std::string, Err> read_content(const std::string_view filename) {
-  const std::unique_ptr<int, void (*)(int *)> fp{new int(open(filename.data(), O_RDONLY)), close_file};
-  if (0 > *fp) {
-    return Err::IO(errno);
-  }
-  const off_t fsize{lseek(*fp, 0, SEEK_END)};
-  if (0 > fsize) {
-    return Err::IO(errno);
-  }
-  if (0 > lseek(*fp, 0, SEEK_SET)) {
-    return Err::IO(errno);
-  }
-  std::string content(static_cast<std::string::size_type>(fsize + 1), '\0');
-  off_t bytes_read{0};
-  while (fsize > bytes_read) {
-    const ssize_t r = read(*fp, content.data() + bytes_read, (size_t) (fsize - bytes_read));
-    if (0 > r && errno != EAGAIN) {
-      return Err::IO(errno);
-    }
-    bytes_read += r;
-  }
-  return content;
-}
-#endif

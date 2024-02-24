@@ -4,6 +4,7 @@
 #include <cstring>
 #include <string>
 
+#include "platform.h"
 #include "assembler.h"
 #include "error.h"
 #include "instr.h"
@@ -126,8 +127,8 @@ static void parse_opts(int argc, char **argv) {
 
 int main(int argc, char **argv) {
   parse_opts(argc, argv);
-  std::string content = Ensure(read_content(args.input_file_path));
-  OperationStream stream = Ensure(parse(content));
+  auto raw_content = Ensure(ReadWholeFile(args.input_file_path));
+  OperationStream stream = Ensure(Parse(raw_content));
   Optimizer::Create(args.optimization_level).Run(stream);
   Heap heap = Ensure(Heap::Create(args.heap_size));
   switch (args.execution_mode) {

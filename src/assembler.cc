@@ -1,19 +1,12 @@
 // SPDX-License-Identifier: MIT License
 #include "assembler.h"
 
-#if defined(_WIN64)
-#define IS_WINDOWS 1
-#elif defined(__linux__)
-#define IS_LINUX 1
-#else
-#error Unsupported plattform
-#endif
-
 #include <cassert>
 #include <cstdio>
 #include <variant>
 #include <vector>
 
+#include "platform.h"
 #include "error.h"
 #include "instr.h"
 
@@ -26,7 +19,7 @@ static void do_read(uint8_t *c, uint32_t mode) {
   if (EOF == input) {
     switch (static_cast<EOFMode>(mode)) {
     case EOFMode::KEEP: {
-      input = (int) *c;
+      input = static_cast<int>(*c);
     } break;
     case EOFMode::ZERO: {
       input = 0;
@@ -36,7 +29,7 @@ static void do_read(uint8_t *c, uint32_t mode) {
     } break;
     }
   }
-  *c = (uint8_t) input;
+  *c = static_cast<uint8_t>(input);
 }
 
 static Err EmitEntry(CodeArea &mem) {

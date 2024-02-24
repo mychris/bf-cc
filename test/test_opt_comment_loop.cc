@@ -26,7 +26,7 @@ TEST(TestOptCommentLoop, nopStream) {
 }
 
 TEST(TestOptCommentLoop, noCommentLoop) {
-  OperationStream stream = std::get<OperationStream>(parse("++++++++++."));
+  OperationStream stream = std::get<OperationStream>(Parse("++++++++++."));
   OptCommentLoop(stream);
   size_t count = 0;
   for (auto *instr : stream) {
@@ -37,7 +37,7 @@ TEST(TestOptCommentLoop, noCommentLoop) {
 }
 
 TEST(TestOptCommentLoop, commentLoopOnly) {
-  OperationStream stream = std::get<OperationStream>(parse("[here is a comment with, some. operations++]"));
+  OperationStream stream = std::get<OperationStream>(Parse("[here is a comment with, some. operations++]"));
   OptCommentLoop(stream);
   size_t count = 0;
   for (auto *instr : stream) {
@@ -48,7 +48,7 @@ TEST(TestOptCommentLoop, commentLoopOnly) {
 }
 
 TEST(TestOptCommentLoop, commentLoopWithNopsOnly) {
-  OperationStream stream = std::get<OperationStream>(parse("[here is a comment with, some. operations++]"));
+  OperationStream stream = std::get<OperationStream>(Parse("[here is a comment with, some. operations++]"));
   OptCommentLoop(stream);
   stream.Prepend(Instruction::NOP);
   stream.Prepend(Instruction::NOP);
@@ -61,7 +61,7 @@ TEST(TestOptCommentLoop, commentLoopWithNopsOnly) {
 }
 
 TEST(TestOptCommentLoop, commentLoop) {
-  OperationStream stream = std::get<OperationStream>(parse("[here is a comment with, some. operations++]++++++++++."));
+  OperationStream stream = std::get<OperationStream>(Parse("[here is a comment with, some. operations++]++++++++++."));
   OptCommentLoop(stream);
   size_t count = 0;
   for (auto *instr : stream) {
@@ -72,7 +72,7 @@ TEST(TestOptCommentLoop, commentLoop) {
 }
 
 TEST(TestOptCommentLoop, commentLoopWithNops) {
-  OperationStream stream = std::get<OperationStream>(parse("[here is a comment with, some. operations++]++++++++++."));
+  OperationStream stream = std::get<OperationStream>(Parse("[here is a comment with, some. operations++]++++++++++."));
   stream.Prepend(Instruction::NOP);
   stream.Prepend(Instruction::NOP);
   OptCommentLoop(stream);
@@ -85,7 +85,7 @@ TEST(TestOptCommentLoop, commentLoopWithNops) {
 }
 
 TEST(TestOptCommentLoop, multipleCommentLoops) {
-  OperationStream stream = std::get<OperationStream>(parse("[++][--]++++++++++."));
+  OperationStream stream = std::get<OperationStream>(Parse("[++][--]++++++++++."));
   OptCommentLoop(stream);
   size_t count = 0;
   for (auto *instr : stream) {
@@ -96,7 +96,7 @@ TEST(TestOptCommentLoop, multipleCommentLoops) {
 }
 
 TEST(TestOptCommentLoop, multipleCommentLoopsWithNops) {
-  OperationStream stream = std::get<OperationStream>(parse("[++][--]++++++++++."));
+  OperationStream stream = std::get<OperationStream>(Parse("[++][--]++++++++++."));
   stream.Prepend(Instruction::NOP);
   stream.Prepend(Instruction::NOP);
   OptCommentLoop(stream);

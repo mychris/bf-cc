@@ -9,8 +9,6 @@
 #include "error.h"
 #include "instr.h"
 
-std::variant<std::string, Err> read_content(const std::string_view);
-
-std::variant<OperationStream, Err> parse(const std::string_view);
+std::variant<OperationStream, Err> Parse(const std::string_view);
 
 #endif /* BF_CC_PARSE_H */
