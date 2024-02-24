@@ -1,6 +1,14 @@
 // SPDX-License-Identifier: MIT License
 #include "assembler.h"
 
+#if defined(_WIN64)
+#define IS_WINDOWS 1
+#elif defined(__linux__)
+#define IS_LINUX 1
+#else
+#error Unsupported plattform
+#endif
+
 #include <cassert>
 #include <cstdio>
 #include <variant>
@@ -33,20 +41,33 @@ static void do_read(uint8_t *c, uint32_t mode) {
 
 static Err EmitEntry(CodeArea &mem) {
   // clang-format off
-  // Just to be save, push all callee saved registers
-  // r12, r13, r14, r15, rbx, rsp, rbp
+  // Just to be save, push ALL registers
   return mem.EmitCodeListing({
-      0x41, 0x54,  // PUSH r12
-      0x41, 0x55,  // PUSH r13
-      0x41, 0x56,  // PUSH r14
       0x41, 0x57,  // PUSH r15
-      0x53,        // PUSH rbx
-      0x54,        // PUSH rsp
+      0x41, 0x56,  // PUSH r14
+      0x41, 0x55,  // PUSH r13
+      0x41, 0x54,  // PUSH r12
+      0x41, 0x53,  // PUSH r11
+      0x41, 0x52,  // PUSH r10
+      0x41, 0x51,  // PUSH r9
+      0x41, 0x50,  // PUSH r8
+      0x57,        // PUSH rdi
+      0x56,        // PUSH rsi
       0x55,        // PUSH rbp
-      // rdx is used to hold the pointer to the current
-      // cell
+      0x54,        // PUSH rsp
+      0x53,        // PUSH rbx
+      0x52,        // PUSH rdx
+      0x51,        // PUSH rcx
+      0x50,        // PUSH rax
+      // rdx is used to hold the pointer to the current cell
+#if defined(IS_WINDOWS)
+      // MOV rdx, rcx
+      0x48, 0x89, 0xCA
+#endif
+#if defined(IS_LINUX)
       // MOV rdx, rdi
       0x48, 0x89, 0xFA
+#endif
     });
   // clang-format on
 }
@@ -54,21 +75,29 @@ static Err EmitEntry(CodeArea &mem) {
 static Err EmitExit(CodeArea &mem) {
   // clang-format off
   return mem.EmitCodeListing({
-      0x5D,        // POP rbp
-      0x5C,        // POP rsp
+      0x58,        // POP rax
+      0x59,        // POP rcx
+      0x5A,        // POP rdx
       0x5B,        // POP rbx
-      0x41, 0x5F,  // POP r15
-      0x41, 0x5E,  // POP r14
-      0x41, 0x5D,  // POP r13
+      0x5C,        // POP rsp
+      0x5D,        // POP rbp
+      0x5E,        // POP rsi
+      0x5F,        // POP rdi
+      0x41, 0x58,  // POP r8
+      0x41, 0x59,  // POP r9
+      0x41, 0x5A,  // POP r10
+      0x41, 0x5B,  // POP r11
       0x41, 0x5C,  // POP r12
+      0x41, 0x5D,  // POP r13
+      0x41, 0x5E,  // POP r14
+      0x41, 0x5F,  // POP r15
       0xC3         // ret
     });
   // clang-format on
 }
 
 static Err EmitNop(CodeArea &mem) {
-  // Only used for debugging, so emit a bit more
-  // NOPs
+  // Only used for debugging, so emit a bit more NOPs
   return mem.EmitCodeListing({0x90, 0x90, 0x90, 0x90});
 }
 
@@ -254,10 +283,18 @@ static Err EmitRead(CodeArea &mem, EOFMode eof_mode) {
     }).and_then([&] { return mem.EmitCode64(addr);
     }).and_then([&] {
       return mem.EmitCodeListing({
+#if defined(IS_WINDOWS)
+          // MOV rcx, rdx
+          0x48, 0x89, 0xD1,
+          // MOV edi, eof_mode
+          0xBF,
+#endif
+#if defined(IS_LINUX)
           // MOV rdi, rdx
           0x48, 0x89, 0xD7,
           // MOV esi, eof_mode
           0xBE,
+#endif
         });
     }).and_then([&] { return mem.EmitCode((uint32_t) eof_mode);
     }).and_then([&] {
@@ -327,8 +364,14 @@ static Err EmitWrite(CodeArea &mem) {
     }).and_then([&] { return mem.EmitCode64(addr);
     }).and_then([&] {
       return mem.EmitCodeListing({
+#if defined(IS_WINDOWS)
+          // MOV rcx, rdx
+          0x48, 0x89, 0xD1,
+#endif
+#if defined(IS_LINUX)
           // MOV rdi, rdx
           0x48, 0x89, 0xD7,
+#endif
           // CALL rax
           0xFF, 0xD0,
           // POP rdx

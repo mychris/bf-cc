@@ -90,6 +90,77 @@ void OperationStream::Dump() {
   }
 }
 
+static bool is_single_jump(OperationStream::Iterator iter) {
+  if (((Operation *) iter->Operand1())->Is(Instruction::JNZ)) {
+    return false;
+  }
+  return !(iter - 1)->Is(Instruction::JNZ);
+}
+
+void OperationStream::Dump2() {
+  int indent_level = 0;
+  auto iter = Begin();
+  const auto end = End();
+  while (iter != end) {
+    switch (iter->OpCode()) {
+    case Instruction::NOP: {
+      printf("_");
+    } break;
+    case Instruction::INCR_CELL: {
+      printf("+{%zu, %zd}", iter->Operand1(), iter->Operand2());
+    } break;
+    case Instruction::DECR_CELL: {
+      printf("-{%zu, %zd}", iter->Operand1(), iter->Operand2());
+    } break;
+    case Instruction::IMUL_CELL: {
+      printf("*{%zu, %zd}", iter->Operand1(), iter->Operand2());
+    } break;
+    case Instruction::DMUL_CELL: {
+      printf("/{%zu, %zd}", iter->Operand1(), iter->Operand2());
+    } break;
+    case Instruction::SET_CELL: {
+      printf("={%zu, %zd}", iter->Operand1(), iter->Operand2());
+    } break;
+    case Instruction::INCR_PTR: {
+      printf(">{%zu}", iter->Operand1());
+    } break;
+    case Instruction::DECR_PTR: {
+      printf("<{%zu}", iter->Operand1());
+    } break;
+    case Instruction::READ: {
+      printf(",{%zd}", iter->Operand2());
+    } break;
+    case Instruction::WRITE: {
+      printf(".{%zd}", iter->Operand2());
+    } break;
+    case Instruction::JZ: {
+      printf("\n%*s[\n%*s", indent_level, "", indent_level + 2, "");
+      indent_level += 2;
+    } break;
+    case Instruction::JNZ: {
+      indent_level -= 2;
+      printf("\n%*s]\n%*s", indent_level, "", indent_level, "");
+    } break;
+    case Instruction::LABEL: {
+      if (is_single_jump(iter)) {
+        indent_level -= 2;
+        printf("\n%*s#\n%*s", indent_level, "", indent_level, "");
+      }
+    } break;
+    case Instruction::FIND_CELL_LOW: {
+      printf("({%zu, %zu}", iter->Operand1(), iter->Operand2());
+    } break;
+    case Instruction::FIND_CELL_HIGH: {
+      printf("){%zu, %zu}", iter->Operand1(), iter->Operand2());
+    } break;
+    default: {
+      printf("?");
+    } break;
+    }
+    ++iter;
+  }
+}
+
 void OperationStream::Verify() {
   auto iter = Begin();
   const auto end = End();

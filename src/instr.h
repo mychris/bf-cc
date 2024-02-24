@@ -431,6 +431,8 @@ public:
 
   void Dump();
 
+  void Dump2();
+
   void Verify();
 };
 

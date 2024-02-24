@@ -1,8 +1,21 @@
 // SPDX-License-Identifier: MIT License
 #include "parse.h"
 
+#if defined(_WIN64)
+#define IS_WINDOWS 1
+#elif defined(__linux__)
+#define IS_LINUX 1
+#else
+#error Unsupported plattform
+#endif
+
+#if defined(IS_WINDOWS)
+#include <windows.h>
+#endif
+#if defined(IS_LINUX)
 #include <fcntl.h>
 #include <unistd.h>
+#endif
 
 #include <cerrno>
 #include <cstdlib>
@@ -62,6 +75,34 @@ std::variant<OperationStream, Err> parse(const std::string_view input) {
   return stream;
 }
 
+#if defined(IS_WINDOWS)
+static void close_handle(HANDLE *handle) {
+  CloseHandle(*handle);
+}
+
+std::variant<std::string, Err> read_content(const std::string_view filename) {
+  const std::unique_ptr<HANDLE, void (*)(HANDLE *)> fp{
+      new HANDLE(
+          CreateFile(filename.data(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)),
+      close_handle};
+  if (INVALID_HANDLE_VALUE == *fp) {
+    return Err::IO(GetLastError());
+  }
+  const DWORD fsize{GetFileSize(*fp, NULL)};
+  if (0 > fsize) {
+    return Err::IO(GetLastError());
+  }
+  std::string content(static_cast<std::string::size_type>(fsize + 1), '\0');
+  DWORD bytes_read{0};
+  if (!ReadFile(*fp, content.data(), fsize, &bytes_read, NULL)) {
+    return Err::IO(GetLastError());
+  }
+  content.data()[bytes_read] = '\0';
+  return content;
+}
+#endif
+
+#if defined(IS_LINUX)
 static void close_file(int *fp) {
   close(*fp);
 }
@@ -89,3 +130,4 @@ std::variant<std::string, Err> read_content(const std::string_view filename) {
   }
   return content;
 }
+#endif
