@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT License
 #include "gtest/gtest.h"
 
 int main(int argc, char **argv) {

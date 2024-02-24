@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT License
 const std = @import("std");
 
 pub fn build(b: *std.build.Builder) void {
@@ -58,6 +59,14 @@ pub fn build(b: *std.build.Builder) void {
 
     b.installArtifact(exe);
 
+    const run_cmd = b.addRunArtifact(exe);
+    run_cmd.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        run_cmd.addArgs(args);
+    }
+    const run_step = b.step("run", "Run bf-cc");
+    run_step.dependOn(&run_cmd.step);
+
     const gtest_root = "/usr/src/googletest/";
 
     const lib_gtest = b.addStaticLibrary(.{
@@ -106,6 +115,9 @@ pub fn build(b: *std.build.Builder) void {
         "src/parse.cc",
     }, CXX_FLAGS);
 
+    const test_step = b.step("test", "Build the test executable");
+    test_step.dependOn(&test_exe.step);
+
     const run_unit_tests = b.addRunArtifact(test_exe);
     run_unit_tests.addArgs(&.{
         "--gtest_shuffle",
@@ -119,15 +131,7 @@ pub fn build(b: *std.build.Builder) void {
     });
     run_integration_tests.addArtifactArg(exe);
 
-    const test_step = b.step("test", "Run unit tests");
-    test_step.dependOn(&run_unit_tests.step);
-    test_step.dependOn(&run_integration_tests.step);
-
-    const run_cmd = b.addRunArtifact(exe);
-    run_cmd.step.dependOn(b.getInstallStep());
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
-    }
-    const run_step = b.step("run", "Run bf-cc");
-    run_step.dependOn(&run_cmd.step);
+    const check_step = b.step("check", "Run the unit and integration tests");
+    check_step.dependOn(&run_unit_tests.step);
+    check_step.dependOn(&run_integration_tests.step);
 }
