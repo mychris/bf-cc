@@ -33,6 +33,14 @@ The `Makefile` can be used for native builds and tests on Linux.  To cross compi
 for Windows, use the [ziglang](https://ziglang.org/) toolchain
 (see the `build.zig` file).
 
+Using the zig toolchain:
+
+- Build on Linux: `zig build`
+- Release build on Linux: `zig build -Doptimize=ReleaseFast`
+- Run unit tests on Linux: `zig build test && ./zig-out/bin/bf-cc-test`
+- Run all tests on Linux: `zig build check`
+- Cross compile to Windows from Linux: `zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-windows`
+
 ## IR
 
 The IR consists of a doubly linked list of instructions.  Each instruction has

@@ -25,8 +25,6 @@ pub fn build(b: *std.build.Builder) void {
         "-fno-exceptions", //
         "-fno-rtti", //
         "-fPIE", //
-        "-fstack-clash-protection", //
-        "-fstack-protector-strong",
     };
 
     const exe = b.addExecutable(.{
@@ -115,8 +113,10 @@ pub fn build(b: *std.build.Builder) void {
         "src/parse.cc",
     }, CXX_FLAGS);
 
+    const install_test_exe = b.addInstallArtifact(test_exe, .{});
+
     const test_step = b.step("test", "Build the test executable");
-    test_step.dependOn(&test_exe.step);
+    test_step.dependOn(&install_test_exe.step);
 
     const run_unit_tests = b.addRunArtifact(test_exe);
     run_unit_tests.addArgs(&.{
