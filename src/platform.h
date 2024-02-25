@@ -2,23 +2,31 @@
 #ifndef BF_CC_PLATFORM_H
 #define BF_CC_PLATFORM_H 1
 
-#undef IS_WINDOWS
 #undef IS_LINUX
+#undef IS_WINDOWS
 
 #undef IS_X86_64
 
-#if defined(_WIN64)
-#define IS_WINDOWS 1
-#elif defined(__linux__)
+#if defined(__linux__)
 #define IS_LINUX 1
+#elif defined(_WIN64)
+#define IS_WINDOWS 1
 #else
-#error Unsupported plattform
+#error Unsupported operating system
 #endif
 
 #if defined(__x86_64__) || defined(_M_X64)
 #define IS_X86_64 1
 #else
-#error Unsupported plattform
+#error Unsupported architecture
+#endif
+
+#if defined(IS_LINUX) && defined(IS_X86_64)
+// OK
+#elif defined(IS_WINDOWS) && defined(IS_X86_64)
+// OK
+#else
+#error Unsupported combination of operating system and architecture
 #endif
 
 #include <cstdint>
