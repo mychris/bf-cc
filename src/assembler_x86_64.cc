@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: MIT License
-#include <cassert>
-#include <cstdio>
-#include <variant>
-#include <vector>
-
 #include "assembler.h"
-#include "error.h"
-#include "instr.h"
 #include "platform.h"
+
+#if defined(IS_X86_64)
+#include <cassert>
+
+#include "error.h"
 
 Err EmitEntry(CodeArea &mem) {
   // clang-format off
@@ -405,3 +403,5 @@ Err EmitFindCellLow(CodeArea &mem, uint8_t value, uintptr_t move_size) {
     });
   // clang-format on
 }
+
+#endif

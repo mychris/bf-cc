@@ -2,10 +2,21 @@
 #ifndef BF_CC_PLATFORM_H
 #define BF_CC_PLATFORM_H 1
 
+#undef IS_WINDOWS
+#undef IS_LINUX
+
+#undef IS_X86_64
+
 #if defined(_WIN64)
 #define IS_WINDOWS 1
 #elif defined(__linux__)
 #define IS_LINUX 1
+#else
+#error Unsupported plattform
+#endif
+
+#if defined(__x86_64__) || defined(_M_X64)
+#define IS_X86_64 1
 #else
 #error Unsupported plattform
 #endif
@@ -29,7 +40,7 @@
 #define PROTECT_RX (PROT_READ | PROT_EXEC)
 #endif
 
-extern std::string NativeErrorToString(int64_t native_error);
+extern std::string NativeErrorToString(int64_t);
 
 extern std::variant<uint8_t *, Err> Allocate(size_t);
 
@@ -41,8 +52,8 @@ extern size_t Pagesize();
 
 extern std::variant<std::string, Err> ReadWholeFile(const std::string_view);
 
-extern "C" void bf_write(uint8_t *c);
+extern "C" void bf_write(uint8_t *);
 
-extern "C" void bf_read(uint8_t *c, uint32_t mode);
+extern "C" void bf_read(uint8_t *, uint32_t);
 
 #endif /* BF_CC_PLATFORM_H */

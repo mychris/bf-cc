@@ -4,6 +4,7 @@
 #if defined(IS_WINDOWS)
 #include <windows.h>
 
+#include <cstdio>
 #include <cstring>
 #include <memory>
 
@@ -82,13 +83,13 @@ extern "C" void bf_read(uint8_t *c, uint32_t mode) {
   int input = std::getchar();
   if (EOF == input) {
     switch (mode) {
-    case 1: { // KEEP
+    case 1: {  // KEEP
       input = static_cast<int>(*c);
     } break;
-    case 2: { // ZERO
+    case 2: {  // ZERO
       input = 0;
     } break;
-    case 3: { // NEG_ONE
+    case 3: {  // NEG_ONE
       input = -1;
     } break;
     default: {
