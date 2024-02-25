@@ -6,6 +6,7 @@
 
 #include "instr.h"
 #include "mem.h"
+#include "platform.h"
 
 void Interpreter::Run(Heap &heap, OperationStream &stream, EOFMode eof_mode) const {
   auto iter = stream.Begin();
@@ -40,25 +41,13 @@ void Interpreter::Run(Heap &heap, OperationStream &stream, EOFMode eof_mode) con
       heap.DecrementDataPointer((int64_t) iter->Operand1());
     } break;
     case Instruction::READ: {
-      const int input = std::getchar();
-      if (EOF == input) {
-        switch (eof_mode) {
-        case EOFMode::KEEP: {
-        } break;
-        case EOFMode::ZERO: {
-          heap.SetCell(0, iter->Operand2());
-        } break;
-        case EOFMode::NEG_ONE: {
-          heap.SetCell((uint8_t) -1, iter->Operand2());
-        } break;
-        }
-      } else {
-        heap.SetCell((uint8_t) input, iter->Operand2());
-      }
+      uint8_t input = 0;
+      bf_read(&input, (uint32_t) eof_mode);
+      heap.SetCell(input, iter->Operand2());
     } break;
     case Instruction::WRITE: {
-      const uint8_t output = heap.GetCell(iter->Operand2());
-      std::putchar((int) output);
+      uint8_t output = heap.GetCell(iter->Operand2());
+      bf_write(&output);
     } break;
     case Instruction::JZ: {
       if (heap.GetCell(0) == 0) {

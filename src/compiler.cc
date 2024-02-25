@@ -12,6 +12,7 @@ Err Compiler::Compile(OperationStream &stream, EOFMode eof_mode) noexcept {
   std::vector<std::pair<const Operation *, uint8_t *>> label_list{};
   Err err = Err::Ok();
   void *entry = m.mem->CurrentWriteAddr();
+  m.entry = nullptr;
   err = EmitEntry(*m.mem);
   if (!err.IsOk()) {
     return err;
@@ -114,6 +115,6 @@ Err Compiler::Compile(OperationStream &stream, EOFMode eof_mode) noexcept {
   if (!err.IsOk()) {
     return err;
   }
-  m.entry = (CodeEntry) entry;
+  m.entry = reinterpret_cast<CodeEntry>(entry);
   return Err::Ok();
 }

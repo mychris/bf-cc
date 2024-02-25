@@ -9,32 +9,11 @@
 #include "instr.h"
 #include "platform.h"
 
-static void do_write(uint8_t *c) {
-  std::putchar((int) *c);
-}
-
-static void do_read(uint8_t *c, uint32_t mode) {
-  int input = std::getchar();
-  if (EOF == input) {
-    switch (static_cast<EOFMode>(mode)) {
-    case EOFMode::KEEP: {
-      input = static_cast<int>(*c);
-    } break;
-    case EOFMode::ZERO: {
-      input = 0;
-    } break;
-    case EOFMode::NEG_ONE: {
-      input = -1;
-    } break;
-    }
-  }
-  *c = static_cast<uint8_t>(input);
-}
-
 Err EmitEntry(CodeArea &mem) {
   // clang-format off
   // Just to be save, push ALL registers
   return mem.EmitCodeListing({
+      0x55,        // PUSH rbp
       0x41, 0x57,  // PUSH r15
       0x41, 0x56,  // PUSH r14
       0x41, 0x55,  // PUSH r13
@@ -45,21 +24,27 @@ Err EmitEntry(CodeArea &mem) {
       0x41, 0x50,  // PUSH r8
       0x57,        // PUSH rdi
       0x56,        // PUSH rsi
-      0x55,        // PUSH rbp
       0x54,        // PUSH rsp
       0x53,        // PUSH rbx
       0x52,        // PUSH rdx
       0x51,        // PUSH rcx
       0x50,        // PUSH rax
       // rdx is used to hold the pointer to the current cell
+      // move the argument
 #if defined(IS_WINDOWS)
       // MOV rdx, rcx
-      0x48, 0x89, 0xCA
+      0x48, 0x89, 0xCA,
 #endif
 #if defined(IS_LINUX)
       // MOV rdx, rdi
-      0x48, 0x89, 0xFA
+      0x48, 0x89, 0xFA,
 #endif
+      // MOV rbp, rsp
+      0x48, 0x89, 0xE5,
+      // allocate some space on the stack for saving rdx across
+      // calls and for windows shadow space
+      // SUB rsp, 80
+      0x48, 0x83, 0xEC, 0x50,
     });
   // clang-format on
 }
@@ -67,12 +52,15 @@ Err EmitEntry(CodeArea &mem) {
 Err EmitExit(CodeArea &mem) {
   // clang-format off
   return mem.EmitCodeListing({
+      // Adjust the stack pointer back
+      // ADD rsp, 80
+      0x48, 0x83, 0xC4, 0x50,
+      // pop all saved registers
       0x58,        // POP rax
       0x59,        // POP rcx
       0x5A,        // POP rdx
       0x5B,        // POP rbx
       0x5C,        // POP rsp
-      0x5D,        // POP rbp
       0x5E,        // POP rsi
       0x5F,        // POP rdi
       0x41, 0x58,  // POP r8
@@ -83,6 +71,7 @@ Err EmitExit(CodeArea &mem) {
       0x41, 0x5D,  // POP r13
       0x41, 0x5E,  // POP r14
       0x41, 0x5F,  // POP r15
+      0x5D,        // POP rbp
       0xC3         // ret
     });
   // clang-format on
@@ -266,10 +255,11 @@ Err EmitDecrPtr(CodeArea &mem, intptr_t amount) {
 
 Err EmitRead(CodeArea &mem, EOFMode eof_mode) {
   // clang-format off
-  uintptr_t addr = (uintptr_t) do_read;
+  uintptr_t addr = (uintptr_t) bf_read;
   return mem.EmitCodeListing({
-      // PUSH rdx
-      0x52,
+      // Save rdx
+      // MOV [rbp], rdx
+      0x48, 0x89, 0x55, 0x00,
       // MOV rax, addr
       0x48, 0xB8,
     }).and_then([&] { return mem.EmitCode64(addr);
@@ -278,8 +268,8 @@ Err EmitRead(CodeArea &mem, EOFMode eof_mode) {
 #if defined(IS_WINDOWS)
           // MOV rcx, rdx
           0x48, 0x89, 0xD1,
-          // MOV edi, eof_mode
-          0xBF,
+          // MOV edx, eof_mode
+          0xBA,
 #endif
 #if defined(IS_LINUX)
           // MOV rdi, rdx
@@ -293,64 +283,20 @@ Err EmitRead(CodeArea &mem, EOFMode eof_mode) {
       return mem.EmitCodeListing({
           // CALL rax
           0xFF, 0xD0,
-          // POP rdx
-          0x5A
+          // restore rdx
+          // MOV rdx, [rbp]
+          0x48, 0x8B, 0x55, 0x00,
         });
     });
-#if 0
-  // Linux syscall version
-  Err err = mem.EmitCodeListing({
-      // PUSH rdx
-      0x52,
-      // MOV rax, 0 (SYS_read)
-      0x48, 0xC7, 0xC0, 0x00, 0x00, 0x00, 0x00,
-      // MOV rdi, 0 (arg0: file descriptor)
-      0x48, 0xC7, 0xC7, 0x00, 0x00, 0x00, 0x00,
-      // MOV rsi, rdx (arg1: pointer)
-      0x48, 0x89, 0xD6,
-      // MOV rdx, 1 (arg2: count)
-      0x48, 0xC7, 0xC2, 0x01, 0x00, 0x00, 0x00,
-      // syscall
-      0x0F, 0x05,
-      // POP rdx
-      0x5A});
-  // clang-format on
-  if (!err.IsOk()) {
-    return err;
-  }
-  switch (eof_mode) {
-  case EOFMode::KEEP: {
-    return err.Ok();
-  } break;
-  case EOFMode::ZERO: {
-    // clang-format off
-    return mem.EmitCodeListing({
-        // CMP rax, 0x0
-        0x48, 0x83, 0xF8, 0x00,
-        // JNZ "next instruction"
-        0x75, 0x03,
-        // MOV byte[rdx], 0x0
-        0xC6, 0x02, 0x00});
-  } break;
-  case EOFMode::NEG_ONE: {
-    return mem.EmitCodeListing({
-        // CMP rax, 0x0
-        0x48, 0x83, 0xF8, 0x00,
-        // JNZ "next instruction"
-        0x75, 0x03,
-        // MOV byte[rdx], -1
-        0xC6, 0x02, 0xFF});
-  } break;
-  }
-#endif
 }
 
 Err EmitWrite(CodeArea &mem) {
   // clang-format off
-  uintptr_t addr = (uintptr_t) do_write;
+  uintptr_t addr = (uintptr_t) bf_write;
   return mem.EmitCodeListing({
-      // PUSH rdx
-      0x52,
+      // Save rdx
+      // MOV [rbp], rdx
+      0x48, 0x89, 0x55, 0x00,
       // MOV rax, addr
       0x48, 0xB8,
     }).and_then([&] { return mem.EmitCode64(addr);
@@ -366,29 +312,11 @@ Err EmitWrite(CodeArea &mem) {
 #endif
           // CALL rax
           0xFF, 0xD0,
-          // POP rdx
-          0x5A
+          // restore rdx
+          // MOV rdx, [rbp]
+          0x48, 0x8B, 0x55, 0x00,
         });
     });
-#if 0
-  // Linux syscall version
-  return mem.EmitCodeListing({
-      // PUSH rdx
-      0x52,
-      // MOV rax, 1 (SYS_write)
-      0x48, 0xC7, 0xC0, 0x01, 0x00, 0x00, 0x00,
-      // MOV rdi, 1 (arg0: file descriptor)
-      0x48, 0xC7, 0xC7, 0x01, 0x00, 0x00, 0x00,
-      // MOV rsi, rdx (arg1: pointer)
-      0x48, 0x89, 0xD6,
-      // MOV rdx, 1 (arg2: count)
-      0x48, 0xC7, 0xC2, 0x01, 0x00, 0x00, 0x00,
-      // syscall
-      0x0F, 0x05,
-      // POP rdx
-      0x5A
-    });
-#endif
   // clang-format on
 }
 

@@ -41,4 +41,8 @@ extern size_t Pagesize();
 
 extern std::variant<std::string, Err> ReadWholeFile(const std::string_view);
 
+extern "C" void bf_write(uint8_t *c);
+
+extern "C" void bf_read(uint8_t *c, uint32_t mode);
+
 #endif /* BF_CC_PLATFORM_H */

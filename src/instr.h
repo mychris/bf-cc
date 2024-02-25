@@ -52,10 +52,11 @@ enum class Instruction : uint32_t {
   FIND_CELL_HIGH = 1 << 15,
 };
 
+// Keep this in sync with the platform do_read functions!
 enum class EOFMode : uint32_t {
-  KEEP,
-  ZERO,
-  NEG_ONE,
+  KEEP = 1,
+  ZERO = 2,
+  NEG_ONE = 3,
 };
 
 class Operation final {
