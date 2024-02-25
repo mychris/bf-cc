@@ -11,26 +11,26 @@ Err EmitExit(CodeArea &);
 
 Err EmitNop(CodeArea &);
 
-Err EmitIncrCell(CodeArea &mem, uint8_t amount, intptr_t offset);
-Err EmitDecrCell(CodeArea &mem, uint8_t amount, intptr_t offset);
+Err EmitIncrCell(CodeArea &, uint8_t, intptr_t);
+Err EmitDecrCell(CodeArea &, uint8_t, intptr_t);
 
-Err EmitImullCell(CodeArea &mem, uint8_t amount, intptr_t offset);
-Err EmitDmullCell(CodeArea &mem, uint8_t amount, intptr_t offset);
+Err EmitImullCell(CodeArea &, uint8_t, intptr_t);
+Err EmitDmullCell(CodeArea &, uint8_t, intptr_t);
 
-Err EmitSetCell(CodeArea &mem, uint8_t amount, intptr_t offset);
+Err EmitSetCell(CodeArea &, uint8_t, intptr_t);
 
-Err EmitIncrPtr(CodeArea &mem, intptr_t amount);
-Err EmitDecrPtr(CodeArea &mem, intptr_t amount);
+Err EmitIncrPtr(CodeArea &, intptr_t);
+Err EmitDecrPtr(CodeArea &, intptr_t);
 
-Err EmitRead(CodeArea &mem, EOFMode eof_mode);
-Err EmitWrite(CodeArea &mem);
+Err EmitRead(CodeArea &, EOFMode);
+Err EmitWrite(CodeArea &);
 
-Err EmitJumpZero(CodeArea &mem);
-Err PatchJumpZero(CodeArea &mem, uint8_t *position, uintptr_t offset);
-Err EmitJumpNonZero(CodeArea &mem);
-Err PatchJumpNonZero(CodeArea &mem, uint8_t *position, uintptr_t offset);
+Err EmitJumpZero(CodeArea &);
+Err PatchJumpZero(CodeArea &, uint8_t *, uintptr_t);
+Err EmitJumpNonZero(CodeArea &);
+Err PatchJumpNonZero(CodeArea &, uint8_t *, uintptr_t);
 
-Err EmitFindCellHigh(CodeArea &mem, uint8_t value, uintptr_t move_size);
-Err EmitFindCellLow(CodeArea &mem, uint8_t value, uintptr_t move_size);
+Err EmitFindCellHigh(CodeArea &, uint8_t, uintptr_t);
+Err EmitFindCellLow(CodeArea &, uint8_t, uintptr_t);
 
 #endif /* BF_CC_ASSEMBLER_H */

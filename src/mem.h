@@ -23,6 +23,7 @@ private:
   struct M {
     size_t page_size;
     size_t allocated;
+    size_t available;
     int64_t data_pointer;
     uint8_t *data;
   } m;
@@ -38,7 +39,7 @@ public:
 
   ~Heap();
 
-  Heap(Heap &&other) noexcept : m(std::exchange(other.m, {0, 0, 0, nullptr})) {
+  Heap(Heap &&other) noexcept : m(std::exchange(other.m, {0, 0, 0, 0, nullptr})) {
   }
 
   Heap &operator=(Heap &&other) noexcept {
@@ -77,6 +78,8 @@ public:
   inline int64_t DataPointer() const noexcept {
     return m.data_pointer;
   }
+
+  void Dump() const noexcept;
 };
 
 class CodeArea final {
@@ -138,7 +141,7 @@ public:
 
   Err MakeExecutable();
 
-  void Dump();
+  void Dump() const noexcept;
 };
 
 #endif /* BF_CC_MEM_H */

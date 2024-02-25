@@ -1,26 +1,8 @@
 // SPDX-License-Identifier: MIT License
 #include "parse.h"
 
-#if defined(_WIN64)
-#define IS_WINDOWS 1
-#elif defined(__linux__)
-#define IS_LINUX 1
-#else
-#error Unsupported plattform
-#endif
-
-#if defined(IS_WINDOWS)
-#include <windows.h>
-#endif
-#if defined(IS_LINUX)
-#include <fcntl.h>
-#include <unistd.h>
-#endif
-
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
-#include <memory>
+#include <string_view>
+#include <variant>
 #include <vector>
 
 #include "error.h"

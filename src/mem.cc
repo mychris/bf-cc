@@ -22,13 +22,35 @@ std::variant<Heap, Err> Heap::Create(size_t size) noexcept {
   size += page_size * (GUARD_PAGES * 2);
   uint8_t *mem = Ensure(Allocate(size));
   Ensure(Protect(mem + page_size * GUARD_PAGES, size - (page_size * GUARD_PAGES * 2), PROTECT_RW));
-  return Heap(M{.page_size = page_size, .allocated = size, .data_pointer = 0, .data = mem + (page_size * GUARD_PAGES)});
+  return Heap(M{.page_size = page_size,
+                .allocated = size,
+                .available = size - (page_size * 2 * GUARD_PAGES),
+                .data_pointer = 0,
+                .data = mem + (page_size * GUARD_PAGES)});
 }
 
 Heap::~Heap() {
   if (m.data) {
     Deallocate(m.data - (m.page_size * GUARD_PAGES), m.allocated);
     m.data = nullptr;
+  }
+}
+
+void Heap::Dump() const noexcept {
+  uint8_t *ptr = m.data;
+  size_t count = 0;
+  const size_t available = m.available;
+  while (count < available) {
+    printf("%p  ", static_cast<void *>(ptr));
+    for (int i = 0; count < available && i < 4; ++i) {
+      printf("  ");
+      for (int j = 0; count < available && j < 4; ++j) {
+        printf(" %02X", *ptr);
+        ++ptr;
+        ++count;
+      }
+    }
+    printf("\n");
   }
 }
 
@@ -47,7 +69,7 @@ std::variant<CodeArea, Err> CodeArea::Create() noexcept {
   });
 }
 
-void CodeArea::Dump() {
+void CodeArea::Dump() const noexcept {
   for (size_t i = m.page_size; i < m.size; ++i) {
     if (i > 0 && i % 16 == 0) {
       printf("\n");

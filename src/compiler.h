@@ -43,8 +43,8 @@ public:
 
   Err Compile(OperationStream &, EOFMode) noexcept;
 
-  void RunCode(uint8_t *heap) noexcept {
-    m.entry(heap);
+  void RunCode(Heap &heap) noexcept {
+    m.entry(heap.BaseAddress());
   }
 };
 

@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <string_view>
 
 #include "compiler.h"
 #include "error.h"
@@ -127,10 +128,13 @@ static void parse_opts(int argc, char **argv) {
 
 int main(int argc, char **argv) {
   parse_opts(argc, argv);
-  auto raw_content = Ensure(ReadWholeFile(args.input_file_path));
+  // Parse and optimize
+  std::string raw_content = Ensure(ReadWholeFile(args.input_file_path));
   OperationStream stream = Ensure(Parse(raw_content));
   Optimizer::Create(args.optimization_level).Run(stream);
+  // Allocate heap
   Heap heap = Ensure(Heap::Create(args.heap_size));
+  // Compile and execute
   switch (args.execution_mode) {
   case ExecMode::INTERPRETER: {
     Interpreter interpreter = Interpreter::Create();
@@ -139,9 +143,8 @@ int main(int argc, char **argv) {
   case ExecMode::COMPILER: {
     Compiler compiler = Ensure(Compiler::Create());
     Ensure(compiler.Compile(stream, args.eof_mode));
-    compiler.RunCode(heap.BaseAddress());
+    compiler.RunCode(heap);
   } break;
   }
-  fflush(stdout);
   return 0;
 }
