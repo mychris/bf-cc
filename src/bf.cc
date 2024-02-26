@@ -66,7 +66,7 @@ static void parse_opts(int argc, char **argv) {
       mem_size_string = std::string_view{&argv[0][9]};
     } else if (0 == strcmp("--interp", argv[0]) || 0 == strcmp("-i", argv[0])) {
       args.execution_mode = ExecMode::INTERPRETER;
-    } else if (0 == strcmp("--comp", argv[0]) || 0 == strcmp("-c", argv[0])) {
+    } else if (0 == strcmp("--compiler", argv[0]) || 0 == strcmp("-c", argv[0])) {
       args.execution_mode = ExecMode::COMPILER;
     } else if (0 == strncmp("-e", argv[0], 2)) {
       eof_mode_string = std::string_view{&argv[0][2]};
