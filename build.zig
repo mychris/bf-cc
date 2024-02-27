@@ -5,7 +5,9 @@ pub fn build(b: *std.build.Builder) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const CXX_FLAGS = &.{
+    var CXX_FLAGS = std.ArrayList([]const u8).init(b.allocator);
+    CXX_FLAGS.deinit();
+    CXX_FLAGS.appendSlice(&.{
         "--std=c++20", //
         "-pedantic", //
         "-Wall", //
@@ -25,7 +27,11 @@ pub fn build(b: *std.build.Builder) void {
         "-fno-exceptions", //
         "-fno-rtti", //
         "-fPIE", //
-    };
+    }) catch @panic("OOM");
+
+    if (optimize == .Debug) {
+        CXX_FLAGS.append("-DDEBUG=1") catch @panic("OOM");
+    }
 
     const exe = b.addExecutable(.{
         .name = "bf-cc",
@@ -40,7 +46,9 @@ pub fn build(b: *std.build.Builder) void {
         "src/platform_linux.cc",
         "src/platform_windows.cc",
         "src/assembler_x86_64.cc",
+        "src/assembler_aarch64.cc",
         "src/compiler.cc",
+        "src/debug.cc",
         "src/error.cc",
         "src/instr.cc",
         "src/interp.cc",
@@ -53,7 +61,7 @@ pub fn build(b: *std.build.Builder) void {
         "src/opt_multiply_loop.cc",
         "src/opt_peep.cc",
         "src/parse.cc",
-    }, CXX_FLAGS);
+    }, CXX_FLAGS.items);
 
     b.installArtifact(exe);
 
@@ -77,7 +85,7 @@ pub fn build(b: *std.build.Builder) void {
     lib_gtest.addIncludePath(.{ .path = gtest_root });
     lib_gtest.addCSourceFiles(&.{
         gtest_root ++ "src/gtest-all.cc",
-    }, CXX_FLAGS);
+    }, CXX_FLAGS.items);
 
     const test_exe = b.addExecutable(.{
         .name = "bf-cc-test",
@@ -98,7 +106,9 @@ pub fn build(b: *std.build.Builder) void {
         "src/platform_linux.cc",
         "src/platform_windows.cc",
         "src/assembler_x86_64.cc",
+        "src/assembler_aarch64.cc",
         "src/compiler.cc",
+        "src/debug.cc",
         "src/error.cc",
         "src/instr.cc",
         "src/interp.cc",
@@ -111,7 +121,7 @@ pub fn build(b: *std.build.Builder) void {
         "src/opt_multiply_loop.cc",
         "src/opt_peep.cc",
         "src/parse.cc",
-    }, CXX_FLAGS);
+    }, CXX_FLAGS.items);
 
     const install_test_exe = b.addInstallArtifact(test_exe, .{});
 

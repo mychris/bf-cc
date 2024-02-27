@@ -1,90 +1,94 @@
 // SPDX-License-Identifier: MIT License
 #include "compiler.h"
 
-#include <cassert>
+#include <cstdio>
 #include <vector>
 
 #include "assembler.h"
+#include "debug.h"
 #include "error.h"
+
+#define DEBUG_COMP(x)
 
 Err Compiler::Compile(OperationStream &stream, EOFMode eof_mode) noexcept {
   std::vector<std::pair<const Operation *, uint8_t *>> jump_list{};
   std::vector<std::pair<const Operation *, uint8_t *>> label_list{};
-  Err err = Err::Ok();
   void *entry = m.mem->CurrentWriteAddr();
   m.entry = nullptr;
-  err = EmitEntry(*m.mem);
-  if (!err.IsOk()) {
-    return err;
+  EmitEntry(*m.mem);
+  if (m.mem->HasWriteError()) {
+    return Err::OutOfMemory();
   }
   for (const Operation *op : stream) {
     switch (op->OpCode()) {
     case Instruction::NOP:
-      err = EmitNop(*m.mem);
+      DEBUG_COMP(printf("NOP\n"));
+      EmitNop(*m.mem);
       break;
     case Instruction::INCR_CELL:
-      err = EmitIncrCell(*m.mem, (uint8_t) op->Operand1(), op->Operand2());
+      DEBUG_COMP(printf("INCR_CELL %zu %zu\n", op->Operand1(), op->Operand2()));
+      EmitIncrCell(*m.mem, (uint8_t) op->Operand1(), op->Operand2());
       break;
     case Instruction::DECR_CELL:
-      err = EmitDecrCell(*m.mem, (uint8_t) op->Operand1(), op->Operand2());
+      DEBUG_COMP(printf("DECR_CELL %zu %zu\n", op->Operand1(), op->Operand2()));
+      EmitDecrCell(*m.mem, (uint8_t) op->Operand1(), op->Operand2());
       break;
     case Instruction::IMUL_CELL:
-      err = EmitImullCell(*m.mem, (uint8_t) op->Operand1(), op->Operand2());
+      DEBUG_COMP(printf("IMUL_CELL %zu %zu\n", op->Operand1(), op->Operand2()));
+      EmitImullCell(*m.mem, (uint8_t) op->Operand1(), op->Operand2());
       break;
     case Instruction::DMUL_CELL:
-      err = EmitDmullCell(*m.mem, (uint8_t) op->Operand1(), op->Operand2());
+      DEBUG_COMP(printf("DMUL_CELL %zu %zu\n", op->Operand1(), op->Operand2()));
+      EmitDmullCell(*m.mem, (uint8_t) op->Operand1(), op->Operand2());
       break;
     case Instruction::SET_CELL:
-      err = EmitSetCell(*m.mem, (uint8_t) op->Operand1(), op->Operand2());
+      DEBUG_COMP(printf("SET_CELL %zu %zu\n", op->Operand1(), op->Operand2()));
+      EmitSetCell(*m.mem, (uint8_t) op->Operand1(), op->Operand2());
       break;
     case Instruction::INCR_PTR:
-      err = EmitIncrPtr(*m.mem, op->Operand1());
+      DEBUG_COMP(printf("INCR_PTR %zu\n", op->Operand1()));
+      EmitIncrPtr(*m.mem, op->Operand1());
       break;
     case Instruction::DECR_PTR:
-      err = EmitDecrPtr(*m.mem, op->Operand1());
+      DEBUG_COMP(printf("DECR_CELL %zu\n", op->Operand1()));
+      EmitDecrPtr(*m.mem, op->Operand1());
       break;
     case Instruction::READ:
-      // clang-format off
-      err = EmitIncrPtr(*m.mem, op->Operand2())
-        .and_then([&]() {
-          return EmitRead(*m.mem, eof_mode);
-        })
-        .and_then([&]() {
-          return EmitDecrPtr(*m.mem, op->Operand2());
-        });
-      // clang-format on
+      DEBUG_COMP(printf("READ %zu %zu\n", op->Operand1(), op->Operand2()));
+      EmitIncrPtr(*m.mem, op->Operand2());
+      EmitRead(*m.mem, eof_mode);
+      EmitDecrPtr(*m.mem, op->Operand2());
       break;
     case Instruction::WRITE:
-      // clang-format off
-      err = EmitIncrPtr(*m.mem, op->Operand2())
-        .and_then([&]() {
-          return EmitWrite(*m.mem);
-        })
-        .and_then([&]() {
-          return EmitDecrPtr(*m.mem, op->Operand2());
-        });
-      // clang-format on
+      DEBUG_COMP(printf("WRITE %zu %zu\n", op->Operand1(), op->Operand2()));
+      EmitIncrPtr(*m.mem, op->Operand2());
+      EmitWrite(*m.mem);
+      EmitDecrPtr(*m.mem, op->Operand2());
       break;
     case Instruction::JZ:
-      err = EmitJumpZero(*m.mem);
+      DEBUG_COMP(printf("JZ\n"));
+      EmitJumpZero(*m.mem);
       jump_list.push_back({op, m.mem->CurrentWriteAddr()});
       break;
     case Instruction::JNZ:
-      err = EmitJumpNonZero(*m.mem);
+      DEBUG_COMP(printf("JNZ\n"));
+      EmitJumpNonZero(*m.mem);
       jump_list.push_back({op, m.mem->CurrentWriteAddr()});
       break;
     case Instruction::LABEL:
       label_list.push_back({op, m.mem->CurrentWriteAddr()});
       break;
     case Instruction::FIND_CELL_HIGH:
-      err = EmitFindCellHigh(*m.mem, (uint8_t) op->Operand1(), (uintptr_t) op->Operand2());
+      DEBUG_COMP(printf("FIND_CELL_HIGH %zu %zu\n", op->Operand1(), op->Operand2()));
+      EmitFindCellHigh(*m.mem, (uint8_t) op->Operand1(), (uintptr_t) op->Operand2());
       break;
     case Instruction::FIND_CELL_LOW:
-      err = EmitFindCellLow(*m.mem, (uint8_t) op->Operand1(), (uintptr_t) op->Operand2());
+      DEBUG_COMP(printf("FIND_CELL_LOW %zu %zu\n", op->Operand1(), op->Operand2()));
+      EmitFindCellLow(*m.mem, (uint8_t) op->Operand1(), (uintptr_t) op->Operand2());
       break;
     }
-    if (!err.IsOk()) {
-      return err;
+    if (m.mem->HasWriteError()) {
+      return Err::OutOfMemory();
     }
   }
   // Patch the jumps
@@ -96,22 +100,19 @@ Err Compiler::Compile(OperationStream &stream, EOFMode eof_mode) noexcept {
         break;
       }
     }
-    assert(target_pos > (uint8_t *) 0 && "Label not found");
-    assert(jump->IsAny({Instruction::JZ, Instruction::JNZ}) && "Invalid op code in jump list");
+    ASSERT(target_pos > (uint8_t *) 0, "Label not found");
+    ASSERT(jump->IsAny({Instruction::JZ, Instruction::JNZ}), "Invalid op code in jump list");
     if (jump->Is(Instruction::JZ)) {
-      err = PatchJumpZero(*m.mem, code_pos, (uintptr_t) (target_pos - code_pos));
+      PatchJumpZero(*m.mem, code_pos, (uintptr_t) (target_pos - code_pos));
     } else if (jump->Is(Instruction::JNZ)) {
-      err = PatchJumpNonZero(*m.mem, code_pos, (uintptr_t) (target_pos - code_pos));
-    }
-    if (!err.IsOk()) {
-      return err;
+      PatchJumpNonZero(*m.mem, code_pos, (uintptr_t) (target_pos - code_pos));
     }
   }
-  err = EmitExit(*m.mem);
-  if (!err.IsOk()) {
-    return err;
+  EmitExit(*m.mem);
+  if (m.mem->HasWriteError()) {
+    return Err::OutOfMemory();
   }
-  err = m.mem->MakeExecutable();
+  Err err = m.mem->MakeExecutable();
   if (!err.IsOk()) {
     return err;
   }

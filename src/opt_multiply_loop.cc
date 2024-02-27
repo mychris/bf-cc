@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT License
-
-#include <cassert>
-
+#include "debug.h"
 #include "instr.h"
 #include "optimize.h"
 
@@ -30,8 +28,8 @@ void OptMultiplyLoop(OperationStream &stream) {
       auto loop_end = iter;
       loop_start.JumpTo((Operation *) loop_end->Operand1());
       auto cur = loop_start;
-      assert(loop_start->Is(Instruction::LABEL));
-      assert(loop_end->Is(Instruction::JNZ));
+      ASSERT(loop_start->Is(Instruction::LABEL), "check");
+      ASSERT(loop_end->Is(Instruction::JNZ), "check");
       // Find the end of the loop.  Stop if another loop starts.
       while (cur != loop_end) {
         if (cur->IsJump()) {
@@ -64,8 +62,8 @@ static inline bool is_loop_counter_decrement(const OperationStream::Iterator &it
 static bool try_optimize_loop(OperationStream &stream,
                               OperationStream::Iterator iter,
                               const OperationStream::Iterator end) {
-  assert(iter->Is(Instruction::LABEL));
-  assert(end->Is(Instruction::JNZ));
+  ASSERT(iter->Is(Instruction::LABEL), "check");
+  ASSERT(end->Is(Instruction::JNZ), "check");
   unsigned int counter_access_count = 0;
   // Check for an appropriate loop
   for (auto cur = iter + 1; cur != end; ++cur) {

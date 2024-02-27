@@ -27,7 +27,7 @@ CXXFLAGS += -Wall -Wextra \
 #	    -fsanitize=undefined \
 #	    -fno-sanitize-recover=all
 CXXFLAGS += -O3
-#CXXFLAGS += -ggdb3 -pg
+#CXXFLAGS += -DDEBUG -ggdb3 -pg
 
 CPPFLAGS += -Isrc/
 

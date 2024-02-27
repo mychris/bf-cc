@@ -6,6 +6,7 @@
 #undef IS_WINDOWS
 
 #undef IS_X86_64
+#undef IS_AARCH64
 
 #if defined(__linux__)
 #define IS_LINUX 1
@@ -17,11 +18,15 @@
 
 #if defined(__x86_64__) || defined(_M_X64)
 #define IS_X86_64 1
+#elif defined(__aarch64__)
+#define IS_AARCH64 1
 #else
 #error Unsupported architecture
 #endif
 
 #if defined(IS_LINUX) && defined(IS_X86_64)
+// OK
+#elif defined(IS_LINUX) && defined(IS_AARCH64)
 // OK
 #elif defined(IS_WINDOWS) && defined(IS_X86_64)
 // OK

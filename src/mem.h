@@ -90,6 +90,7 @@ private:
     size_t reserved;
     size_t page_size;
     uint8_t *mem;
+    bool err;
   } m;
 
   explicit CodeArea(M m) noexcept : m(std::move(m)) {
@@ -98,16 +99,16 @@ private:
   CodeArea(const CodeArea &) = delete;
   CodeArea &operator=(const CodeArea &) = delete;
 
-  Err EmitData(const uint8_t *, const size_t);
+  void EmitData(const uint8_t *, const size_t);
 
-  Err PatchData(uint8_t *, const uint8_t *, const size_t);
+  void PatchData(uint8_t *, const uint8_t *, const size_t);
 
 public:
   static std::variant<CodeArea, Err> Create() noexcept;
 
   ~CodeArea();
 
-  CodeArea(CodeArea &&other) noexcept : m(std::exchange(other.m, {0, 0, 0, 0, nullptr})) {
+  CodeArea(CodeArea &&other) noexcept : m(std::exchange(other.m, {0, 0, 0, 0, nullptr, true})) {
   }
 
   CodeArea &operator=(CodeArea &&other) noexcept {
@@ -115,23 +116,23 @@ public:
     return *this;
   }
 
-  inline Err EmitCode(const uint32_t c) {
+  inline void EmitCode(const uint32_t c) {
     return EmitData((const uint8_t *) &c, sizeof(uint32_t));
   }
 
-  inline Err EmitCode64(const uint64_t c) {
+  inline void EmitCode64(const uint64_t c) {
     return EmitData((const uint8_t *) &c, sizeof(uint64_t));
   }
 
-  inline Err EmitCodeListing(std::initializer_list<uint8_t> l) {
+  inline void EmitCodeListing(std::initializer_list<uint8_t> l) {
     return EmitData((const uint8_t *) std::data(l), l.size());
   }
 
-  inline Err PatchCode(uint8_t *p, const uint32_t c) {
+  inline void PatchCode(uint8_t *p, const uint32_t c) {
     return PatchData(p, (const uint8_t *) &c, sizeof(uint32_t));
   }
 
-  inline Err PatchCodeListing(uint8_t *p, std::initializer_list<uint8_t> l) {
+  inline void PatchCodeListing(uint8_t *p, std::initializer_list<uint8_t> l) {
     return PatchData(p, (const uint8_t *) std::data(l), l.size());
   }
 
@@ -140,6 +141,10 @@ public:
   }
 
   Err MakeExecutable();
+
+  bool HasWriteError() const noexcept {
+    return m.err;
+  };
 
   void Dump() const noexcept;
 };

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT License
 #include "optimize.h"
 
+#include "debug.h"
 #include "instr.h"
 
 void Optimizer::Run(OperationStream &stream) const noexcept {
@@ -16,6 +17,9 @@ void Optimizer::Run(OperationStream &stream) const noexcept {
   for (const auto &stage : pipeline) {
     if (stage.Level() <= m.level) {
       stage.Run(stream);
+#if defined(DEBUG_BUILD)
+      stream.Verify();
+#endif
     }
   }
 }

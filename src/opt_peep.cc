@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT License
-#include <cassert>
-
+#include "debug.h"
 #include "instr.h"
 #include "optimize.h"
 
@@ -26,8 +25,8 @@ static void ReplaceSingleInstructionLoops(OperationStream &stream) {
       auto label2 = iter++;
       if (jz->Operand1() == (Operation::operand_type) *label2 && jnz->Operand1() == (Operation::operand_type) *label1
           && incr_decr->Operand1() % 2 == 1) {
-        assert(label2->Operand1() == (Operation::operand_type) *jz);
-        assert(label1->Operand1() == (Operation::operand_type) *jnz);
+        ASSERT(label2->Operand1() == (Operation::operand_type) *jz, "check");
+        ASSERT(label1->Operand1() == (Operation::operand_type) *jnz, "check");
         jz->SetOpCode(Instruction::SET_CELL);
         jz->SetOperand1(0);
         stream.Delete(label1);

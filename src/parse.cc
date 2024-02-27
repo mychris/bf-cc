@@ -5,6 +5,7 @@
 #include <variant>
 #include <vector>
 
+#include "debug.h"
 #include "error.h"
 #include "instr.h"
 
@@ -54,5 +55,8 @@ std::variant<OperationStream, Err> Parse(const std::string_view input) {
   if (0 != jump_stack.size()) {
     return Err::UnmatchedJump();
   }
+#if defined(DEBUG_BUILD)
+  stream.Verify();
+#endif
   return stream;
 }

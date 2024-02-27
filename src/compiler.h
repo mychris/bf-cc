@@ -44,7 +44,13 @@ public:
   Err Compile(OperationStream &, EOFMode) noexcept;
 
   void RunCode(Heap &heap) noexcept {
-    m.entry(heap.BaseAddress());
+    CodeEntry entry = m.entry;
+    uint8_t *heap_addr = heap.BaseAddress();
+    entry(heap_addr);
+  }
+
+  void Dump() const noexcept {
+    m.mem->Dump();
   }
 };
 

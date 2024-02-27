@@ -66,17 +66,16 @@ std::variant<CodeArea, Err> CodeArea::Create() noexcept {
       .reserved = reserved,
       .page_size = page_size,
       .mem = (uint8_t *) mem,
+      .err = false,
   });
 }
 
 void CodeArea::Dump() const noexcept {
   for (size_t i = m.page_size; i < m.size; ++i) {
-    if (i > 0 && i % 16 == 0) {
+    if (i > 0 && i % 4 == 0) {
       printf("\n");
-    } else if (i > 0 && i % 2 == 0) {
-      printf(" ");
     }
-    printf("%02X", m.mem[i]);
+    printf(" %02X", m.mem[i]);
   }
   printf("\n");
 }
@@ -88,22 +87,22 @@ CodeArea::~CodeArea() {
   }
 }
 
-Err CodeArea::EmitData(const uint8_t *data, const size_t length) {
-  while (m.size + length >= m.allocated) {
-    if (m.allocated == m.reserved) {
-      return Err::OutOfMemory();
+void CodeArea::EmitData(const uint8_t *data, const size_t length) {
+  if (!m.err) {
+    while (m.size + length >= m.allocated) {
+      if (m.allocated == m.reserved) {
+        m.err = true;
+      }
+      Ensure(Protect(m.mem + m.allocated, m.page_size, PROTECT_RW));
+      m.allocated += m.page_size;
     }
-    Ensure(Protect(m.mem + m.allocated, m.page_size, PROTECT_RW));
-    m.allocated += m.page_size;
+    std::memcpy(m.mem + m.size, data, length);
+    m.size += length;
   }
-  std::memcpy(m.mem + m.size, data, length);
-  m.size += length;
-  return Err::Ok();
 }
 
-Err CodeArea::PatchData(uint8_t *p, const uint8_t *data, const size_t length) {
+void CodeArea::PatchData(uint8_t *p, const uint8_t *data, const size_t length) {
   std::memcpy(p, data, length);
-  return Err::Ok();
 }
 
 Err CodeArea::MakeExecutable() {

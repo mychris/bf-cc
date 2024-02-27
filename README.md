@@ -4,6 +4,7 @@ A brainfuck interpreter and run-time compiler written in C++. Currently, the
 following platforms are supported:
 
 - Linux on x86-64
+- Linux on Aarch64
 - Windows 10 on x86-64
 
 The input program is translated into a minimalistic IR, optimized, and then
@@ -12,7 +13,7 @@ The optimizer is capable of performing some very basic optimizations and
 could be enhanced further.
 
 The runtime compiler uses simple, hard-coded instruction templates for each
-OpCode of the IR.
+op code of the IR.
 
 ## Command line interface
 
@@ -72,11 +73,11 @@ If something goes wrong, first try to disable optimizations.
 ## Interpreter
 
 The interpreter is not optimized at all. It simply runs over the instruction 
-stream and switches over the opcode of the instruction to perform it.
+stream and switches over the op code of the instruction to perform it.
 
 ## Runtime compiler
 
-The runtime compiler uses hardcoded templates for each instruction.  It does not
+The runtime compiler uses hard-coded templates for each instruction.  It does not
 create any reusable procedures.  There are many assumptions for the type of the
 operands of each instruction, which should generally hold for brainfuck programs.
 
@@ -87,7 +88,11 @@ If something goes wrong, first try the interpreter.
 The `-e` flag can be used to change the behavior on EOF.  I have seen many 
 programs which rely on `-e0`, but I think `-ekeep` is a more sane default, since
 the program can simply set the cell to `0` before the read, if desired.  Using a
-hardcoded value for EOF might make it harder for certain applications.
+hard-coded value for EOF might make it harder for certain applications.
+
+For instance, the `cat` program is often written as `,[.,]` in brainfuck.
+This will not work with the default EOF flag in results in an endless loop.
+`,[.[-],]` would be a more resilient implementation.
 
 ## TODOs
 

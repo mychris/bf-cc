@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT License
 #include "instr.h"
 
-#include <cassert>
 #include <cstdio>
+
+#include "debug.h"
 
 void Operation::Dump() const {
   printf("%zu ", (uintptr_t) this);
@@ -169,25 +170,25 @@ void OperationStream::Verify() {
     case Instruction::NOP: {
     } break;
     case Instruction::INCR_CELL: {
-      assert(iter->Operand1() > 0);
+      GUARANTEE(iter->Operand1() > 0, "Increment with invalid operand1: %zd", iter->Operand1());
     } break;
     case Instruction::DECR_CELL: {
-      assert(iter->Operand1() > 0);
+      GUARANTEE(iter->Operand1() > 0, "Decrement with invalid operand1: %zd", iter->Operand1());
     } break;
     case Instruction::IMUL_CELL: {
-      assert(iter->Operand1() > 0);
+      GUARANTEE(iter->Operand1() > 0, "Imul with invalid operand1: %zd", iter->Operand1());
     } break;
     case Instruction::DMUL_CELL: {
-      assert(iter->Operand1() > 0);
+      GUARANTEE(iter->Operand1() > 0, "Dmul with invalid operand1: %zd", iter->Operand1());
     } break;
     case Instruction::SET_CELL: {
-      assert(iter->Operand1() >= 0 && iter->Operand1() <= 255);
+      GUARANTEE(iter->Operand1() >= 0 && iter->Operand1() <= 255, "Set cell invalid operand1: %zd", iter->Operand1());
     } break;
     case Instruction::INCR_PTR: {
-      assert(iter->Operand1() > 0);
+      GUARANTEE(iter->Operand1() > 0, "IncrPtr with invalid operand1: %zd", iter->Operand1());
     } break;
     case Instruction::DECR_PTR: {
-      assert(iter->Operand1() > 0);
+      GUARANTEE(iter->Operand1() > 0, "DecrPtr with invalid operand1: %zd", iter->Operand1());
     } break;
     case Instruction::READ: {
     } break;
@@ -204,7 +205,7 @@ void OperationStream::Verify() {
     case Instruction::FIND_CELL_HIGH: {
     } break;
     default: {
-      assert(0 && "Invalid instruction");
+      UNREACHABLE();
     } break;
     }
     ++iter;

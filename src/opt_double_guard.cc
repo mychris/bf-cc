@@ -1,6 +1,4 @@
 // SPDX-License-Identifier: MIT License
-#include <cassert>
-
 #include "instr.h"
 #include "optimize.h"
 
