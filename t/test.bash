@@ -18,10 +18,10 @@ TEST_CASE_FLAG_MATRIX=("--interp --optimize=0"
                        "--interp --optimize=1"
                        "--interp --optimize=2"
                        "--interp --optimize=3"
-                       "--compiler --optimize=0"
-                       "--compiler --optimize=1"
-                       "--compiler --optimize=2"
-                       "--compiler --optimize=3")
+                       "--comp --optimize=0"
+                       "--comp --optimize=1"
+                       "--comp --optimize=2"
+                       "--comp --optimize=3")
 
 function run_testcase () {
     name="$1"

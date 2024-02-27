@@ -34,7 +34,7 @@ static void usage(void) {
   fprintf(stderr, "  -O, --optimize=  Set the optimization level to 0, 1, 2, or 3\n");
   fprintf(stderr, "  -m, --memory=    Set the heap memory size\n");
   fprintf(stderr, "  -i, --interp     Set the execution mode to: interpreter\n");
-  fprintf(stderr, "  -c, --compiler   Set the execution mode to: compiler\n");
+  fprintf(stderr, "  -c, --comp       Set the execution mode to: compiler\n");
   fprintf(stderr, "  -e, --eof=       Set EOF to 'keep', '0', or '-1'\n");
   fprintf(stderr, "  -h, --help       Display this help message\n");
 }
@@ -66,7 +66,7 @@ static void parse_opts(int argc, char **argv) {
       mem_size_string = std::string_view{&argv[0][9]};
     } else if (0 == strcmp("--interp", argv[0]) || 0 == strcmp("-i", argv[0])) {
       args.execution_mode = ExecMode::INTERPRETER;
-    } else if (0 == strcmp("--compiler", argv[0]) || 0 == strcmp("-c", argv[0])) {
+    } else if (0 == strcmp("--comp", argv[0]) || 0 == strcmp("-c", argv[0])) {
       args.execution_mode = ExecMode::COMPILER;
     } else if (0 == strncmp("-e", argv[0], 2)) {
       eof_mode_string = std::string_view{&argv[0][2]};
