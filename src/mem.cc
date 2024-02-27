@@ -20,8 +20,15 @@ std::variant<Heap, Err> Heap::Create(size_t size) noexcept {
   size = ((size + page_size - 1) / page_size) * page_size;
   // Add guard pages in the front and the back
   size += page_size * (GUARD_PAGES * 2);
-  uint8_t *mem = Ensure(Allocate(size));
-  Ensure(Protect(mem + page_size * GUARD_PAGES, size - (page_size * GUARD_PAGES * 2), PROTECT_RW));
+  auto alloc_result = Allocate(size);
+  if (alloc_result.index() != 0) {
+    return std::get<Err>(alloc_result);
+  }
+  uint8_t *mem = std::get<uint8_t*>(alloc_result);
+  Err err = Protect(mem + page_size * GUARD_PAGES, size - (page_size * GUARD_PAGES * 2), PROTECT_RW);
+  if (!err.IsOk()) {
+    return err;
+  }
   return Heap(M{.page_size = page_size,
                 .allocated = size,
                 .available = size - (page_size * 2 * GUARD_PAGES),
@@ -59,13 +66,16 @@ std::variant<CodeArea, Err> CodeArea::Create() noexcept {
   size_t reserved = 512 * 1024 * 1024;
   // Round reserved up to page_size
   reserved = ((reserved + page_size - 1) / page_size) * page_size;
-  void *mem = Ensure(Allocate(reserved));
+  auto alloc_result = Allocate(reserved);
+  if (alloc_result.index() != 0) {
+    return std::get<Err>(alloc_result);
+  }
   return CodeArea(M{
       .size = page_size,  // keep the first page clean as guard page
       .allocated = 0,
       .reserved = reserved,
       .page_size = page_size,
-      .mem = (uint8_t *) mem,
+      .mem = std::get<uint8_t*>(alloc_result),
       .err = false,
   });
 }
