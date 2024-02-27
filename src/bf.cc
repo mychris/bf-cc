@@ -47,34 +47,35 @@ static void parse_opts(int argc, char **argv) {
   std::string_view mem_size_string{""};
   std::string_view eof_mode_string{""};
   while (argc--) {
-    if (0 == strcmp("-h", argv[0]) || 0 == strcmp("--help", argv[0])) {
+    std::string_view this_arg(argv[0]);
+    if (this_arg == "-h" || this_arg == "--help") {
       usage();
       exit(0);
-    } else if (0 == strncmp("-O", argv[0], 2)) {
-      opt_level = argv[0][2];
-      if (argv[0][2] == '\0' || argv[0][3] != '\0' || opt_level < '0' || opt_level > '3') {
-        Error("Invalid optimization level: %s", argv[0]);
+    } else if (this_arg.starts_with("-O")) {
+      opt_level = this_arg[2];
+      if (opt_level == '\0' || this_arg.size() > 3 || opt_level < '0' || opt_level > '3') {
+        Error("Invalid optimization level: %s", this_arg.data());
       }
-    } else if (0 == strncmp("--optimize=", argv[0], 11)) {
-      opt_level = argv[0][11];
-      if (argv[0][11] == '\0' || argv[0][12] != '\0' || opt_level < '0' || opt_level > '3') {
-        Error("Invalid optimization level: %s", argv[0]);
+    } else if (this_arg.starts_with("--optimize=")) {
+      opt_level = this_arg[11];
+      if (opt_level == '\0' || this_arg.size() > 12 || opt_level < '0' || opt_level > '3') {
+        Error("Invalid optimization level: %s", this_arg.data());
       }
-    } else if (0 == strncmp("-m", argv[0], 2)) {
-      mem_size_string = std::string_view{&argv[0][2]};
-    } else if (0 == strncmp("--memory=", argv[0], 9)) {
-      mem_size_string = std::string_view{&argv[0][9]};
-    } else if (0 == strcmp("--interp", argv[0]) || 0 == strcmp("-i", argv[0])) {
+    } else if (this_arg.starts_with("-m")) {
+      mem_size_string = this_arg.substr(2);
+    } else if (this_arg.starts_with("--memory=")) {
+      mem_size_string = this_arg.substr(9);
+    } else if (this_arg == "--interp" || this_arg == "-i") {
       args.execution_mode = ExecMode::INTERPRETER;
-    } else if (0 == strcmp("--comp", argv[0]) || 0 == strcmp("-c", argv[0])) {
+    } else if (this_arg == "--comp" || this_arg == "-c") {
       args.execution_mode = ExecMode::COMPILER;
-    } else if (0 == strncmp("-e", argv[0], 2)) {
-      eof_mode_string = std::string_view{&argv[0][2]};
-    } else if (0 == strncmp("--eof=", argv[0], 6)) {
-      eof_mode_string = std::string_view{&argv[0][6]};
-    } else if (argv[0][0] != '-') {
-      args.input_file_path = std::string{argv[0]};
-    } else if (0 == strcmp("-", argv[0])) {
+    } else if (this_arg.starts_with("-e")) {
+      eof_mode_string = this_arg.substr(2);
+    } else if (this_arg.starts_with("--eof=")) {
+      eof_mode_string = this_arg.substr(6);
+    } else if (this_arg[0] != '-') {
+      args.input_file_path = std::string(this_arg);
+    } else if (this_arg == "-") {
       args.input_file_path = std::string{"/dev/stdin"};
     } else {
       Error("Invalid argument: %s", argv[0]);
