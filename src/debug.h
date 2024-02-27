@@ -8,22 +8,25 @@
 #undef DEBUG_BUILD
 #endif
 
+#include <optional>
+#include <string_view>
+
 #if defined(DEBUG_BUILD)
-#define ASSERT(test, format, ...)                                       \
-  do {                                                                  \
-    if (!(test)) {                                                      \
-      Assert(__FILE__, __LINE__, (format) __VA_OPT__(,) __VA_ARGS__);   \
-    }                                                                   \
+#define ASSERT(test, format, ...)                                      \
+  do {                                                                 \
+    if (!(test)) {                                                     \
+      Assert(__FILE__, __LINE__, (format) __VA_OPT__(, ) __VA_ARGS__); \
+    }                                                                  \
   } while (0)
 #else
 #define ASSERT(test, format, ...)
 #endif
 
-#define GUARANTEE(test, format, ...)                                    \
-  do {                                                                  \
-    if (!(test)) {                                                      \
-      Assert(__FILE__, __LINE__, (format) __VA_OPT__(,) __VA_ARGS__);   \
-    }                                                                   \
+#define GUARANTEE(test, format, ...)                                   \
+  do {                                                                 \
+    if (!(test)) {                                                     \
+      Assert(__FILE__, __LINE__, (format) __VA_OPT__(, ) __VA_ARGS__); \
+    }                                                                  \
   } while (0)
 
 #define UNIMPLEMENTED() Assert(__FILE__, __LINE__, "%s: %s", __FUNCTION__, "unimplemented")
@@ -31,5 +34,9 @@
 #define UNREACHABLE() Assert(__FILE__, __LINE__, "%s: %s", __FUNCTION__, "unreachable")
 
 [[noreturn]] extern void Assert(const char*, unsigned long long, const char*, ...);
+
+std::optional<std::string_view> IsDumpEnabled(std::string_view);
+
+void DumpEnable(std::string_view);
 
 #endif /* BF_CC_DEBUG_H */

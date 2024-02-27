@@ -6,6 +6,7 @@
 #include <string_view>
 
 #include "compiler.h"
+#include "debug.h"
 #include "error.h"
 #include "instr.h"
 #include "interp.h"
@@ -46,6 +47,7 @@ static void parse_opts(int argc, char **argv) {
   char opt_level{'2'};
   std::string_view mem_size_string{""};
   std::string_view eof_mode_string{""};
+  std::string_view dump_string{""};
   while (argc--) {
     std::string_view this_arg(argv[0]);
     if (this_arg == "-h" || this_arg == "--help") {
@@ -65,6 +67,10 @@ static void parse_opts(int argc, char **argv) {
       mem_size_string = this_arg.substr(2);
     } else if (this_arg.starts_with("--memory=")) {
       mem_size_string = this_arg.substr(9);
+    } else if (this_arg.starts_with("-d")) {
+      dump_string = this_arg.substr(2);
+    } else if (this_arg.starts_with("--dump=")) {
+      dump_string = this_arg.substr(7);
     } else if (this_arg == "--interp" || this_arg == "-i") {
       args.execution_mode = ExecMode::INTERPRETER;
     } else if (this_arg == "--comp" || this_arg == "-c") {
@@ -90,6 +96,22 @@ static void parse_opts(int argc, char **argv) {
       }
       args.heap_size = (size_t) result;
       mem_size_string = std::string_view{""};
+    }
+    if (!dump_string.empty()) {
+      const size_t length = dump_string.size();
+      size_t start = 0;
+      for (size_t i = 0; i < length; ++i) {
+        if (dump_string[i] == ',') {
+          if (i > start) {
+            DumpEnable(dump_string.substr(start, i - start));
+          }
+          start = i + 1;
+        }
+      }
+      if (length > start) {
+        DumpEnable(dump_string.substr(start));
+      }
+      dump_string = std::string_view{""};
     }
     if (!eof_mode_string.empty()) {
       if ("keep" == eof_mode_string) {
@@ -146,6 +168,9 @@ int main(int argc, char **argv) {
     Ensure(compiler.Compile(stream, args.eof_mode));
     compiler.RunCode(heap);
   } break;
+  }
+  if (IsDumpEnabled("heap")) {
+    heap.Dump();
   }
   return 0;
 }

@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -24,7 +25,7 @@ std::variant<Heap, Err> Heap::Create(size_t size) noexcept {
   if (alloc_result.index() != 0) {
     return std::get<Err>(alloc_result);
   }
-  uint8_t *mem = std::get<uint8_t*>(alloc_result);
+  uint8_t *mem = std::get<uint8_t *>(alloc_result);
   Err err = Protect(mem + page_size * GUARD_PAGES, size - (page_size * GUARD_PAGES * 2), PROTECT_RW);
   if (!err.IsOk()) {
     return err;
@@ -47,8 +48,9 @@ void Heap::Dump() const noexcept {
   uint8_t *ptr = m.data;
   size_t count = 0;
   const size_t available = m.available;
+  const int digits = static_cast<int>(std::ceil(std::log10(static_cast<double>(available))));
   while (count < available) {
-    printf("%p  ", static_cast<void *>(ptr));
+    printf("%0*zu  ", digits, ptr - m.data);
     for (int i = 0; count < available && i < 4; ++i) {
       printf("  ");
       for (int j = 0; count < available && j < 4; ++j) {
@@ -75,7 +77,7 @@ std::variant<CodeArea, Err> CodeArea::Create() noexcept {
       .allocated = 0,
       .reserved = reserved,
       .page_size = page_size,
-      .mem = std::get<uint8_t*>(alloc_result),
+      .mem = std::get<uint8_t *>(alloc_result),
       .err = false,
   });
 }
