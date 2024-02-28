@@ -170,7 +170,10 @@ int main(int argc, char **argv) {
   } break;
   }
   if (IsDumpEnabled("heap")) {
-    heap.Dump();
+    size_t from = 0;
+    size_t to = 0;
+    std::sscanf(IsDumpEnabled("heap").value().data(), "%zu-%zu", &from, &to);
+    heap.Dump(from, to);
   }
   return 0;
 }

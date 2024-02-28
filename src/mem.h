@@ -79,7 +79,7 @@ public:
     return m.data_pointer;
   }
 
-  void Dump() const noexcept;
+  void Dump(size_t, size_t) const noexcept;
 };
 
 class CodeArea final {

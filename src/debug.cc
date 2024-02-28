@@ -29,7 +29,7 @@ std::optional<std::string_view> IsDumpEnabled(std::string_view opt) {
       }
       if (flag[len] == '=') {
         std::string_view result{flag};
-        return result.substr(len);
+        return result.substr(len + 1);
       }
       return {};
     }

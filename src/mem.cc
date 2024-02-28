@@ -44,20 +44,30 @@ Heap::~Heap() {
   }
 }
 
-void Heap::Dump() const noexcept {
+void Heap::Dump(size_t from, size_t to) const noexcept {
+  const size_t row_count = 16;
+  if (to <= from) {
+    return;
+  }
+  to = std::min(to, m.available);
+  from = std::min(from, m.available);
+  to = (to + row_count) / row_count * row_count;
+  from = from / row_count * row_count;
+  printf("Heap dump for cells %zu to %zu\n", from, to - 1);
   uint8_t *ptr = m.data;
-  size_t count = 0;
+  ptr += from;
+  size_t count = from;
   const size_t available = m.available;
   const int digits = static_cast<int>(std::ceil(std::log10(static_cast<double>(available))));
-  while (count < available) {
+  while (count < available && count < to) {
     printf("%0*zu  ", digits, ptr - m.data);
-    for (int i = 0; count < available && i < 4; ++i) {
-      printf("  ");
-      for (int j = 0; count < available && j < 4; ++j) {
-        printf(" %02X", *ptr);
-        ++ptr;
-        ++count;
+    for (size_t i = 0; count < available && i < row_count; ++i) {
+      if (i % 4 == 0) {
+        printf("  ");
       }
+      printf(" %02X", *ptr);
+      ++ptr;
+      ++count;
     }
     printf("\n");
   }
