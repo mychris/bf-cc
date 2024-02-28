@@ -155,25 +155,34 @@ int main(int argc, char **argv) {
   std::string raw_content = Ensure(ReadWholeFile(args.input_file_path));
   OperationStream stream = Ensure(Parse(raw_content));
   Optimizer::Create(args.optimization_level).Run(stream);
-  // Allocate heap
-  Heap heap = Ensure(Heap::Create(args.heap_size));
-  // Compile and execute
-  switch (args.execution_mode) {
-  case ExecMode::INTERPRETER: {
-    Interpreter interpreter = Interpreter::Create();
-    interpreter.Run(heap, stream, args.eof_mode);
-  } break;
-  case ExecMode::COMPILER: {
-    Compiler compiler = Ensure(Compiler::Create());
-    Ensure(compiler.Compile(stream, args.eof_mode));
-    compiler.RunCode(heap);
-  } break;
-  }
-  if (IsDumpEnabled("heap")) {
-    size_t from = 0;
-    size_t to = 0;
-    std::sscanf(IsDumpEnabled("heap").value().data(), "%zu-%zu", &from, &to);
-    heap.Dump(from, to);
+  if (IsDumpEnabled("prog")) {
+    stream.Dump2();
+  } else {
+    // Allocate heap
+    Heap heap = Ensure(Heap::Create(args.heap_size));
+    // Compile and execute
+    switch (args.execution_mode) {
+    case ExecMode::INTERPRETER: {
+      Interpreter interpreter = Interpreter::Create();
+      interpreter.Run(heap, stream, args.eof_mode);
+    } break;
+    case ExecMode::COMPILER: {
+      Compiler compiler = Ensure(Compiler::Create());
+      Ensure(compiler.Compile(stream, args.eof_mode));
+      if (IsDumpEnabled("code")) {
+        compiler.Dump();
+        return 0;
+      } else {
+        compiler.RunCode(heap);
+      }
+    } break;
+    }
+    if (IsDumpEnabled("heap")) {
+      size_t from = 0;
+      size_t to = 0;
+      std::sscanf(IsDumpEnabled("heap").value().data(), "%zu-%zu", &from, &to);
+      heap.Dump(from, to);
+    }
   }
   return 0;
 }
