@@ -104,3 +104,6 @@ Copyright (c) 2023-2024 Christoph Göttschkes
 
 Licensed under the [MIT](https://opensource.org/licenses/MIT) License.
 See the `LICENSE` file for more info.
+
+Intergation test programs starting with bforg_ are taken from [brainfuck.org](http://www.brainfuck.org/)
+and have been created by daniel b cristofani and are licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)

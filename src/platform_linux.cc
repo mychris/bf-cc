@@ -68,6 +68,7 @@ std::variant<std::string, Err> ReadWholeFile(const std::string_view filename) {
 
 extern "C" void bf_write(uint8_t *c) {
   std::putchar((int) *c);
+  std::fflush(stdout);
 }
 
 extern "C" void bf_read(uint8_t *c, uint32_t mode) {
