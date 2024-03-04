@@ -76,9 +76,10 @@ Using the zig toolchain:
 
 The IR consists of a doubly linked list of instructions.  Each instruction has
 up to two operands.  Jump instruction jump to their corresponding labels.  Each
-label can only jumped to from a single position.  JNZ are always backward jumps
-and JZ are always forward jumps.  Each jump instruction contains a pointer to
-its corresponding label, and the label contains a pointer to its jump.
+label can only be jumped to from a single jump instruction.  JNZ are always
+backward jumps and JZ are always forward jumps.  Each jump instruction contains
+a pointer to its corresponding label, and the label contains a pointer to its
+jump.
 
 Optimizations use an iterator over the instruction stream to inspect it, match
 patterns, and manipulate the stream.  Because of the C++ iterator API, care must
@@ -103,7 +104,7 @@ If something goes wrong, first try to disable optimizations.
 == Interpreter
 
 The interpreter is not optimized at all. It simply runs over the instruction 
-stream and switches over the op code of the instruction to perform it.
+stream and switches over the op code of the instruction to execute it.
 
 == Runtime compiler
 
@@ -121,7 +122,7 @@ the program can simply set the cell to `0` before the read, if desired.  Using a
 hard-coded value for EOF might make it harder for certain applications.
 
 For instance, the `cat` program is often written as `,[.,]` in brainfuck.
-This will not work with the default EOF flag in results in an endless loop.
+This will not work with the default EOF flag and results in an endless loop.
 `,[.[-],]` would be a more resilient implementation.
 
 == TODOs
