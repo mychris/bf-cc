@@ -92,7 +92,7 @@ static void parse_opts(int argc, char **argv) {
       errno = 0;
       result = std::strtoll(mem_size_string.data(), &end, 0);
       if (result < 0 || errno == ERANGE || NULL == end || *end != '\0') {
-        Error("Invalid heap memory size: %s", mem_size_string);
+        Error("Invalid heap memory size: %s", mem_size_string.data());
       }
       args.heap_size = (size_t) result;
       mem_size_string = std::string_view{""};
@@ -121,7 +121,7 @@ static void parse_opts(int argc, char **argv) {
       } else if ("-1" == eof_mode_string) {
         args.eof_mode = EOFMode::NEG_ONE;
       } else {
-        Error("Invalid EOF mode: %s", eof_mode_string);
+        Error("Invalid EOF mode: %s", eof_mode_string.data());
       }
       eof_mode_string = std::string_view{""};
     }

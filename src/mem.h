@@ -12,10 +12,10 @@
 
 #include <cstdint>
 #include <iterator>
-#include <memory>
 #include <utility>
 #include <variant>
 
+#include "debug.h"
 #include "error.h"
 
 class Heap final {
@@ -48,18 +48,26 @@ public:
   }
 
   inline void IncrementCell(uint8_t amount, int64_t offset) noexcept {
+    ASSERT(m.data_pointer + offset >= 0, "cell outside of memory area");
+    ASSERT(m.data_pointer + offset < static_cast<int64_t>(m.available), "cell outside of memory area");
     m.data[m.data_pointer + offset] += amount;
   }
 
   inline void DecrementCell(uint8_t amount, int64_t offset) noexcept {
+    ASSERT(m.data_pointer + offset >= 0, "cell outside of memory area");
+    ASSERT(m.data_pointer + offset < static_cast<int64_t>(m.available), "cell outside of memory area");
     m.data[m.data_pointer + offset] -= amount;
   }
 
   inline void SetCell(const uint8_t value, int64_t offset) noexcept {
+    ASSERT(m.data_pointer + offset >= 0, "cell outside of memory area");
+    ASSERT(m.data_pointer + offset < static_cast<int64_t>(m.available), "cell outside of memory area");
     m.data[m.data_pointer + offset] = value;
   }
 
   inline uint8_t GetCell(int64_t offset) const noexcept {
+    ASSERT(m.data_pointer + offset >= 0, "cell outside of memory area");
+    ASSERT(m.data_pointer + offset < static_cast<int64_t>(m.available), "cell outside of memory area");
     return m.data[m.data_pointer + offset];
   }
 

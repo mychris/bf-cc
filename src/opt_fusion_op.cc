@@ -35,8 +35,9 @@ void OptFusionOp(OperationStream &stream) {
       while (iter != end && iter->OpCode() == seq_cmd) {
         amount += iter->Operand1();
         stream.Delete(iter++);
-        seq_head->SetOperand1(amount);
       }
+      amount = amount % 256;
+      seq_head->SetOperand1(amount % 256);
     } else {
       ++iter;
     }

@@ -1,4 +1,4 @@
 		     cat the input to the output
-			    expect -e0
+			    expect -e-1
 
-,[.,]
+-,+[-.[-]-,+]

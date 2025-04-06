@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT License
 #include "optimize.h"
 
-#include "debug.h"
 #include "instr.h"
 
 void Optimizer::Run(OperationStream &stream) const noexcept {

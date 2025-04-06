@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT License
 const std = @import("std");
 
-pub fn build(b: *std.build.Builder) void {
+pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
     var CXX_FLAGS = std.ArrayList([]const u8).init(b.allocator);
-    CXX_FLAGS.deinit();
     CXX_FLAGS.appendSlice(&.{
         "--std=c++20", //
         "-pedantic", //
@@ -30,7 +29,12 @@ pub fn build(b: *std.build.Builder) void {
     }) catch @panic("OOM");
 
     if (optimize == .Debug) {
-        CXX_FLAGS.append("-DDEBUG=1") catch @panic("OOM");
+        CXX_FLAGS.appendSlice(&.{
+            "-DDEBUG=1", //
+            "-ggdb3", //
+            "-pg", //
+            "-O0", //
+        }) catch @panic("OOM");
     }
 
     const exe = b.addExecutable(.{
@@ -38,30 +42,34 @@ pub fn build(b: *std.build.Builder) void {
         .target = target,
         .optimize = optimize,
     });
-    exe.addIncludePath(.{ .path = "src" });
+    exe.addIncludePath(b.path("src"));
     exe.linkLibC();
     exe.linkLibCpp();
-    exe.addCSourceFiles(&.{
-        "src/bf.cc",
-        "src/platform_linux.cc",
-        "src/platform_windows.cc",
-        "src/assembler_x86_64.cc",
-        "src/assembler_aarch64.cc",
-        "src/compiler.cc",
-        "src/debug.cc",
-        "src/error.cc",
-        "src/instr.cc",
-        "src/interp.cc",
-        "src/mem.cc",
-        "src/optimize.cc",
-        "src/opt_comment_loop.cc",
-        "src/opt_delay_ptr.cc",
-        "src/opt_double_guard.cc",
-        "src/opt_fusion_op.cc",
-        "src/opt_multiply_loop.cc",
-        "src/opt_peep.cc",
-        "src/parse.cc",
-    }, CXX_FLAGS.items);
+    exe.addCSourceFiles(.{
+        .root = b.path("src"),
+        .files = &.{
+            "bf.cc",
+            "platform_linux.cc",
+            "platform_windows.cc",
+            "assembler_x86_64.cc",
+            "assembler_aarch64.cc",
+            "compiler.cc",
+            "debug.cc",
+            "error.cc",
+            "instr.cc",
+            "interp.cc",
+            "mem.cc",
+            "optimize.cc",
+            "opt_comment_loop.cc",
+            "opt_delay_ptr.cc",
+            "opt_double_guard.cc",
+            "opt_fusion_op.cc",
+            "opt_multiply_loop.cc",
+            "opt_peep.cc",
+            "parse.cc",
+        },
+        .flags = CXX_FLAGS.items
+    });
 
     b.installArtifact(exe);
 
@@ -73,55 +81,57 @@ pub fn build(b: *std.build.Builder) void {
     const run_step = b.step("run", "Run bf-cc");
     run_step.dependOn(&run_cmd.step);
 
-    const gtest_root = "/usr/src/googletest/";
-
-    const lib_gtest = b.addStaticLibrary(.{
-        .name = "gtest",
+    const googletest_dep = b.dependency("googletest", .{
         .target = target,
         .optimize = optimize,
     });
-    lib_gtest.linkLibC();
-    lib_gtest.linkLibCpp();
-    lib_gtest.addIncludePath(.{ .path = gtest_root });
-    lib_gtest.addCSourceFiles(&.{
-        gtest_root ++ "src/gtest-all.cc",
-    }, CXX_FLAGS.items);
 
     const test_exe = b.addExecutable(.{
         .name = "bf-cc-test",
         .target = target,
         .optimize = optimize,
     });
-    test_exe.addIncludePath(.{ .path = "src" });
+    test_exe.addIncludePath(b.path("src"));
+    test_exe.addIncludePath(b.path("test"));
     test_exe.linkLibC();
     test_exe.linkLibCpp();
-    test_exe.linkLibrary(lib_gtest);
-    test_exe.addCSourceFiles(&.{
-        "test/main.cc",
-        "test/test_interp.cc",
-        "test/test_opt_comment_loop.cc",
-        "test/test_opt_double_guard.cc",
-        "test/test_opt_fusion_op.cc",
-        "test/test_opt_multiply_loop.cc",
-        "src/platform_linux.cc",
-        "src/platform_windows.cc",
-        "src/assembler_x86_64.cc",
-        "src/assembler_aarch64.cc",
-        "src/compiler.cc",
-        "src/debug.cc",
-        "src/error.cc",
-        "src/instr.cc",
-        "src/interp.cc",
-        "src/mem.cc",
-        "src/optimize.cc",
-        "src/opt_comment_loop.cc",
-        "src/opt_delay_ptr.cc",
-        "src/opt_double_guard.cc",
-        "src/opt_fusion_op.cc",
-        "src/opt_multiply_loop.cc",
-        "src/opt_peep.cc",
-        "src/parse.cc",
-    }, CXX_FLAGS.items);
+    test_exe.linkLibrary(googletest_dep.artifact("gtest"));
+    test_exe.addCSourceFiles(.{
+        .root = b.path("test"),
+        .files = &.{
+            "main.cc",
+            "test_interp.cc",
+            "test_opt_comment_loop.cc",
+            "test_opt_double_guard.cc",
+            "test_opt_fusion_op.cc",
+            "test_opt_multiply_loop.cc",
+        },
+        .flags = CXX_FLAGS.items,
+    });
+    test_exe.addCSourceFiles(.{
+        .root = b.path("src"),
+        .files = &.{
+            "platform_linux.cc",
+            "platform_windows.cc",
+            "assembler_x86_64.cc",
+            "assembler_aarch64.cc",
+            "compiler.cc",
+            "debug.cc",
+            "error.cc",
+            "instr.cc",
+            "interp.cc",
+            "mem.cc",
+            "optimize.cc",
+            "opt_comment_loop.cc",
+            "opt_delay_ptr.cc",
+            "opt_double_guard.cc",
+            "opt_fusion_op.cc",
+            "opt_multiply_loop.cc",
+            "opt_peep.cc",
+            "parse.cc",
+        },
+        .flags = CXX_FLAGS.items,
+    });
 
     const install_test_exe = b.addInstallArtifact(test_exe, .{});
 

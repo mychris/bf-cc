@@ -92,14 +92,14 @@ static void MergeSetIncrDecr(OperationStream &stream) {
       auto set = iter;
       auto incr = iter + 1;
       if (set->Operand2() == incr->Operand2()) {
-        set->SetOperand1(set->Operand1() + incr->Operand1());
+        set->SetOperand1((set->Operand1() + incr->Operand1()) % 256);
         stream.Delete(incr);
       }
     } else if (iter.LookingAt(decr_pattern)) {
       auto set = iter;
       auto decr = iter + 1;
       if (set->Operand2() == decr->Operand2()) {
-        set->SetOperand1(set->Operand1() - decr->Operand1());
+        set->SetOperand1((set->Operand1() - decr->Operand1() + 256) % 256);
         stream.Delete(decr);
       }
     } else {
