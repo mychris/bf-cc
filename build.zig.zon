@@ -21,6 +21,6 @@
         "test",
         "Makefile",
         "LICENSE",
-        "README.adoc",
+        "README.md",
     },
 }

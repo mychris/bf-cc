@@ -1,4 +1,4 @@
-= bf-cc
+# bf-cc
 
 A brainfuck interpreter and run-time compiler written in C++. Currently, the
 following platforms are supported:
@@ -15,53 +15,23 @@ could be enhanced further.
 The runtime compiler uses simple, hard-coded instruction templates for each
 op code of the IR.
 
-== Command line interface
+## Command line interface
 
 Usage: `bf-cc [-h] [-O(0|1|2|3)] [-mMEMORY_SIZE] [-e(keep|0|1)] [(-i|-c)] PROGRAM`
 
-[cols="1,1,1,1"]
-|===
+| Short option | Long option | Argument    | Description         |
+|:-------------|:------------|:------------|:--------------------|
+| -O           | --optimize= | 0\|1\|2\|3  | Optimization level  |
+| -m           | --memory=   | bytes       | Size of the heap    |
+| -i           | --interp    |             | Use the interpreter |
+| -c           | --comp      |             | Use the compiler    |
+| -e           | --eof=      | keep\|0\|-1 | EOF mode            |
+| -h           | --help      |             | Display help        |
 
-|Short option
-|Long option
-|Argument
-|Description
-
-|-O
-|--optimize=
-|0\|1\|2\|3
-|Optimization level
-
-|-m
-|--memory=
-|bytes
-|Size of the heap
-
-|-i
-|--interp
-|
-|Use the interpreter
-
-|-c
-|--comp
-|
-|Use the compiler
-
-|-e
-|--eof=
-|keep\|0\|-1
-|EOF mode
-
-|-h
-|--help
-|
-|Display help
-|===
-
-== Build instructions
+## Build instructions
 
 The `Makefile` can be used for native builds and tests on Linux.  To cross compile
-for Windows, use the https://ziglang.org/[ziglang] toolchain
+for Windows, use the [ziglang](https://ziglang.org/) toolchain
 (see the `build.zig` file).
 
 Using the zig toolchain:
@@ -72,7 +42,7 @@ Using the zig toolchain:
 * Run all tests on Linux: `zig build check`
 * Cross compile to Windows from Linux: `zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-windows`
 
-== IR
+## IR
 
 The IR consists of a doubly linked list of instructions.  Each instruction has
 up to two operands.  Jump instruction jump to their corresponding labels.  Each
@@ -87,7 +57,7 @@ be taken if the stream is manipulated while an iterator is alive.  The underlyin
 structure is a linked list, so removing something from the list might make the
 iterator invalid.
 
-== Optimizations
+## Optimizations
 
 The optimizer has several passes, which can be controlled using the `-O` flag.
 `-O0` disables all optimizations.
@@ -101,12 +71,12 @@ introduced and operations get more operands. The highest optimization level
 
 If something goes wrong, first try to disable optimizations.
 
-== Interpreter
+## Interpreter
 
 The interpreter is not optimized at all. It simply runs over the instruction 
 stream and switches over the op code of the instruction to execute it.
 
-== Runtime compiler
+## Runtime compiler
 
 The runtime compiler uses hard-coded templates for each instruction.  It does not
 create any reusable procedures.  There are many assumptions for the type of the
@@ -114,7 +84,7 @@ operands of each instruction, which should generally hold for brainfuck programs
 
 If something goes wrong, first try the interpreter.
 
-== EOF for read operations
+## EOF for read operations
 
 The `-e` flag can be used to change the behavior on EOF.  I have seen many 
 programs which rely on `-e0`, but I think `-ekeep` is a more sane default, since
@@ -125,16 +95,16 @@ For instance, the `cat` program is often written as `,[.,]` in brainfuck.
 This will not work with the default EOF flag and results in an endless loop.
 `,[.[-],]` would be a more resilient implementation.
 
-== TODOs
+## TODOs
 
 Like always, too many.
 
-== License
+## License
 
-Copyright (c) 2023-2024 Christoph Göttschkes
+Copyright (c) 2023-2025 Christoph Göttschkes
 
-Licensed under the https://opensource.org/licenses/MIT[MIT] License.
+Licensed under the [MIT](https://opensource.org/licenses/MIT) License.
 See the `LICENSE` file for more info.
 
-Intergation test programs starting with bforg_ are taken from http://www.brainfuck.org/[brainfuck.org]
-and have been created by daniel b cristofani and are licensed under https://creativecommons.org/licenses/by-sa/4.0/[CC BY-SA 4.0]
+Intergation test programs starting with bforg_ are taken from [brainfuck.org](http://www.brainfuck.org/)
+and have been created by daniel b cristofani and are licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
