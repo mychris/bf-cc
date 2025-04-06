@@ -91,7 +91,7 @@ void OperationStream::Dump() {
   }
 }
 
-static bool is_single_jump(OperationStream::Iterator iter) {
+static bool is_single_jump(const OperationStream::Iterator &iter) {
   if (((Operation *) iter->Operand1())->Is(Instruction::JNZ)) {
     return false;
   }

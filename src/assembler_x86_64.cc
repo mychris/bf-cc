@@ -245,16 +245,20 @@ void EmitRead(CodeArea &mem, EOFMode eof_mode) {
   mem.EmitCode64(addr);
   mem.EmitCodeListing({
 #if defined(IS_WINDOWS)
-    // MOV rcx, rdx
-    0x48, 0x89, 0xD1,
-        // MOV edx, eof_mode
-        0xBA,
+      // MOV rcx, rdx
+      0x48,
+      0x89,
+      0xD1,
+      // MOV edx, eof_mode
+      0xBA,
 #endif
 #if defined(IS_LINUX)
-        // MOV rdi, rdx
-        0x48, 0x89, 0xD7,
-        // MOV esi, eof_mode
-        0xBE,
+      // MOV rdi, rdx
+      0x48,
+      0x89,
+      0xD7,
+      // MOV esi, eof_mode
+      0xBE,
 #endif
   });
   mem.EmitCode((uint32_t) eof_mode);
@@ -287,18 +291,26 @@ void EmitWrite(CodeArea &mem) {
   mem.EmitCode64(addr);
   mem.EmitCodeListing({
 #if defined(IS_WINDOWS)
-    // MOV rcx, rdx
-    0x48, 0x89, 0xD1,
+      // MOV rcx, rdx
+      0x48,
+      0x89,
+      0xD1,
 #endif
 #if defined(IS_LINUX)
-        // MOV rdi, rdx
-        0x48, 0x89, 0xD7,
+      // MOV rdi, rdx
+      0x48,
+      0x89,
+      0xD7,
 #endif
-        // CALL rax
-        0xFF, 0xD0,
-        // restore rdx
-        // MOV rdx, [rbp]
-        0x48, 0x8B, 0x55, 0x00,
+      // CALL rax
+      0xFF,
+      0xD0,
+      // restore rdx
+      // MOV rdx, [rbp]
+      0x48,
+      0x8B,
+      0x55,
+      0x00,
   });
 }
 
